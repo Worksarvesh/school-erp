@@ -1,0 +1,25 @@
+{
+  "name": "@school-erp/shared-types",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Types and constants shared by mobile, web and API",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@school-erp/config": "workspace:*",
+    "@types/node": "^24.0.0",
+    "vitest": "^5.0.5"
+  }
+}

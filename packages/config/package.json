@@ -1,0 +1,9 @@
+{
+  "name": "@school-erp/config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared TypeScript configuration for all workspaces",
+  "files": [
+    "tsconfig.base.json"
+  ]
+}

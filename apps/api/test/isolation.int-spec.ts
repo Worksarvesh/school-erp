@@ -11,15 +11,14 @@
  *
  * If this file fails after you add a route or table, fix the route or table, not the test.
  */
-import type { INestApplication } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import pg from 'pg';
 import request from 'supertest';
 import { withSchoolContext } from '../src/database/school-context.js';
 import type { PrismaClient } from '../src/generated/prisma/client.js';
 import { Role } from '../src/generated/prisma/enums.js';
-import { TEST_USER_HEADER } from './support/header-identity.js';
 import { isSchoolRoute, type ServedRoute, servedRoutes } from './support/routes.js';
-import { createTestApp } from './support/test-app.js';
+import { bearer, createTestApp } from './support/test-app.js';
 import { appPrisma, testDbUrl, truncateTenantData } from './support/test-db.js';
 
 const SCHOOL_A = '0192f0a4-0000-7000-8000-00000000000a';
@@ -28,17 +27,39 @@ const ADMIN_A = '0192f0a4-0000-7000-8000-0000000000a1'; // every role in A
 const ADMIN_B = '0192f0a4-0000-7000-8000-0000000000b1'; // every role in B
 const SOME_ID = '0192f0a4-0000-7000-8000-0000000000ff'; // fills any other path param
 
-/** Routes outside /v1/schools/:schoolId. Adding one here is a security review decision. */
-const NON_SCHOOL_ROUTES = ['GET /v1'];
+/**
+ * Routes outside /v1/schools/:schoolId. Adding one here is a security review decision.
+ * `authenticated` routes must return 401 signed out (checked below). `public` routes must not
+ * reveal whether an account exists (checked per route in auth.int-spec.ts).
+ */
+const NON_SCHOOL_ROUTES: Record<string, 'public' | 'authenticated'> = {
+  'GET /v1': 'public',
+  'POST /v1/auth/login': 'public',
+  'POST /v1/auth/refresh': 'public',
+  'POST /v1/auth/password-reset': 'public',
+  'POST /v1/auth/logout': 'authenticated',
+  'POST /v1/auth/logout-all': 'authenticated',
+  'GET /v1/me': 'authenticated',
+  'GET /v1/me/sessions': 'authenticated',
+  'DELETE /v1/me/sessions/:sessionId': 'authenticated',
+  'POST /v1/me/password': 'authenticated',
+};
 
 // Routes are discovered at collection time so each one gets its own named tests.
 const prisma: PrismaClient = appPrisma(2);
-const app: INestApplication = await createTestApp(prisma);
+const app: NestExpressApplication = await createTestApp(prisma);
 const routes = servedRoutes(app);
 const schoolRoutes = routes.filter(isSchoolRoute);
+const authenticatedRoutes = routes.filter((r) => NON_SCHOOL_ROUTES[label(r)] === 'authenticated');
+const auth: Record<string, string> = {
+  [ADMIN_A]: await bearer(app, ADMIN_A),
+  [ADMIN_B]: await bearer(app, ADMIN_B),
+};
 let owner: pg.Client;
 
-const label = (r: ServedRoute) => `${r.method} ${r.path}`;
+function label(r: ServedRoute) {
+  return `${r.method} ${r.path}`;
+}
 const count = (sql: string) => `SELECT count(*)::int AS n FROM ${sql}`;
 
 function call(route: ServedRoute, schoolId: string, userId?: string) {
@@ -46,7 +67,7 @@ function call(route: ServedRoute, schoolId: string, userId?: string) {
   const method = route.method.toLowerCase() as 'get' | 'post' | 'put' | 'patch' | 'delete';
   let req = request(app.getHttpServer())[method](path);
   if (userId) {
-    req = req.set(TEST_USER_HEADER, userId);
+    req = req.set('Authorization', auth[userId]!);
   }
   return ['post', 'put', 'patch'].includes(method) ? req.send({}) : req;
 }
@@ -69,6 +90,16 @@ beforeAll(async () => {
     INSERT INTO school_memberships (id, school_id, user_id, role, status, updated_at) VALUES
       ${everyRole(SCHOOL_A, ADMIN_A)},
       ${everyRole(SCHOOL_B, ADMIN_B)};
+    INSERT INTO credentials (user_id, password_hash, password_changed_at, updated_at) VALUES
+      ('${ADMIN_A}', 'not-a-real-hash-a', now(), now()),
+      ('${ADMIN_B}', 'not-a-real-hash-b', now(), now());
+    INSERT INTO sessions (id, user_id, token_hash, expires_at) VALUES
+      (gen_random_uuid(), '${ADMIN_A}', 'hash-a', now() + interval '1 day'),
+      (gen_random_uuid(), '${ADMIN_B}', 'hash-b', now() + interval '1 day');
+    INSERT INTO audit_logs (id, school_id, actor_user_id, action) VALUES
+      (gen_random_uuid(), '${SCHOOL_A}', '${ADMIN_A}', 'test.event'),
+      (gen_random_uuid(), '${SCHOOL_B}', '${ADMIN_B}', 'test.event'),
+      (gen_random_uuid(), NULL, '${ADMIN_A}', 'test.global_event');
   `);
 });
 
@@ -90,9 +121,18 @@ describe('route inventory', () => {
 
   it('serves no route outside /v1/schools/:schoolId except the allowlist', () => {
     const others = routes.filter((r) => !isSchoolRoute(r)).map(label);
-    expect(others.sort()).toEqual([...NON_SCHOOL_ROUTES].sort());
+    expect(others.sort()).toEqual(Object.keys(NON_SCHOOL_ROUTES).sort());
   });
 });
+
+describe.each(authenticatedRoutes.map((r) => [label(r), r] as const))(
+  '%s (authenticated, outside schools)',
+  (_name, route) => {
+    it('returns 401 when signed out', async () => {
+      await call(route, SCHOOL_A).expect(401);
+    });
+  },
+);
 
 describe.each(schoolRoutes.map((r) => [label(r), r] as const))('%s', (_name, route) => {
   it('returns 401 when signed out', async () => {

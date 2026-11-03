@@ -3,12 +3,11 @@
  *   GET /v1/schools/:schoolId          (school.read)
  *   GET /v1/schools/:schoolId/members  (members.read)
  */
-import type { INestApplication } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import pg from 'pg';
 import request from 'supertest';
 import type { PrismaClient } from '../src/generated/prisma/client.js';
-import { TEST_USER_HEADER } from './support/header-identity.js';
-import { createTestApp } from './support/test-app.js';
+import { bearer, createTestApp } from './support/test-app.js';
 import { appPrisma, testDbUrl, truncateTenantData } from './support/test-db.js';
 
 const id = (suffix: string) => `0192f0a3-0000-7000-8000-${suffix.padStart(12, '0')}`;
@@ -28,10 +27,11 @@ const MB = { pB: id('201'), abB: id('202') };
 
 let owner: pg.Client;
 let prisma: PrismaClient;
-let app: INestApplication;
+let app: NestExpressApplication;
+const auth: Record<string, string> = {}; // userId -> Authorization header
 
 const get = (path: string, userId: string) =>
-  request(app.getHttpServer()).get(path).set(TEST_USER_HEADER, userId);
+  request(app.getHttpServer()).get(path).set('Authorization', auth[userId]!);
 const ids = (res: request.Response) => (res.body.items as { id: string }[]).map((m) => m.id);
 
 beforeAll(async () => {
@@ -60,6 +60,9 @@ beforeAll(async () => {
   `);
   prisma = appPrisma(2);
   app = await createTestApp(prisma);
+  for (const userId of [PRINCIPAL_A, TEACHER_A, TEACHER_A2, CLERK_A, PRINCIPAL_B, USER_AB]) {
+    auth[userId] = await bearer(app, userId);
+  }
 });
 
 afterAll(async () => {

@@ -1,22 +1,19 @@
 /**
- * Step 1.4: SchoolAccessGuard over HTTP. A probe controller (test-only) stands in for real
- * school routes, which arrive in Step 1.5.
+ * Step 1.4: SchoolAccessGuard over HTTP. A test-only probe controller exercises every guard
+ * branch, including ones no real route has (an undeclared permission, a body).
  */
 import { Body, Get, type INestApplication, Post } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
 import pg from 'pg';
 import request from 'supertest';
-import { AppModule } from '../src/app.module.js';
-import { IdentityResolver } from '../src/auth/identity.js';
-import { configureApp } from '../src/configure-app.js';
 import { PrismaService } from '../src/database/prisma.service.js';
 import { withSchoolContext } from '../src/database/school-context.js';
 import type { PrismaClient } from '../src/generated/prisma/client.js';
 import { RequirePermission } from '../src/tenancy/require-permission.decorator.js';
 import { CurrentTenant, SchoolController } from '../src/tenancy/school-controller.decorator.js';
 import type { TenantContext } from '../src/tenancy/tenant-request.js';
-import { HeaderIdentityResolver, TEST_USER_HEADER } from './support/header-identity.js';
-import { appPrisma, testDbUrl } from './support/test-db.js';
+import { TEST_USER_HEADER } from './support/header-identity.js';
+import { createTestApp } from './support/test-app.js';
+import { appPrisma, testDbUrl, truncateTenantData } from './support/test-db.js';
 
 const SCHOOL_A = '0192f0a2-0000-7000-8000-00000000000a';
 const SCHOOL_B = '0192f0a2-0000-7000-8000-00000000000b';
@@ -61,21 +58,8 @@ let owner: pg.Client;
 let prisma: PrismaClient;
 let app: INestApplication;
 
-async function createApp(identity: 'header' | 'default'): Promise<INestApplication> {
-  let builder = Test.createTestingModule({
-    imports: [AppModule],
-    controllers: [ProbeController],
-  })
-    .overrideProvider(PrismaService)
-    .useValue(prisma);
-  if (identity === 'header') {
-    builder = builder.overrideProvider(IdentityResolver).useClass(HeaderIdentityResolver);
-  }
-  const moduleRef = await builder.compile();
-  const nestApp = configureApp(moduleRef.createNestApplication({ logger: false }));
-  await nestApp.init();
-  return nestApp;
-}
+const createApp = (identity: 'header' | 'default') =>
+  createTestApp(prisma, { identity, controllers: [ProbeController] });
 
 const get = (path: string, userId?: string) => {
   const req = request(app.getHttpServer()).get(path);
@@ -85,9 +69,9 @@ const get = (path: string, userId?: string) => {
 beforeAll(async () => {
   owner = new pg.Client({ connectionString: testDbUrl('MIGRATION_DATABASE_URL') });
   await owner.connect();
-  await owner.query(
-    'TRUNCATE school_memberships, users, schools, role_permissions, permissions CASCADE',
-  );
+  await truncateTenantData(owner);
+  // Permissions come from the seed migration: principal has school.read and members.read,
+  // teacher has school.read only.
   await owner.query(`
     INSERT INTO schools (id, name, code, updated_at) VALUES
       ('${SCHOOL_A}', 'School A', 'SCH-A', now()),
@@ -102,13 +86,6 @@ beforeAll(async () => {
       (gen_random_uuid(), '${SCHOOL_A}', '${TEACHER_A}', 'teacher', 'active', now()),
       (gen_random_uuid(), '${SCHOOL_A}', '${SUSPENDED_A}', 'principal', 'suspended', now()),
       (gen_random_uuid(), '${SCHOOL_B}', '${PRINCIPAL_B}', 'principal', 'active', now());
-    INSERT INTO permissions (id, key, description) VALUES
-      ('0192f0a2-0000-7000-8000-0000000000e1', 'school.read', 'View the school'),
-      ('0192f0a2-0000-7000-8000-0000000000e2', 'members.read', 'List school members');
-    INSERT INTO role_permissions (id, role, permission_id) VALUES
-      (gen_random_uuid(), 'principal', '0192f0a2-0000-7000-8000-0000000000e1'),
-      (gen_random_uuid(), 'teacher', '0192f0a2-0000-7000-8000-0000000000e1'),
-      (gen_random_uuid(), 'principal', '0192f0a2-0000-7000-8000-0000000000e2');
   `);
   prisma = appPrisma(2);
   app = await createApp('header');
@@ -117,10 +94,10 @@ beforeAll(async () => {
 afterAll(async () => {
   await app?.close();
   await prisma?.$disconnect();
-  await owner?.query(
-    'TRUNCATE school_memberships, users, schools, role_permissions, permissions CASCADE',
-  );
-  await owner?.end();
+  if (owner) {
+    await truncateTenantData(owner);
+    await owner.end();
+  }
 });
 
 describe('SchoolAccessGuard', () => {

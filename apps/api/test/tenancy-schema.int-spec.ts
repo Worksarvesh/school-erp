@@ -5,7 +5,8 @@
 import pg from 'pg';
 import { Prisma, type PrismaClient } from '../src/generated/prisma/client.js';
 import { withSchoolContext, withUserContext } from '../src/database/school-context.js';
-import { appPrisma, testDbUrl } from './support/test-db.js';
+import { PERMISSIONS } from '../src/tenancy/permissions.js';
+import { appPrisma, testDbUrl, truncateTenantData } from './support/test-db.js';
 
 const SCHOOL_A = '0192f0a1-0000-7000-8000-00000000000a';
 const SCHOOL_B = '0192f0a1-0000-7000-8000-00000000000b';
@@ -18,13 +19,10 @@ const UUID_V7 = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f
 let owner: pg.Client;
 let prisma: PrismaClient;
 
-const truncateAll = () =>
-  owner.query('TRUNCATE school_memberships, users, schools, role_permissions, permissions CASCADE');
-
 beforeAll(async () => {
   owner = new pg.Client({ connectionString: testDbUrl('MIGRATION_DATABASE_URL') });
   await owner.connect();
-  await truncateAll();
+  await truncateTenantData(owner);
   await owner.query(`
     INSERT INTO schools (id, name, code, updated_at) VALUES
       ('${SCHOOL_A}', 'School A', 'SCH-A', now()),
@@ -38,16 +36,16 @@ beforeAll(async () => {
       (gen_random_uuid(), '${SCHOOL_B}', '${USER_B}', 'teacher', 'active', now()),
       (gen_random_uuid(), '${SCHOOL_A}', '${USER_AB}', 'principal', 'active', now()),
       (gen_random_uuid(), '${SCHOOL_B}', '${USER_AB}', 'parent', 'active', now());
-    INSERT INTO permissions (id, key, description) VALUES
-      (gen_random_uuid(), 'members.read', 'List school members');
   `);
   prisma = appPrisma(2);
 });
 
 afterAll(async () => {
   await prisma?.$disconnect();
-  await truncateAll();
-  await owner?.end();
+  if (owner) {
+    await truncateTenantData(owner);
+    await owner.end();
+  }
 });
 
 describe('RLS coverage', () => {
@@ -163,9 +161,22 @@ describe('users', () => {
 });
 
 describe('permissions', () => {
-  it('can be read by the app role', async () => {
-    const keys = (await prisma.permission.findMany()).map((p) => p.key);
-    expect(keys).toEqual(['members.read']);
+  it('seeded catalogue matches the keys the code checks, and the app role can read it', async () => {
+    const rows = await prisma.permission.findMany({ orderBy: { key: 'asc' } });
+    expect(rows.map((p) => p.key)).toEqual([...PERMISSIONS].sort());
+  });
+
+  it('seeds school.read for every role and members.read for school leadership', async () => {
+    const grants = await prisma.rolePermission.findMany({
+      select: { role: true, permission: { select: { key: true } } },
+    });
+    const rolesWith = (key: string) =>
+      grants
+        .filter((g) => g.permission.key === key)
+        .map((g) => g.role)
+        .sort();
+    expect(rolesWith('school.read')).toHaveLength(10);
+    expect(rolesWith('members.read')).toEqual(['principal', 'school_admin', 'vice_principal']);
   });
 
   it('cannot be changed by the app role', async () => {

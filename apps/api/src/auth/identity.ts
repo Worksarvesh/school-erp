@@ -1,19 +1,12 @@
-import { Injectable } from '@nestjs/common';
 import type { Request } from 'express';
 
+/** Who is calling. The access token carries only these two ids; memberships are checked live. */
 export interface Identity {
   userId: string;
+  sessionId: string;
 }
 
-/** Works out who is calling. Step 2 replaces the default with JWT verification. */
+/** Works out who is calling from the request. */
 export abstract class IdentityResolver {
   abstract resolve(request: Request): Promise<Identity | null>;
-}
-
-/** Until Step 2 there is no login, so nobody is authenticated and school routes return 401. */
-@Injectable()
-export class NoIdentityResolver extends IdentityResolver {
-  resolve(): Promise<Identity | null> {
-    return Promise.resolve(null);
-  }
 }

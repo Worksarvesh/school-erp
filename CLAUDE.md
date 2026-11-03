@@ -4,7 +4,7 @@ Rules for every session working in this repo. Source of truth: **System design v
 
 ## Current step
 
-**Build order Step 1: Tenancy core.** Status: questions answered (see "Step 1 decisions" in `docs/decisions.md`). Done: 1.1 local Postgres, 1.2 Prisma + RLS spike (passed, Prisma confirmed), 1.3 tables and RLS migrations. Next: 1.4 tenancy module.
+**Build order Step 1: Tenancy core.** Status: questions answered (see "Step 1 decisions" in `docs/decisions.md`). Done: 1.1 local Postgres, 1.2 Prisma + RLS spike (passed, Prisma confirmed), 1.3 tables and RLS migrations, 1.4 tenancy module. Next: 1.5 minimal read endpoints (and seed `school.read` / `members.read`).
 
 Step 1 sub-steps: 1.1 local Postgres and DB roles · 1.2 Prisma + RLS spike · 1.3 tables and RLS migrations · 1.4 tenancy module (route prefix, guard, permission decorator, tenant transaction) · 1.5 minimal read endpoints · 1.6 isolation test suite.
 
@@ -35,6 +35,8 @@ Update this marker when a step starts or finishes.
 
 - Shared database, shared schema. **`school_id` (UUID) on every tenant table.** `schools` has a `shard_key` column from day one.
 - **Routes**: every tenant route is `/v1/schools/:schoolId/...`. A guard checks that the caller has an **active membership** in that school and the **required permission**.
+- In code: tenant controllers use `@SchoolController('<path>')` (never plain `@Controller`), every route has `@RequirePermission('<key>')` (the guard returns 403 without it), and handlers get the checked school from `@CurrentTenant()`. Permission keys live in `apps/api/src/tenancy/permissions.ts`.
+- Guard responses: 401 not signed in · 400 school id in body · 404 not an active member (or unknown school) · 403 member without the permission.
 - **Never take `school_id` from a request body** (or query). It comes only from the `:schoolId` path param, after the guard has checked it.
 - **RLS on every tenant table**: `school_id = current_setting('app.school_id')::uuid`.
 - Each request runs in a transaction that sets the tenant with `set_config('app.school_id', <id>, true)` (**transaction-local**). Never use `SET` without `LOCAL` and never set session-level settings, because they leak across pooled connections (PgBouncer transaction mode).

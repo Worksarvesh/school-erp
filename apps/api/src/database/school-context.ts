@@ -1,6 +1,5 @@
+import { isUuid } from '../common/uuid.js';
 import type { Prisma, PrismaClient } from '../generated/prisma/client.js';
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type Setting = 'app.school_id' | 'app.user_id';
 
@@ -36,7 +35,7 @@ async function withSetting<T>(
   id: string,
   fn: (tx: Prisma.TransactionClient) => Promise<T>,
 ): Promise<T> {
-  if (!UUID.test(id)) {
+  if (!isUuid(id)) {
     throw new Error(`${setting} must be a UUID`);
   }
   return prisma.$transaction(async (tx) => {

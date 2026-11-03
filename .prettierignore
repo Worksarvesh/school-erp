@@ -8,3 +8,9 @@ pnpm-lock.yaml
 
 # Prisma client, generated on install
 apps/api/src/generated
+
+# Tool-managed agent skill files
+.agents/
+.claude/skills/
+.cursor/skills/
+.devin/skills/

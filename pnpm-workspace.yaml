@@ -3,6 +3,9 @@ packages:
   - 'packages/*'
 allowBuilds:
   '@prisma/engines': true
+  argon2: true
+  # Install-time usage telemetry pulled in by swagger-ui-dist; not needed.
+  '@scarf/scarf': false
   esbuild: false
   prisma: true
   workerd: false

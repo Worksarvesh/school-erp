@@ -1,32 +1,34 @@
-import type { INestApplication, Type } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import type { LoggerService, Type } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module.js';
-import { IdentityResolver } from '../../src/auth/identity.js';
+import { AccessTokenService } from '../../src/auth/access-token.service.js';
 import { configureApp } from '../../src/configure-app.js';
 import { PrismaService } from '../../src/database/prisma.service.js';
 import type { PrismaClient } from '../../src/generated/prisma/client.js';
-import { HeaderIdentityResolver } from './header-identity.js';
 
-interface TestAppOptions {
-  /** 'header' trusts the x-test-user-id header; 'default' keeps the real (no login yet) resolver. */
-  identity?: 'header' | 'default';
-  /** Extra test-only controllers. */
-  controllers?: Type[];
-}
-
-/** The real AppModule, wired to the test database, configured exactly like main.ts. */
+/** The real AppModule (real JWT auth), wired to the test database, configured like main.ts. */
 export async function createTestApp(
   prisma: PrismaClient,
-  { identity = 'header', controllers = [] }: TestAppOptions = {},
-): Promise<INestApplication> {
-  let builder = Test.createTestingModule({ imports: [AppModule], controllers })
+  { controllers = [], logger }: { controllers?: Type[]; logger?: LoggerService } = {},
+): Promise<NestExpressApplication> {
+  const moduleRef = await Test.createTestingModule({ imports: [AppModule], controllers })
     .overrideProvider(PrismaService)
-    .useValue(prisma);
-  if (identity === 'header') {
-    builder = builder.overrideProvider(IdentityResolver).useClass(HeaderIdentityResolver);
-  }
-  const moduleRef = await builder.compile();
-  const app = configureApp(moduleRef.createNestApplication({ logger: false }));
+    .useValue(prisma)
+    .compile();
+  const app = configureApp(
+    moduleRef.createNestApplication<NestExpressApplication>({ logger: logger ?? false }),
+  );
   await app.init();
   return app;
+}
+
+/**
+ * `Authorization` header value with a real access token for `userId`. The session id is
+ * random: guards do not look sessions up (memberships are checked live instead).
+ */
+export async function bearer(app: NestExpressApplication, userId: string): Promise<string> {
+  const token = await app.get(AccessTokenService).sign({ userId, sessionId: randomUUID() });
+  return `Bearer ${token}`;
 }

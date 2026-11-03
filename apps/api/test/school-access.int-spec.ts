@@ -2,7 +2,8 @@
  * Step 1.4: SchoolAccessGuard over HTTP. A test-only probe controller exercises every guard
  * branch, including ones no real route has (an undeclared permission, a body).
  */
-import { Body, Get, type INestApplication, Post } from '@nestjs/common';
+import { Body, Get, Post } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import pg from 'pg';
 import request from 'supertest';
 import { PrismaService } from '../src/database/prisma.service.js';
@@ -11,8 +12,7 @@ import type { PrismaClient } from '../src/generated/prisma/client.js';
 import { RequirePermission } from '../src/tenancy/require-permission.decorator.js';
 import { CurrentTenant, SchoolController } from '../src/tenancy/school-controller.decorator.js';
 import type { TenantContext } from '../src/tenancy/tenant-request.js';
-import { TEST_USER_HEADER } from './support/header-identity.js';
-import { createTestApp } from './support/test-app.js';
+import { bearer, createTestApp } from './support/test-app.js';
 import { appPrisma, testDbUrl, truncateTenantData } from './support/test-db.js';
 
 const SCHOOL_A = '0192f0a2-0000-7000-8000-00000000000a';
@@ -56,14 +56,12 @@ class ProbeController {
 
 let owner: pg.Client;
 let prisma: PrismaClient;
-let app: INestApplication;
-
-const createApp = (identity: 'header' | 'default') =>
-  createTestApp(prisma, { identity, controllers: [ProbeController] });
+let app: NestExpressApplication;
+const auth: Record<string, string> = {}; // userId -> Authorization header
 
 const get = (path: string, userId?: string) => {
   const req = request(app.getHttpServer()).get(path);
-  return userId ? req.set(TEST_USER_HEADER, userId) : req;
+  return userId ? req.set('Authorization', auth[userId]!) : req;
 };
 
 beforeAll(async () => {
@@ -88,7 +86,10 @@ beforeAll(async () => {
       (gen_random_uuid(), '${SCHOOL_B}', '${PRINCIPAL_B}', 'principal', 'active', now());
   `);
   prisma = appPrisma(2);
-  app = await createApp('header');
+  app = await createTestApp(prisma, { controllers: [ProbeController] });
+  for (const userId of [PRINCIPAL_A, TEACHER_A, SUSPENDED_A, PRINCIPAL_B]) {
+    auth[userId] = await bearer(app, userId);
+  }
 });
 
 afterAll(async () => {
@@ -137,7 +138,7 @@ describe('SchoolAccessGuard', () => {
     const post = (body: object) =>
       request(app.getHttpServer())
         .post(`/v1/schools/${SCHOOL_A}/probe`)
-        .set(TEST_USER_HEADER, PRINCIPAL_A)
+        .set('Authorization', auth[PRINCIPAL_A]!)
         .send(body);
 
     await post({ schoolId: SCHOOL_B }).expect(400);
@@ -150,16 +151,25 @@ describe('SchoolAccessGuard', () => {
   });
 });
 
-describe('without the test identity stub (no login until Step 2)', () => {
-  it('returns 401 on school routes', async () => {
-    const defaultApp = await createApp('default');
-    try {
-      await request(defaultApp.getHttpServer())
-        .get(`/v1/schools/${SCHOOL_A}/probe`)
-        .set(TEST_USER_HEADER, PRINCIPAL_A)
-        .expect(401);
-    } finally {
-      await defaultApp.close();
-    }
+describe('with a bad access token', () => {
+  it.each([
+    ['garbage', 'Bearer not-a-jwt'],
+    ['wrong scheme', () => auth[PRINCIPAL_A]!.replace('Bearer', 'Basic')],
+    ['tampered payload', () => tamper(auth[PRINCIPAL_A]!)],
+  ])('returns 401 for %s', async (_name, header) => {
+    const value = typeof header === 'function' ? header() : header;
+    await request(app.getHttpServer())
+      .get(`/v1/schools/${SCHOOL_A}/probe`)
+      .set('Authorization', value)
+      .expect(401);
   });
 });
+
+/** Swaps the payload for one naming another user, keeping the original signature. */
+function tamper(header: string): string {
+  const [head, , signature] = header.slice('Bearer '.length).split('.');
+  const payload = Buffer.from(JSON.stringify({ sub: PRINCIPAL_B, sid: PRINCIPAL_B })).toString(
+    'base64url',
+  );
+  return `Bearer ${head}.${payload}.${signature}`;
+}

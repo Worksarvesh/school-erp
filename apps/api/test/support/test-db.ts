@@ -19,7 +19,9 @@ export function testDbUrl(envName: 'DATABASE_URL' | 'MIGRATION_DATABASE_URL'): s
  * they are reference data seeded by migrations.
  */
 export async function truncateTenantData(owner: { query(sql: string): Promise<unknown> }) {
-  await owner.query('TRUNCATE school_memberships, users, schools CASCADE');
+  await owner.query(
+    'TRUNCATE audit_logs, sessions, credentials, school_memberships, users, schools CASCADE',
+  );
 }
 
 /** Prisma client connected as the app role (no BYPASSRLS), like the running API. */

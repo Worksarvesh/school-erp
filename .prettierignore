@@ -5,3 +5,6 @@ coverage
 .expo
 .next
 pnpm-lock.yaml
+
+# Prisma client, generated on install
+apps/api/src/generated

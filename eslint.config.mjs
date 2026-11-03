@@ -12,6 +12,7 @@ export default tseslint.config(
       '**/coverage/**',
       '**/.expo/**',
       '**/.next/**',
+      'apps/api/src/generated/**',
     ],
   },
   js.configs.recommended,
@@ -22,6 +23,12 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/consistent-type-imports': 'error',
     },
+  },
+  {
+    // NestJS dependency injection needs runtime imports for decorator metadata;
+    // `import type` on an injected class breaks it.
+    files: ['apps/api/**/*.ts'],
+    rules: { '@typescript-eslint/consistent-type-imports': 'off' },
   },
   prettier,
 );

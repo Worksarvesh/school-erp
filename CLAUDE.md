@@ -4,9 +4,13 @@ Rules for every session working in this repo. Source of truth: **System design v
 
 ## Current step
 
-**Build order Step 1: Tenancy core.** Status: questions answered (see "Step 1 decisions" in `docs/decisions.md`). Done: 1.1 local Postgres, 1.2 Prisma + RLS spike (passed, Prisma confirmed), 1.3 tables and RLS migrations, 1.4 tenancy module, 1.5 read endpoints (`GET /v1/schools/:schoolId`, `GET /v1/schools/:schoolId/members`), 1.6 isolation test suite and Postgres in CI. **Step 1 is complete** on branch `feat/tenancy-core` (PR and merge pending). Next: Step 2 (auth and sessions); its open decision is "own auth vs managed provider" (design section 16), so ask before starting.
+**Slice 2A (credentials, sessions, audit, error shape): done** on branch `feat/auth-sessions`, PR pending. **Next: slice 2B** (principal registration without OTP, `school_claims`, platform verifier approval). Wait for the user's "next slice"; plan first and get approval before coding.
 
-Step 1 sub-steps: 1.1 local Postgres and DB roles · 1.2 Prisma + RLS spike · 1.3 tables and RLS migrations · 1.4 tenancy module (route prefix, guard, permission decorator, tenant transaction) · 1.5 minimal read endpoints · 1.6 isolation test suite.
+Slices (user's order, OTP deferred): Step 1 tenancy core (done) · 2A credentials/sessions/audit/error shape (done) · 2B principal registration + school_claims + verifier approval · 3 school setup (academic sessions, classes, sections, subjects, staff, custom field definitions) · 4 students, enrollments, guardians, link-code parent linking · 5 attendance (bulk, idempotent, monthly partitions), notices, notifications via outbox + BullMQ worker + device tokens · 6 homework, submissions, files (presigned URLs), fees in integer paise · 7 timetable, exams, marks entry · 8 hardening.
+
+Workflow per slice: new branch `feat/<slice>` from an up-to-date `main` → short plan + design doubts, wait for approval → build (migrations, RLS, permissions seeded by migration, endpoints, DTOs, pagination, errors, audit, OpenAPI) → unit + integration tests (isolation suite must cover new routes/tables) → seed script updated → format/lint/typecheck/test/build green → update this marker, `docs/decisions.md`, `docs/api/<slice>.md` (PowerShell `Invoke-RestMethod` examples) → small commits → progress report, then stop.
+
+On hold: Supabase staging (9 open questions from the hosting plan).
 
 Update this marker when a step starts or finishes.
 
@@ -15,7 +19,10 @@ Update this marker when a step starts or finishes.
 - `*.spec.ts`: unit tests (`pnpm --filter api run test`).
 - `*.int-spec.ts`: integration tests against the local Docker database, `school_erp_test` only (`pnpm --filter api run test:int`). The test database is migrated automatically first. CI runs them in the `db-test` job against the same Docker Compose database.
 - Schema changes: edit `prisma/schema.prisma`, then `pnpm --filter api exec prisma migrate dev --create-only --name <name>`, append any RLS SQL, then `pnpm --filter api run db:migrate` and `pnpm --filter api run db:generate` (Prisma 7 does not regenerate the client on migrate).
-- Migrations grant and revoke on the role `school_erp_app` by name; every environment's app role must use that name.
+- Migrations grant and revoke on the roles `school_erp_app` and `school_erp_auth_lookup` by name; every environment must use those names (the Docker init script creates them).
+- If `prisma migrate dev` stops with "non-interactive", generate the SQL with `prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script -o prisma/migrations/<timestamp>_<name>/migration.sql`, then `prisma migrate deploy`.
+- Tests get real access tokens from `bearer(app, userId)` in `test/support/test-app.ts`; there is no identity stub. Tests never truncate `permissions` / `role_permissions`.
+- Demo data: `pnpm --filter api run seed` (idempotent; extend `src/seed/demo-data.ts` with each slice).
 
 ## How we work
 
@@ -48,7 +55,8 @@ Update this marker when a step starts or finishes.
 - RLS policies read the setting as `nullif(current_setting('app.school_id', true), '')::uuid`, so a query with no tenant set returns zero rows.
 - A cross-school request returns **404** (never reveal that another school exists).
 - Cache keys for tenant data always include the school id.
-- **Isolation test suite** (`apps/api/test/isolation.int-spec.ts`): two schools; it discovers every served route and every RLS table on its own. Every school route must return 401 signed out, 404 across schools, and work for an all-roles member of its own school. Any route outside `/v1/schools/:schoolId` must be on its `NON_SCHOOL_ROUTES` allowlist, and adding one is a security decision. Never weaken this file to make a new route pass.
+- **Isolation test suite** (`apps/api/test/isolation.int-spec.ts`): two schools; it discovers every served route and every RLS table on its own. Every school route must return 401 signed out, 404 across schools, and work for an all-roles member of its own school. Any route outside `/v1/schools/:schoolId` must be on its `NON_SCHOOL_ROUTES` allowlist, marked `public` or `authenticated` (authenticated ones must 401 signed out; public ones must not reveal whether an account exists, tested per route). Adding one is a security decision. Never weaken this file to make a new route pass.
+- Signed-in routes outside schools use `@UseGuards(AuthenticatedGuard)` and `@CurrentIdentity()`.
 
 ## Identity and authorization (design section 4)
 
@@ -57,6 +65,9 @@ Update this marker when a step starts or finishes.
 - **Guards check permissions, never role names.** Permissions come from a `role -> permission` table (seeded defaults, per-school overrides later).
 - Passwords use argon2id. Access JWT lasts 15 min. Refresh tokens rotate and are stored hashed in `sessions`, with reuse detection. OTP only for registration, recovery and step-up.
 - Generic error messages (no account enumeration). Rate limits per IP, phone and account.
+- **Own auth** behind `AuthProvider` (`apps/api/src/auth/`). The access JWT carries only `sub` and `sid`; HS256, issuer and audience are pinned. Never put roles or permissions in tokens.
+- **OTP is not built.** Anything needing OTP or step-up calls `OtpProvider` / `StepUpProvider`, whose defaults answer 501 `not_enabled`. Do not build OTP until the user asks.
+- Pre-login lookups go only through the `auth_find_*` SECURITY DEFINER functions (see the auth migration for the rules they follow).
 
 ## Data rules (design sections 6, 12)
 
@@ -70,7 +81,10 @@ Update this marker when a step starts or finishes.
 
 ## API rules (design section 7)
 
-- REST, `/v1` prefix, OpenAPI generated from NestJS. DTO validation on every input. One consistent error shape that includes a request id.
+- REST, `/v1` prefix, OpenAPI generated from NestJS (Swagger UI at `/docs` in development). DTO validation on every input. One consistent error shape that includes a request id.
+- Errors: `{ "error": { code, message, requestId, details? } }` via `ApiExceptionFilter`. Throw `ApiException(status, code, message)` for errors the client should see; anything else gets a generic message. Every response has `X-Request-Id`.
+- **Never** let passwords, tokens or `Authorization` headers reach logs, error responses or audit metadata (a test checks this).
+- Sensitive actions call `AuditService.record()` (append-only `audit_logs`).
 - Cursor pagination, plus a whitelist for server-side sorting.
 - `Idempotency-Key` header on bulk attendance, payments and any mobile write that may be retried.
 - Exports and reports run as async jobs, downloaded through signed URLs. Breaking changes go to `/v2`.
@@ -85,7 +99,7 @@ Update this marker when a step starts or finishes.
 ## Build order (design section 15)
 
 1. **Tenancy core**: schools, users, memberships, permissions, RLS, isolation test suite. Done.
-2. Auth and sessions, OTP, principal registration and verification. <- next
+2. Auth and sessions, OTP, principal registration and verification. <- in progress (2A done; OTP deferred)
 3. School setup: sessions, classes, sections, subjects, staff.
 4. Students, enrollments, guardian linking.
 5. Attendance, notices, push notifications.
@@ -94,4 +108,4 @@ Update this marker when a step starts or finishes.
 
 ## Open decisions (design section 16), do not decide alone
 
-DB hosting (Supabase vs RDS) · school directory seed source · auth (own vs managed) · SMS/email provider · payment gateway · DPDP legal review.
+DB hosting (Supabase chosen in principle; setup on hold) · school directory seed source · SMS/email provider · payment gateway · DPDP legal review (includes plain-text phone/email and audit retention). Auth is decided: own auth.

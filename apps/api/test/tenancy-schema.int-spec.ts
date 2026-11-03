@@ -48,21 +48,7 @@ afterAll(async () => {
   }
 });
 
-describe('RLS coverage', () => {
-  it('has RLS enabled on every table with a school_id column, plus schools and users', async () => {
-    const { rows } = await owner.query<{ table: string; rls: boolean }>(`
-      SELECT c.relname AS table, c.relrowsecurity AS rls
-      FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p')
-        AND (c.relname IN ('schools', 'users') OR EXISTS (
-          SELECT 1 FROM information_schema.columns col
-          WHERE col.table_schema = 'public' AND col.table_name = c.relname
-            AND col.column_name = 'school_id'))
-      ORDER BY 1`);
-    expect(rows.map((r) => r.table)).toEqual(['school_memberships', 'schools', 'users']);
-    expect(rows.filter((r) => !r.rls)).toEqual([]);
-  });
-});
+// RLS coverage for all tables lives in isolation.int-spec.ts.
 
 describe('schools', () => {
   it('shows no school without context', async () => {

@@ -4,7 +4,7 @@ Rules for every session working in this repo. Source of truth: **System design v
 
 ## Current step
 
-**Build order Step 1: Tenancy core.** Status: questions answered (see "Step 1 decisions" in `docs/decisions.md`). Done: 1.1 local Postgres, 1.2 Prisma + RLS spike (passed, Prisma confirmed), 1.3 tables and RLS migrations, 1.4 tenancy module, 1.5 read endpoints (`GET /v1/schools/:schoolId`, `GET /v1/schools/:schoolId/members`). Next: 1.6 isolation test suite (and Postgres in CI).
+**Build order Step 1: Tenancy core.** Status: questions answered (see "Step 1 decisions" in `docs/decisions.md`). Done: 1.1 local Postgres, 1.2 Prisma + RLS spike (passed, Prisma confirmed), 1.3 tables and RLS migrations, 1.4 tenancy module, 1.5 read endpoints (`GET /v1/schools/:schoolId`, `GET /v1/schools/:schoolId/members`), 1.6 isolation test suite and Postgres in CI. **Step 1 is complete** on branch `feat/tenancy-core` (PR and merge pending). Next: Step 2 (auth and sessions); its open decision is "own auth vs managed provider" (design section 16), so ask before starting.
 
 Step 1 sub-steps: 1.1 local Postgres and DB roles · 1.2 Prisma + RLS spike · 1.3 tables and RLS migrations · 1.4 tenancy module (route prefix, guard, permission decorator, tenant transaction) · 1.5 minimal read endpoints · 1.6 isolation test suite.
 
@@ -13,7 +13,7 @@ Update this marker when a step starts or finishes.
 ## Tests (apps/api)
 
 - `*.spec.ts`: unit tests (`pnpm --filter api run test`).
-- `*.int-spec.ts`: integration tests against the local Docker database, `school_erp_test` only (`pnpm --filter api run test:int`). The test database is migrated automatically first. They are not in CI yet.
+- `*.int-spec.ts`: integration tests against the local Docker database, `school_erp_test` only (`pnpm --filter api run test:int`). The test database is migrated automatically first. CI runs them in the `db-test` job against the same Docker Compose database.
 - Schema changes: edit `prisma/schema.prisma`, then `pnpm --filter api exec prisma migrate dev --create-only --name <name>`, append any RLS SQL, then `pnpm --filter api run db:migrate` and `pnpm --filter api run db:generate` (Prisma 7 does not regenerate the client on migrate).
 - Migrations grant and revoke on the role `school_erp_app` by name; every environment's app role must use that name.
 
@@ -43,12 +43,12 @@ Update this marker when a step starts or finishes.
 - The app connects as a **non-owner role without `BYPASSRLS`**. Migrations run as a separate owner role.
 - Platform staff (verifiers, support) use a separate role and path, and every access is audit-logged.
 - All tenant DB work goes through `withSchoolContext()` (or `withUserContext()` for "my own rows") in `apps/api/src/database/school-context.ts`. Do not call `set_config` anywhere else.
-- A new table with `school_id` must enable RLS in the same migration (hand-written SQL appended to the Prisma migration). `test/tenancy-schema.int-spec.ts` fails if RLS is missing; add the table to its expected list.
+- A new table with `school_id` must enable RLS in the same migration (hand-written SQL appended to the Prisma migration). `test/isolation.int-spec.ts` fails if RLS is missing, and also requires fixture rows for every RLS table in that file.
 - Policies use the SQL helpers `current_school_id()` and `current_app_user_id()`.
 - RLS policies read the setting as `nullif(current_setting('app.school_id', true), '')::uuid`, so a query with no tenant set returns zero rows.
 - A cross-school request returns **404** (never reveal that another school exists).
 - Cache keys for tenant data always include the school id.
-- **Isolation test suite**: two schools; every tenant endpoint returns 403/404 across schools; RLS blocks raw queries without context. Every new tenant endpoint or table is added to this suite.
+- **Isolation test suite** (`apps/api/test/isolation.int-spec.ts`): two schools; it discovers every served route and every RLS table on its own. Every school route must return 401 signed out, 404 across schools, and work for an all-roles member of its own school. Any route outside `/v1/schools/:schoolId` must be on its `NON_SCHOOL_ROUTES` allowlist, and adding one is a security decision. Never weaken this file to make a new route pass.
 
 ## Identity and authorization (design section 4)
 
@@ -84,8 +84,8 @@ Update this marker when a step starts or finishes.
 
 ## Build order (design section 15)
 
-1. **Tenancy core**: schools, users, memberships, permissions, RLS, isolation test suite. <- current
-2. Auth and sessions, OTP, principal registration and verification.
+1. **Tenancy core**: schools, users, memberships, permissions, RLS, isolation test suite. Done.
+2. Auth and sessions, OTP, principal registration and verification. <- next
 3. School setup: sessions, classes, sections, subjects, staff.
 4. Students, enrollments, guardian linking.
 5. Attendance, notices, push notifications.

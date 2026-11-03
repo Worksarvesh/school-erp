@@ -6,7 +6,7 @@
 
 **Multi-tenancy:** shared database, shared schema, `school_id` on every tenant table. Isolation is enforced in the backend (guards plus PostgreSQL Row Level Security as a second layer). Frontend checks are never the control.
 
-**Authorization:** role-based, enforced in the API. Parents can access only verified linked children; linking uses school code, admission number and a school-issued verification step, never phone-number matching alone.
+**Authorization:** permission-based, enforced in the API. Roles map to permissions through a `role -> permission` table; guards check permissions, never role names. Parents can access only verified linked children; linking uses school code, admission number and a school-issued verification step, never phone-number matching alone.
 
 **Data:** PostgreSQL via Supabase initially, used as plain managed Postgres. No privileged keys in any client. Migrations are version-controlled.
 

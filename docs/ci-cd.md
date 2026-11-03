@@ -4,18 +4,19 @@
 
 Runs on pull requests to `main`, pushes to `main`, and manually.
 
-| Job                        | What it does                                           |
-| -------------------------- | ------------------------------------------------------ |
-| PR title                   | Conventional Commits check (PRs only)                  |
-| Format, lint and typecheck | Prettier check, ESLint, `tsc`                          |
-| Unit and integration tests | `pnpm run test` (workspaces that define `test`)        |
-| Build                      | `pnpm run build` (workspaces that define `build`)      |
-| Dependency audit           | Advisory (non-blocking) `pnpm audit` for high/critical |
-| CI passed                  | Aggregate required check for branch protection         |
+| Job                        | What it does                                                                                            |
+| -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| PR title                   | Conventional Commits check (PRs only)                                                                   |
+| Format, lint and typecheck | Prettier check, ESLint, `tsc`                                                                           |
+| Unit and integration tests | `pnpm run test` (workspaces that define `test`)                                                         |
+| API integration tests      | Docker Compose PostgreSQL, then `test:int` (incl. tenant isolation suite) and `test:e2e` for `apps/api` |
+| Build                      | `pnpm run build` (workspaces that define `build`)                                                       |
+| Dependency audit           | Advisory (non-blocking) `pnpm audit` for high/critical                                                  |
+| CI passed                  | Aggregate required check for branch protection                                                          |
 
 Design choices: `permissions: contents: read`; frozen lockfile; Node version from `.node-version`; pnpm version pinned through `packageManager`; dependency cache via `setup-node`; no secrets used; superseded runs are cancelled.
 
-Apps without scripts yet (`api`, `web`, `mobile`) are skipped by `--if-present`. This is **pending, not passing**: add scripts when each app is scaffolded and CI starts covering it.
+Apps without scripts yet (`web`, `mobile`) are skipped by `--if-present`. This is **pending, not passing**: add scripts when each app is scaffolded and CI starts covering it.
 
 **Verify CI passed:** open the PR (or the Actions tab), confirm every job is green and `CI passed` is present.
 

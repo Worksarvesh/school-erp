@@ -1,0 +1,4 @@
+.env
+
+# Prisma client, generated on install (`pnpm run db:generate`)
+src/generated/

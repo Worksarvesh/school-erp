@@ -80,10 +80,43 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # Runs `test` in every workspace that defines it. Apps without a test script
-      # yet (api, web, mobile) are skipped; add the script when each app is scaffolded.
+      # Runs `test` (unit tests) in every workspace that defines it. Database tests run in
+      # the db-test job. Apps without a test script yet (web, mobile) are skipped.
       - name: Run tests
         run: pnpm run test
+
+  db-test:
+    name: API integration tests (PostgreSQL, tenant isolation)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Throwaway passwords for a container that lives only for this job, bound to 127.0.0.1.
+      # Not secrets; never reuse them anywhere else.
+      DB_SUPERUSER_PASSWORD: ci-only-superuser
+      DB_OWNER_PASSWORD: ci-only-owner
+      DB_APP_PASSWORD: ci-only-app
+      DATABASE_URL: postgresql://school_erp_app:ci-only-app@localhost:5434/school_erp
+      MIGRATION_DATABASE_URL: postgresql://school_erp_owner:ci-only-owner@localhost:5434/school_erp
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Same compose file and role setup as local development.
+      - name: Start PostgreSQL
+        run: docker compose up -d --wait
+      - name: Integration tests (incl. isolation suite)
+        run: pnpm --filter api run test:int
+      - name: E2E tests
+        run: pnpm --filter api run test:e2e
+      - name: Database logs
+        if: failure()
+        run: docker compose logs postgres
 
   build:
     name: Build
@@ -126,7 +159,7 @@ jobs:
     name: CI passed
     # Single required status check for branch protection.
     if: always()
-    needs: [quality, test, build]
+    needs: [quality, test, db-test, build]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

@@ -3,12 +3,17 @@
 #
 # school_erp_owner: owns the schema, runs migrations. CREATEDB for Prisma's shadow database.
 # school_erp_app:   what the API connects as. Not an owner, no BYPASSRLS, so RLS always applies.
+# school_erp_auth_lookup: NOLOGIN owner of the two pre-login lookup functions.
 set -eu
 
 psql -v ON_ERROR_STOP=1 -U postgres -d postgres \
   -v owner_pw="$DB_OWNER_PASSWORD" -v app_pw="$DB_APP_PASSWORD" <<'SQL'
 CREATE ROLE school_erp_owner LOGIN CREATEDB NOSUPERUSER NOBYPASSRLS PASSWORD :'owner_pw';
 CREATE ROLE school_erp_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS PASSWORD :'app_pw';
+-- Owns the pre-login SECURITY DEFINER lookup functions (see the auth migration). Cannot log in.
+-- The owner role is a member so migrations can hand functions to it.
+CREATE ROLE school_erp_auth_lookup NOLOGIN NOSUPERUSER NOBYPASSRLS;
+GRANT school_erp_auth_lookup TO school_erp_owner;
 
 CREATE DATABASE school_erp OWNER school_erp_owner;
 CREATE DATABASE school_erp_test OWNER school_erp_owner;

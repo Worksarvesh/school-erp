@@ -10,6 +10,7 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.int-spec.ts'],
+    globalSetup: ['./test/support/migrate-test-db.ts'],
     // Files share one test database.
     fileParallelism: false,
   },

@@ -4,7 +4,7 @@ Rules for every session working in this repo. Source of truth: **System design v
 
 ## Current step
 
-**Build order Step 1: Tenancy core.** Status: questions answered (see "Step 1 decisions" in `docs/decisions.md`). Done: 1.1 local Postgres, 1.2 Prisma + RLS spike (passed, Prisma confirmed). Next: 1.3 tables and RLS migrations.
+**Build order Step 1: Tenancy core.** Status: questions answered (see "Step 1 decisions" in `docs/decisions.md`). Done: 1.1 local Postgres, 1.2 Prisma + RLS spike (passed, Prisma confirmed), 1.3 tables and RLS migrations. Next: 1.4 tenancy module.
 
 Step 1 sub-steps: 1.1 local Postgres and DB roles · 1.2 Prisma + RLS spike · 1.3 tables and RLS migrations · 1.4 tenancy module (route prefix, guard, permission decorator, tenant transaction) · 1.5 minimal read endpoints · 1.6 isolation test suite.
 
@@ -13,7 +13,9 @@ Update this marker when a step starts or finishes.
 ## Tests (apps/api)
 
 - `*.spec.ts`: unit tests (`pnpm --filter api run test`).
-- `*.int-spec.ts`: integration tests against the local Docker database, `school_erp_test` only (`pnpm --filter api run test:int`). They are not in CI yet.
+- `*.int-spec.ts`: integration tests against the local Docker database, `school_erp_test` only (`pnpm --filter api run test:int`). The test database is migrated automatically first. They are not in CI yet.
+- Schema changes: edit `prisma/schema.prisma`, then `pnpm --filter api exec prisma migrate dev --create-only --name <name>`, append any RLS SQL, then `pnpm --filter api run db:migrate` and `pnpm --filter api run db:generate` (Prisma 7 does not regenerate the client on migrate).
+- Migrations grant and revoke on the role `school_erp_app` by name; every environment's app role must use that name.
 
 ## How we work
 
@@ -38,7 +40,9 @@ Update this marker when a step starts or finishes.
 - Each request runs in a transaction that sets the tenant with `set_config('app.school_id', <id>, true)` (**transaction-local**). Never use `SET` without `LOCAL` and never set session-level settings, because they leak across pooled connections (PgBouncer transaction mode).
 - The app connects as a **non-owner role without `BYPASSRLS`**. Migrations run as a separate owner role.
 - Platform staff (verifiers, support) use a separate role and path, and every access is audit-logged.
-- All tenant DB work goes through `withSchoolContext()` (`apps/api/src/database/school-context.ts`). Do not call `set_config` anywhere else.
+- All tenant DB work goes through `withSchoolContext()` (or `withUserContext()` for "my own rows") in `apps/api/src/database/school-context.ts`. Do not call `set_config` anywhere else.
+- A new table with `school_id` must enable RLS in the same migration (hand-written SQL appended to the Prisma migration). `test/tenancy-schema.int-spec.ts` fails if RLS is missing; add the table to its expected list.
+- Policies use the SQL helpers `current_school_id()` and `current_app_user_id()`.
 - RLS policies read the setting as `nullif(current_setting('app.school_id', true), '')::uuid`, so a query with no tenant set returns zero rows.
 - A cross-school request returns **404** (never reveal that another school exists).
 - Cache keys for tenant data always include the school id.

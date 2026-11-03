@@ -22,6 +22,7 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "test:int": "vitest run --config ./vitest.config.int.ts",
     "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
     "postinstall": "prisma generate"
   },
   "dependencies": {

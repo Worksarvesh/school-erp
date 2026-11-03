@@ -132,7 +132,7 @@ describe('RLS spike: Prisma + transaction-local school context', () => {
 
   it('rejects a school id that is not a UUID before touching the database', async () => {
     await expect(withSchoolContext(prisma, "x' OR true --", namesIn)).rejects.toThrow(
-      'schoolId must be a UUID',
+      'app.school_id must be a UUID',
     );
   });
 });

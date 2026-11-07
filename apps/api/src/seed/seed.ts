@@ -5,7 +5,7 @@
  */
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client.js';
-import { DEMO_SCHOOLS, DEMO_USERS, seedDemoData } from './demo-data.js';
+import { DEMO_APPLICANT, DEMO_SCHOOLS, DEMO_USERS, seedDemoData } from './demo-data.js';
 
 async function main(): Promise<void> {
   if (process.env.APP_ENV === 'production') {
@@ -24,15 +24,23 @@ async function main(): Promise<void> {
     await prisma.$disconnect();
   }
 
-  console.log(`Seeded ${DEMO_SCHOOLS.length} schools and ${DEMO_USERS.length} users.`);
+  console.log(`Seeded ${DEMO_SCHOOLS.length} schools and ${DEMO_USERS.length + 1} users.`);
   for (const school of DEMO_SCHOOLS) {
-    console.log(`  ${school.name}  id=${school.id}`);
+    console.log(`  ${school.code}  ${school.name} (${school.status})  id=${school.id}`);
   }
   console.log('Sign in with any of these (password = SEED_DEMO_PASSWORD):');
   for (const u of DEMO_USERS) {
-    const roles = u.roles.map((r) => r.role).join(', ');
+    const roles = u.platformRole ?? u.roles.map((r) => r.role).join(', ');
     console.log(`  ${u.email.padEnd(40)} ${u.phone}  ${u.fullName} (${roles})`);
   }
+  console.log(
+    'Principals also sign in by OTP: POST /v1/auth/otp/request, then /v1/auth/otp/verify with the ' +
+      'fixed local code (OTP_FIXED_CODE, default 999999).',
+  );
+  console.log(
+    `Pending verification: ${DEMO_APPLICANT.fullName} (${DEMO_APPLICANT.phone}, OTP only) asked ` +
+      `for "${DEMO_APPLICANT.proposedName}".`,
+  );
 }
 
 main().catch((error: unknown) => {

@@ -98,6 +98,7 @@ jobs:
       DATABASE_URL: postgresql://school_erp_app:ci-only-app@localhost:5434/school_erp
       MIGRATION_DATABASE_URL: postgresql://school_erp_owner:ci-only-owner@localhost:5434/school_erp
       JWT_ACCESS_SECRET: ci-only-jwt-secret-not-used-anywhere-else-000
+      OTP_HASH_SECRET: ci-only-otp-hash-secret-not-used-anywhere-else
     steps:
       - uses: actions/checkout@v7
         with:

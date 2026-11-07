@@ -5,8 +5,8 @@ import type { Request } from 'express';
 import { AuthenticatedGuard, CurrentIdentity } from './authenticated.guard.js';
 import { LoginDto, PasswordResetDto, RefreshDto } from './auth.dto.js';
 import { AuthProvider, type RequestMeta } from './auth-provider.js';
+import { NotEnabledException } from '../common/errors.js';
 import type { Identity } from './identity.js';
-import { OtpProvider } from './otp.js';
 
 export const metaOf = (request: Request): RequestMeta => ({ ip: request.ip ?? null });
 
@@ -15,10 +15,7 @@ export const metaOf = (request: Request): RequestMeta => ({ ip: request.ip ?? nu
 @Controller('auth')
 @UseGuards(ThrottlerGuard)
 export class AuthController {
-  constructor(
-    private readonly auth: AuthProvider,
-    private readonly otp: OtpProvider,
-  ) {}
+  constructor(private readonly auth: AuthProvider) {}
 
   @Post('login')
   @HttpCode(200)
@@ -32,10 +29,13 @@ export class AuthController {
     return this.auth.refresh(body.refreshToken, metaOf(request));
   }
 
-  /** Needs OTP, which is not built yet: always 501 `not_enabled`, whatever the identifier. */
+  /**
+   * Self-service reset is not part of V1.1 (resets are started by the Principal, Admin or Super
+   * Admin): always 501 `not_enabled`, whatever the identifier.
+   */
   @Post('password-reset')
-  async passwordReset(@Body() body: PasswordResetDto): Promise<void> {
-    await this.otp.send(body.identifier, 'password_reset');
+  passwordReset(@Body() _body: PasswordResetDto): Promise<void> {
+    return Promise.reject(new NotEnabledException('Password reset'));
   }
 
   /** Ends the session of the access token used for this call. */

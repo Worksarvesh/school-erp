@@ -5,9 +5,10 @@
  * tables are covered without editing this file:
  * - every /v1/schools/:schoolId/... route returns 401 signed out and 404 across schools, and
  *   works for a member with every role in their own school (positive control)
- * - every other route is on an explicit allowlist
+ * - every other route is on an explicit allowlist; platform routes return 401 signed out, 403 to
+ *   school members, and work for platform staff
  * - every table with a school_id column has RLS, and every RLS table returns no rows without
- *   context and no other-school rows inside a school context
+ *   context (or refuses the app role outright) and no other-school rows inside a school context
  *
  * If this file fails after you add a route or table, fix the route or table, not the test.
  */
@@ -26,15 +27,19 @@ const SCHOOL_B = '0192f0a4-0000-7000-8000-00000000000b';
 const ADMIN_A = '0192f0a4-0000-7000-8000-0000000000a1'; // every role in A
 const ADMIN_B = '0192f0a4-0000-7000-8000-0000000000b1'; // every role in B
 const SOME_ID = '0192f0a4-0000-7000-8000-0000000000ff'; // fills any other path param
+const VERIFIER = '0192f0a4-0000-7000-8000-0000000000c1'; // platform staff, no school membership
 
 /**
  * Routes outside /v1/schools/:schoolId. Adding one here is a security review decision.
  * `authenticated` routes must return 401 signed out (checked below). `public` routes must not
- * reveal whether an account exists (checked per route in auth.int-spec.ts).
+ * reveal whether an account exists (checked per route in auth.int-spec.ts and otp.int-spec.ts).
+ * `platform` routes must return 401 signed out and 403 to a school member (checked below).
  */
-const NON_SCHOOL_ROUTES: Record<string, 'public' | 'authenticated'> = {
+const NON_SCHOOL_ROUTES: Record<string, 'public' | 'authenticated' | 'platform'> = {
   'GET /v1': 'public',
   'POST /v1/auth/login': 'public',
+  'POST /v1/auth/otp/request': 'public',
+  'POST /v1/auth/otp/verify': 'public',
   'POST /v1/auth/refresh': 'public',
   'POST /v1/auth/password-reset': 'public',
   'POST /v1/auth/logout': 'authenticated',
@@ -43,6 +48,14 @@ const NON_SCHOOL_ROUTES: Record<string, 'public' | 'authenticated'> = {
   'GET /v1/me/sessions': 'authenticated',
   'DELETE /v1/me/sessions/:sessionId': 'authenticated',
   'POST /v1/me/password': 'authenticated',
+  'GET /v1/me/school-verification-requests': 'authenticated',
+  'POST /v1/me/school-verification-requests': 'authenticated',
+  'GET /v1/directory/schools': 'authenticated',
+  'GET /v1/platform/school-verification-requests': 'platform',
+  'GET /v1/platform/school-verification-requests/:requestId': 'platform',
+  'POST /v1/platform/school-verification-requests/:requestId/approve': 'platform',
+  'POST /v1/platform/school-verification-requests/:requestId/reject': 'platform',
+  'POST /v1/platform/schools': 'platform',
 };
 
 // Routes are discovered at collection time so each one gets its own named tests.
@@ -51,9 +64,11 @@ const app: NestExpressApplication = await createTestApp(prisma);
 const routes = servedRoutes(app);
 const schoolRoutes = routes.filter(isSchoolRoute);
 const authenticatedRoutes = routes.filter((r) => NON_SCHOOL_ROUTES[label(r)] === 'authenticated');
+const platformRoutes = routes.filter((r) => NON_SCHOOL_ROUTES[label(r)] === 'platform');
 const auth: Record<string, string> = {
   [ADMIN_A]: await bearer(app, ADMIN_A),
   [ADMIN_B]: await bearer(app, ADMIN_B),
+  [VERIFIER]: await bearer(app, VERIFIER),
 };
 let owner: pg.Client;
 
@@ -82,11 +97,20 @@ beforeAll(async () => {
       .join(',\n');
   await owner.query(`
     INSERT INTO schools (id, name, code, updated_at) VALUES
-      ('${SCHOOL_A}', 'School A', 'SCH-A', now()),
-      ('${SCHOOL_B}', 'School B', 'SCH-B', now());
+      ('${SCHOOL_A}', 'School A', 'sch9001', now()),
+      ('${SCHOOL_B}', 'School B', 'sch9002', now());
     INSERT INTO users (id, full_name, updated_at) VALUES
       ('${ADMIN_A}', 'Admin A', now()),
-      ('${ADMIN_B}', 'Admin B', now());
+      ('${ADMIN_B}', 'Admin B', now()),
+      ('${VERIFIER}', 'Verifier', now());
+    INSERT INTO platform_staff (user_id, role, updated_at) VALUES ('${VERIFIER}', 'verifier', now());
+    INSERT INTO school_verification_requests
+      (id, principal_user_id, school_id, principal_name, status, decided_by_user_id, decided_at,
+       updated_at) VALUES
+      (gen_random_uuid(), '${ADMIN_A}', '${SCHOOL_A}', 'Admin A', 'approved', '${VERIFIER}', now(), now()),
+      (gen_random_uuid(), '${ADMIN_B}', '${SCHOOL_B}', 'Admin B', 'approved', '${VERIFIER}', now(), now());
+    INSERT INTO otp_challenges (id, purpose, phone, code_hash, expires_at) VALUES
+      (gen_random_uuid(), 'principal_login', '+919000000001', 'not-a-real-hash', now() + interval '5 minutes');
     INSERT INTO school_memberships (id, school_id, user_id, role, status, updated_at) VALUES
       ${everyRole(SCHOOL_A, ADMIN_A)},
       ${everyRole(SCHOOL_B, ADMIN_B)};
@@ -130,6 +154,25 @@ describe.each(authenticatedRoutes.map((r) => [label(r), r] as const))(
   (_name, route) => {
     it('returns 401 when signed out', async () => {
       await call(route, SCHOOL_A).expect(401);
+    });
+  },
+);
+
+describe.each(platformRoutes.map((r) => [label(r), r] as const))(
+  '%s (platform)',
+  (_name, route) => {
+    it('returns 401 when signed out', async () => {
+      await call(route, SCHOOL_A).expect(401);
+    });
+
+    it('returns 403 to a school member with every role', async () => {
+      await call(route, SCHOOL_A, ADMIN_A).expect(403);
+    });
+
+    it('works for platform staff (positive control)', async () => {
+      const res = await call(route, SCHOOL_A, VERIFIER);
+      expect([401, 403]).not.toContain(res.status);
+      expect(res.status).toBeLessThan(500);
     });
   },
 );
@@ -185,6 +228,17 @@ describe('database (RLS)', () => {
 
   it('every RLS table returns no rows to a raw query without context', async () => {
     for (const table of rlsTables) {
+      const { rows: grant } = await owner.query<{ ok: boolean }>(
+        `SELECT has_table_privilege('school_erp_app', $1, 'SELECT') AS ok`,
+        [`public."${table}"`],
+      );
+      if (!grant[0]?.ok) {
+        // Tables reached only through SECURITY DEFINER functions: the app role is refused outright.
+        await expect(prisma.$queryRawUnsafe(count(`"${table}"`)), table).rejects.toThrow(
+          /permission denied/,
+        );
+        continue;
+      }
       const rows = await prisma.$queryRawUnsafe<{ n: number }[]>(count(`"${table}"`));
       expect(rows[0]?.n, table).toBe(0);
     }

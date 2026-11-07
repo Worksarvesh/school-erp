@@ -7,13 +7,18 @@ import {
   AuthProvider,
   type LoginInput,
   type LoginResult,
+  type OtpLoginInput,
+  type OtpLoginResult,
   type RequestMeta,
   type TokenPair,
 } from './auth-provider.js';
 import { CredentialsService } from './credentials.service.js';
-import { normalizeIdentifier } from './identifier.js';
+import { normalizeIdentifier, normalizePhone } from './identifier.js';
 import type { Identity } from './identity.js';
 import { LoginFailureLimiter } from './login-failure-limiter.js';
+import type { OtpPurpose } from './otp.js';
+import { OtpRequestLimiter } from './otp-request-limiter.js';
+import { OTP_TTL_SECONDS, OtpService } from './otp.service.js';
 import { PasswordService } from './password.service.js';
 import { parseRefreshToken } from './refresh-token.js';
 import { SessionsService } from './sessions.service.js';
@@ -29,6 +34,14 @@ const tooManyAttempts = () =>
     'too_many_requests',
     'Too many attempts, try again later',
   );
+// One answer for wrong, expired, missing or used codes, and for disabled accounts.
+const invalidOtp = () =>
+  new ApiException(HttpStatus.UNAUTHORIZED, 'invalid_otp', 'Invalid or expired code');
+const invalidPhone = () =>
+  new ApiException(HttpStatus.BAD_REQUEST, 'invalid_phone', 'Enter a valid mobile number');
+
+/** A principal's code may have been issued for login or for registration. */
+const PRINCIPAL_PURPOSES: OtpPurpose[] = ['principal_login', 'principal_registration'];
 
 @Injectable()
 export class LocalAuthProvider extends AuthProvider {
@@ -40,8 +53,71 @@ export class LocalAuthProvider extends AuthProvider {
     private readonly accessTokens: AccessTokenService,
     private readonly limiter: LoginFailureLimiter,
     private readonly audit: AuditService,
+    private readonly otp: OtpService,
+    private readonly otpLimiter: OtpRequestLimiter,
   ) {
     super();
+  }
+
+  async requestOtp(rawPhone: string, meta: RequestMeta): Promise<{ expiresInSeconds: number }> {
+    const phone = normalizePhone(rawPhone);
+    if (!phone) {
+      throw invalidPhone();
+    }
+    if (!this.otpLimiter.tryAcquire(phone)) {
+      await this.audit.record({ action: 'auth.otp_rate_limited', ip: meta.ip });
+      throw tooManyAttempts();
+    }
+    // Principals can always register, so a code is issued for every valid number: the answer
+    // never depends on whether the number is known.
+    const user = await this.users.findLoginUser(phone);
+    await this.otp.issue(phone, user ? 'principal_login' : 'principal_registration', meta.ip);
+    await this.audit.record({ action: 'auth.otp_requested', ip: meta.ip });
+    return { expiresInSeconds: OTP_TTL_SECONDS };
+  }
+
+  async loginWithOtp(input: OtpLoginInput, meta: RequestMeta): Promise<OtpLoginResult> {
+    const phone = normalizePhone(input.phone);
+    const check = phone ? await this.otp.verify(phone, PRINCIPAL_PURPOSES, input.code) : 'none';
+    if (check === 'locked') {
+      await this.audit.record({ action: 'auth.otp_locked', ip: meta.ip });
+      throw tooManyAttempts();
+    }
+    if (check !== 'ok' || !phone) {
+      await this.audit.record({ action: 'auth.otp_failed', ip: meta.ip });
+      throw invalidOtp();
+    }
+
+    const existing = await this.users.findLoginUser(phone);
+    if (existing && existing.status !== 'active') {
+      await this.audit.record({
+        action: 'auth.otp_failed',
+        actorUserId: existing.userId,
+        ip: meta.ip,
+      });
+      throw invalidOtp();
+    }
+    const userId = existing ? existing.userId : await this.users.createVerifiedPhoneUser(phone);
+    if (existing) {
+      await this.users.recordPhoneLogin(userId);
+    }
+
+    const session = await this.sessions.create(userId, input.deviceName, 'school_app');
+    await this.audit.record({
+      action: 'auth.otp_verified',
+      actorUserId: userId,
+      targetType: 'session',
+      targetId: session.sessionId,
+      sessionId: session.sessionId,
+      ip: meta.ip,
+      metadata: { newUser: !existing },
+    });
+    const profile = await this.users.getOwnProfile(userId);
+    return {
+      ...(await this.tokens(userId, session.sessionId, session.refreshToken, session.expiresAt)),
+      user: { id: userId, fullName: profile?.fullName ?? '' },
+      isNewUser: !existing,
+    };
   }
 
   async login(input: LoginInput, meta: RequestMeta): Promise<LoginResult> {

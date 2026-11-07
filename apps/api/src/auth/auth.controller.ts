@@ -2,10 +2,10 @@ import { Body, Controller, HttpCode, Post, Req, UseGuards } from '@nestjs/common
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import type { Request } from 'express';
-import { AuthenticatedGuard, CurrentIdentity } from './authenticated.guard.js';
-import { LoginDto, PasswordResetDto, RefreshDto } from './auth.dto.js';
-import { AuthProvider, type RequestMeta } from './auth-provider.js';
 import { NotEnabledException } from '../common/errors.js';
+import { AuthenticatedGuard, CurrentIdentity } from './authenticated.guard.js';
+import { LoginDto, OtpRequestDto, OtpVerifyDto, PasswordResetDto, RefreshDto } from './auth.dto.js';
+import { AuthProvider, type RequestMeta } from './auth-provider.js';
 import type { Identity } from './identity.js';
 
 export const metaOf = (request: Request): RequestMeta => ({ ip: request.ip ?? null });
@@ -21,6 +21,19 @@ export class AuthController {
   @HttpCode(200)
   login(@Body() body: LoginDto, @Req() request: Request) {
     return this.auth.login(body, metaOf(request));
+  }
+
+  /** Principal OTP. Same 202 for every valid number; the code is never in the response. */
+  @Post('otp/request')
+  @HttpCode(202)
+  requestOtp(@Body() body: OtpRequestDto, @Req() request: Request) {
+    return this.auth.requestOtp(body.phone, metaOf(request));
+  }
+
+  @Post('otp/verify')
+  @HttpCode(200)
+  verifyOtp(@Body() body: OtpVerifyDto, @Req() request: Request) {
+    return this.auth.loginWithOtp(body, metaOf(request));
   }
 
   @Post('refresh')

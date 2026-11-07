@@ -1,4 +1,12 @@
-import { normalizeIdentifier } from './identifier.js';
+import { normalizeIdentifier, normalizePhone } from './identifier.js';
+
+describe('normalizePhone', () => {
+  it('normalises Indian numbers and rejects emails and junk', () => {
+    expect(normalizePhone(' 98765 43210 ')).toBe('+919876543210');
+    expect(normalizePhone('asha@example.test')).toBeNull();
+    expect(normalizePhone('12')).toBeNull();
+  });
+});
 
 describe('normalizeIdentifier', () => {
   it.each([

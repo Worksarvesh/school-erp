@@ -10,6 +10,8 @@ import { LocalAuthProvider } from './local-auth.provider.js';
 import { LoginFailureLimiter } from './login-failure-limiter.js';
 import { MeController } from './me.controller.js';
 import { DisabledStepUpProvider, FixedOtpProvider, OtpProvider, StepUpProvider } from './otp.js';
+import { OtpRequestLimiter } from './otp-request-limiter.js';
+import { OtpService } from './otp.service.js';
 import { PasswordService } from './password.service.js';
 import { SessionsService } from './sessions.service.js';
 
@@ -32,6 +34,8 @@ import { SessionsService } from './sessions.service.js';
     CredentialsService,
     SessionsService,
     LoginFailureLimiter,
+    OtpRequestLimiter,
+    OtpService,
     { provide: AuthProvider, useClass: LocalAuthProvider },
     // Only "fixed" exists; loadAppConfig() rejects anything else and refuses it in production.
     { provide: OtpProvider, useClass: FixedOtpProvider },

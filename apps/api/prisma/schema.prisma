@@ -213,8 +213,9 @@ model Session {
 /// Append-only security log. Owned by the audit module. school_id is null for global events
 /// (login). RLS: a school context reads its own rows; the app role may insert, never update/delete.
 /// Never holds passwords, OTP codes, tokens or typed login identifiers.
+/// Range-partitioned by month on created_at (partitions and the append-only trigger are in SQL).
 model AuditLog {
-  id          String        @id @default(uuid(7)) @db.Uuid
+  id          String        @default(uuid(7)) @db.Uuid
   schoolId    String?       @map("school_id") @db.Uuid
   actorUserId String?       @map("actor_user_id") @db.Uuid
   /// A school role or a platform role, as text.
@@ -234,6 +235,7 @@ model AuditLog {
 
   @@index([schoolId, createdAt])
   @@index([actorUserId, createdAt])
+  @@id([id, createdAt])
   @@index([schoolId, module, createdAt])
   @@map("audit_logs")
 }

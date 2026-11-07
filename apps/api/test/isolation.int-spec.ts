@@ -202,21 +202,40 @@ describe('database (RLS)', () => {
   let rlsTables: string[];
   let schoolIdTables: string[];
 
+  // Partitions are reached only through their parent table (checked separately below).
   beforeAll(async () => {
     const rls = await owner.query<{ table: string }>(`
       SELECT relname AS table FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p') AND c.relrowsecurity
+        AND NOT c.relispartition
       ORDER BY 1`);
     rlsTables = rls.rows.map((r) => r.table);
     const cols = await owner.query<{ table: string }>(`
-      SELECT DISTINCT table_name AS table FROM information_schema.columns
-      WHERE table_schema = 'public' AND column_name = 'school_id'`);
+      SELECT DISTINCT c.relname AS table FROM pg_attribute a
+      JOIN pg_class c ON c.oid = a.attrelid JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p') AND NOT c.relispartition
+        AND a.attname = 'school_id' AND NOT a.attisdropped`);
     schoolIdTables = cols.rows.map((r) => r.table);
   });
 
   it('has RLS on every table with a school_id column, and on schools and users', () => {
     const tenantTables = [...schoolIdTables, 'schools', 'users'];
     expect(tenantTables.filter((t) => !rlsTables.includes(t))).toEqual([]);
+  });
+
+  it('every partition has RLS and refuses the app role (rows only through the parent)', async () => {
+    const { rows } = await owner.query<{ table: string; rls: boolean; granted: boolean }>(`
+      SELECT c.relname AS table, c.relrowsecurity AS rls,
+        has_table_privilege('school_erp_app', c.oid, 'SELECT,INSERT,UPDATE,DELETE') AS granted
+      FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p') AND c.relispartition`);
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.filter((r) => !r.rls || r.granted)).toEqual([]);
+  });
+
+  it('audit_logs is append-only for the owner role too', async () => {
+    await expect(owner.query(`UPDATE audit_logs SET action = 'x'`)).rejects.toThrow(/append-only/);
+    await expect(owner.query('DELETE FROM audit_logs')).rejects.toThrow(/append-only/);
   });
 
   it('every RLS table has fixture rows here, so the checks below mean something', async () => {

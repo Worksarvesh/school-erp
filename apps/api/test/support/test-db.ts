@@ -20,7 +20,8 @@ export function testDbUrl(envName: 'DATABASE_URL' | 'MIGRATION_DATABASE_URL'): s
  */
 export async function truncateTenantData(owner: { query(sql: string): Promise<unknown> }) {
   await owner.query(
-    'TRUNCATE audit_logs, sessions, credentials, school_memberships, users, schools CASCADE',
+    `TRUNCATE audit_logs, otp_challenges, school_verification_requests, platform_staff, sessions,
+      credentials, school_memberships, users, schools CASCADE`,
   );
 }
 

@@ -10,7 +10,7 @@ Swagger UI (development only): <http://localhost:3000/docs>
 | ----------------------------------- | --------- | ------------------------------------------------------------------------------------------------- |
 | `POST /v1/auth/login`               | public    | Phone or email + password. Returns an access token (15 min) and a refresh token (30 days)         |
 | `POST /v1/auth/refresh`             | public    | Swaps a refresh token for new tokens. The old one stops working; reusing it signs that device out |
-| `POST /v1/auth/password-reset`      | public    | Needs OTP: always `501 not_enabled`                                                               |
+| `POST /v1/auth/password-reset`      | public    | Not in V1.1 (resets are started by staff): always `501 not_enabled`                               |
 | `POST /v1/auth/logout`              | signed in | Ends the current device's session                                                                 |
 | `POST /v1/auth/logout-all`          | signed in | Ends every session of the user                                                                    |
 | `GET /v1/me`                        | signed in | Profile plus schools and roles                                                                    |
@@ -188,7 +188,7 @@ Its refresh token no longer works:
 Show-ApiError { Invoke-RestMethod -Method Post "$api/auth/refresh" -ContentType 'application/json' -Body (@{ refreshToken = $laptop.refreshToken } | ConvertTo-Json) }
 ```
 
-## 6. Actions that need OTP (not built yet)
+## 6. Actions that are not enabled yet
 
 Change password: `501 not_enabled`:
 
@@ -196,7 +196,7 @@ Change password: `501 not_enabled`:
 Show-ApiError { Invoke-RestMethod -Method Post "$api/me/password" -Headers $auth -ContentType 'application/json' -Body (@{ currentPassword = $pw; newPassword = 'a-brand-new-password' } | ConvertTo-Json) }
 ```
 
-Password reset: `501 not_enabled`, the same for any identifier:
+Password reset: `501 not_enabled`, the same for any identifier (principal OTP login is in [2b-principal.md](2b-principal.md)):
 
 ```powershell
 Show-ApiError { Invoke-RestMethod -Method Post "$api/auth/password-reset" -ContentType 'application/json' -Body (@{ identifier = '9000010101' } | ConvertTo-Json) }

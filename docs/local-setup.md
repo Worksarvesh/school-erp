@@ -36,7 +36,7 @@
    ```powershell
    pnpm --filter api exec prisma migrate deploy
    ```
-7. Set `JWT_ACCESS_SECRET` (at least 32 bytes) and `SEED_DEMO_PASSWORD` in `.env`, then load demo schools and users (safe to repeat):
+7. Set `JWT_ACCESS_SECRET` and `OTP_HASH_SECRET` (each at least 32 bytes) and `SEED_DEMO_PASSWORD` in `.env` (see `.env.example`; local OTP uses the fixed code `999999`), then load demo schools and users (safe to repeat):
    ```powershell
    pnpm --filter api run seed
    ```

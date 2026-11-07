@@ -4,7 +4,7 @@ Rules for every session working in this repo. Source of truth: **System design v
 
 ## Current step
 
-**Slice 2A (credentials, sessions, audit, error shape): done** on branch `feat/auth-sessions`, PR pending. **Next: slice 2B** (principal registration without OTP, `school_claims`, platform verifier approval). Wait for the user's "next slice"; plan first and get approval before coding.
+**Slice 2A (credentials, sessions, audit, error shape): done** on branch `feat/auth-sessions`, PR pending. **V1.1 audit and Phase B schema design: in progress** on branch `docs/v1.1-audit` (`docs/system-design/AUDIT-2026-11-07.md`, `docs/system-design/schema/`, decisions in `docs/decisions.md` "V1.1 decisions"). V1.1 overrides the slice list and rules below where they conflict (parent linking, login methods, fees, roles); the full rewrite of this file waits for schema approval. Wait for the user's go-ahead; plan first and get approval before coding.
 
 Slices (user's order, OTP deferred): Step 1 tenancy core (done) · 2A credentials/sessions/audit/error shape (done) · 2B principal registration + school_claims + verifier approval · 3 school setup (academic sessions, classes, sections, subjects, staff, custom field definitions) · 4 students, enrollments, guardians, link-code parent linking · 5 attendance (bulk, idempotent, monthly partitions), notices, notifications via outbox + BullMQ worker + device tokens · 6 homework, submissions, files (presigned URLs), fees in integer paise · 7 timetable, exams, marks entry · 8 hardening.
 
@@ -66,7 +66,7 @@ Update this marker when a step starts or finishes.
 - Passwords use argon2id. Access JWT lasts 15 min. Refresh tokens rotate and are stored hashed in `sessions`, with reuse detection. OTP only for registration, recovery and step-up.
 - Generic error messages (no account enumeration). Rate limits per IP, phone and account.
 - **Own auth** behind `AuthProvider` (`apps/api/src/auth/`). The access JWT carries only `sub` and `sid`; HS256, issuer and audience are pinned. Never put roles or permissions in tokens.
-- **OTP is not built.** Anything needing OTP or step-up calls `OtpProvider` / `StepUpProvider`, whose defaults answer 501 `not_enabled`. Do not build OTP until the user asks.
+- **OTP is not built yet.** Anything needing OTP or step-up calls `OtpProvider` / `StepUpProvider`, whose defaults answer 501 `not_enabled`. Decided 2026-11-07 for when OTP login is built (slice 2B): a **fixed-code provider** (`OTP_PROVIDER=fixed`, `OTP_FIXED_CODE`, default `999999` locally and in tests) that creates normal hashed `otp_challenges` with all protections; the API must refuse to start with `fixed` when `NODE_ENV` or `APP_ENV` is `production`; never log the code. A real SMS provider (`OTP_PROVIDER=sms`) is a production blocker. Details in `docs/decisions.md` "V1.1 decisions".
 - Pre-login lookups go only through the `auth_find_*` SECURITY DEFINER functions (see the auth migration for the rules they follow).
 
 ## Data rules (design sections 6, 12)

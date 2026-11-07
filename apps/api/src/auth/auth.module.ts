@@ -9,7 +9,7 @@ import { IdentityModule } from './identity.module.js';
 import { LocalAuthProvider } from './local-auth.provider.js';
 import { LoginFailureLimiter } from './login-failure-limiter.js';
 import { MeController } from './me.controller.js';
-import { DisabledOtpProvider, DisabledStepUpProvider, OtpProvider, StepUpProvider } from './otp.js';
+import { DisabledStepUpProvider, FixedOtpProvider, OtpProvider, StepUpProvider } from './otp.js';
 import { PasswordService } from './password.service.js';
 import { SessionsService } from './sessions.service.js';
 
@@ -33,7 +33,8 @@ import { SessionsService } from './sessions.service.js';
     SessionsService,
     LoginFailureLimiter,
     { provide: AuthProvider, useClass: LocalAuthProvider },
-    { provide: OtpProvider, useClass: DisabledOtpProvider },
+    // Only "fixed" exists; loadAppConfig() rejects anything else and refuses it in production.
+    { provide: OtpProvider, useClass: FixedOtpProvider },
     { provide: StepUpProvider, useClass: DisabledStepUpProvider },
   ],
 })

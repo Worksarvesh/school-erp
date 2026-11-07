@@ -1,35 +1,47 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { NotEnabledException } from '../common/errors.js';
+import { APP_CONFIG, type AppConfig } from '../config/app-config.js';
+
+/** Matches the otp_purpose enum. */
+export type OtpPurpose = 'principal_registration' | 'principal_login' | 'parent_login';
 
 /**
- * One-time passwords (registration, password recovery). Not built yet (see docs/decisions.md):
- * the default implementation makes every OTP action answer 501 `not_enabled`.
+ * Makes and delivers one-time codes. Storage, expiry, attempts and rate limits live in OtpService,
+ * so swapping the fixed provider for a real SMS one changes no tables and no protections.
  */
 export abstract class OtpProvider {
-  abstract send(phone: string, purpose: OtpPurpose): Promise<void>;
-  abstract verify(phone: string, purpose: OtpPurpose, code: string): Promise<boolean>;
+  /** The code for a new challenge. */
+  abstract newCode(): string;
+  /** Sends the code to the phone. Never logs the code. */
+  abstract deliver(phone: string, code: string, purpose: OtpPurpose): Promise<void>;
 }
 
-export type OtpPurpose = 'registration' | 'password_reset';
+/**
+ * Interim provider (OTP_PROVIDER=fixed): every code is OTP_FIXED_CODE and nothing is sent.
+ * loadAppConfig() refuses to start with it in production.
+ */
+@Injectable()
+export class FixedOtpProvider extends OtpProvider {
+  constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {
+    super();
+  }
 
-/** Extra verification before sensitive actions (change phone/password, fee refund, export). */
+  newCode(): string {
+    return this.config.otpFixedCode;
+  }
+
+  deliver(): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
+/** Extra verification before sensitive actions (change phone/password, export). */
 export abstract class StepUpProvider {
   /** Resolves when the user has just proved it is them; throws otherwise. */
   abstract require(userId: string, action: StepUpAction): Promise<void>;
 }
 
-export type StepUpAction = 'password_change' | 'phone_change' | 'fee_refund' | 'data_export';
-
-@Injectable()
-export class DisabledOtpProvider extends OtpProvider {
-  send(): Promise<void> {
-    return Promise.reject(new NotEnabledException('OTP'));
-  }
-
-  verify(): Promise<boolean> {
-    return Promise.reject(new NotEnabledException('OTP'));
-  }
-}
+export type StepUpAction = 'password_change' | 'phone_change' | 'data_export';
 
 @Injectable()
 export class DisabledStepUpProvider extends StepUpProvider {

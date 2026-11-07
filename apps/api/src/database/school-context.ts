@@ -1,7 +1,9 @@
 import { isUuid } from '../common/uuid.js';
 import type { Prisma, PrismaClient } from '../generated/prisma/client.js';
+import { PlatformRole } from '../generated/prisma/enums.js';
 
 type Setting = 'app.school_id' | 'app.user_id';
+const PLATFORM_ROLES: string[] = Object.values(PlatformRole);
 
 /**
  * Runs `fn` in one transaction with `app.school_id` set, so RLS policies see only that school.
@@ -27,6 +29,26 @@ export function withUserContext<T>(
   fn: (tx: Prisma.TransactionClient) => Promise<T>,
 ): Promise<T> {
   return withSetting(prisma, 'app.user_id', userId, fn);
+}
+
+/**
+ * Platform path (Verifier, Super Admin) after PlatformGuard has checked `platform_staff`:
+ * `app.user_id` plus `app.platform_role`, which the platform RLS policies read. No school is set.
+ */
+export function withPlatformContext<T>(
+  prisma: PrismaClient,
+  userId: string,
+  role: PlatformRole,
+  fn: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+  if (!isUuid(userId) || !PLATFORM_ROLES.includes(role)) {
+    throw new Error('platform context needs a user id and a platform role');
+  }
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT set_config('app.user_id', ${userId}, true)`;
+    await tx.$executeRaw`SELECT set_config('app.platform_role', ${role}, true)`;
+    return fn(tx);
+  });
 }
 
 async function withSetting<T>(

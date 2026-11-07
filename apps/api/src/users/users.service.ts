@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { uuidv7 } from '../common/uuid.js';
 import { PrismaService } from '../database/prisma.service.js';
 import { withSchoolContext, withUserContext } from '../database/school-context.js';
 import type { UserStatus } from '../generated/prisma/enums.js';
@@ -30,6 +31,41 @@ export class UsersService {
       SELECT user_id, status FROM auth_find_login_user(${normalizedIdentifier})`;
     const row = rows[0];
     return row ? { userId: row.user_id, status: row.status } : null;
+  }
+
+  /**
+   * First OTP login of an unknown number (a principal registering): a user with only the verified
+   * phone. The name is filled in with the verification request.
+   */
+  async createVerifiedPhoneUser(phone: string): Promise<string> {
+    const id = uuidv7();
+    const now = new Date();
+    await withUserContext(this.prisma, id, (tx) =>
+      tx.user.create({
+        data: { id, fullName: '', phone, phoneVerifiedAt: now, lastLoginAt: now },
+        select: { id: true },
+      }),
+    );
+    return id;
+  }
+
+  /** After an OTP login: the phone is proven and the login time recorded. */
+  async recordPhoneLogin(userId: string): Promise<void> {
+    const now = new Date();
+    await withUserContext(this.prisma, userId, (tx) =>
+      tx.user.update({
+        where: { id: userId },
+        data: { phoneVerifiedAt: now, lastLoginAt: now },
+        select: { id: true },
+      }),
+    );
+  }
+
+  /** The user's display name, set by the user (e.g. a principal's name on registration). */
+  async setOwnName(userId: string, fullName: string): Promise<void> {
+    await withUserContext(this.prisma, userId, (tx) =>
+      tx.user.update({ where: { id: userId }, data: { fullName }, select: { id: true } }),
+    );
   }
 
   /** The signed-in user's own profile. */

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service.js';
 import { withUserContext } from '../database/school-context.js';
+import type { ClientApp } from '../generated/prisma/enums.js';
 import {
   formatRefreshToken,
   hashRefreshSecret,
@@ -18,12 +19,18 @@ export type RotateResult =
 export class SessionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(userId: string, deviceName: string | undefined) {
+  async create(userId: string, deviceName: string | undefined, clientApp?: ClientApp) {
     const { secret, hash } = newRefreshSecret();
     const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
     const session = await withUserContext(this.prisma, userId, (tx) =>
       tx.session.create({
-        data: { userId, tokenHash: hash, deviceName: deviceName ?? null, expiresAt },
+        data: {
+          userId,
+          tokenHash: hash,
+          deviceName: deviceName ?? null,
+          clientApp: clientApp ?? null,
+          expiresAt,
+        },
         select: { id: true },
       }),
     );

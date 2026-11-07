@@ -1,4 +1,4 @@
-import { IsOptional, IsString, Length, MaxLength } from 'class-validator';
+import { IsOptional, IsString, Length, Matches, MaxLength } from 'class-validator';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from './password.service.js';
 
 export class LoginDto {
@@ -10,6 +10,29 @@ export class LoginDto {
   @IsString()
   @Length(1, PASSWORD_MAX_LENGTH)
   password!: string;
+
+  /** Shown in the device list, e.g. "Pixel 8". */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  deviceName?: string;
+}
+
+export class OtpRequestDto {
+  /** Mobile number; Indian numbers may omit +91. */
+  @IsString()
+  @Length(6, 20)
+  phone!: string;
+}
+
+export class OtpVerifyDto {
+  @IsString()
+  @Length(6, 20)
+  phone!: string;
+
+  @IsString()
+  @Matches(/^\d{6}$/, { message: 'code must be 6 digits' })
+  code!: string;
 
   /** Shown in the device list, e.g. "Pixel 8". */
   @IsOptional()

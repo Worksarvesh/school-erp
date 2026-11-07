@@ -6,8 +6,8 @@ import { PasswordService } from '../auth/password.service.js';
 const demoId = (n: number) => `0197de00-0000-7000-8000-${n.toString(16).padStart(12, '0')}`;
 
 export const DEMO_SCHOOLS = [
-  { id: demoId(1), name: 'Sunrise Public School (Demo)', code: 'DEMO-SUNRISE' },
-  { id: demoId(2), name: 'Lakeview High School (Demo)', code: 'DEMO-LAKEVIEW' },
+  { id: demoId(1), name: 'Sunrise Public School (Demo)', code: 'sch0001' },
+  { id: demoId(2), name: 'Lakeview High School (Demo)', code: 'sch0002' },
 ] as const;
 const [SUNRISE, LAKEVIEW] = DEMO_SCHOOLS;
 

@@ -40,8 +40,8 @@ beforeAll(async () => {
   await truncateTenantData(owner);
   await owner.query(`
     INSERT INTO schools (id, name, code, updated_at) VALUES
-      ('${SCHOOL_A}', 'School A', 'SCH-A', now()),
-      ('${SCHOOL_B}', 'School B', 'SCH-B', now());
+      ('${SCHOOL_A}', 'School A', 'sch9001', now()),
+      ('${SCHOOL_B}', 'School B', 'sch9002', now());
     INSERT INTO users (id, full_name, updated_at) VALUES
       ('${PRINCIPAL_A}', 'Principal A', now()),
       ('${TEACHER_A}', 'Teacher A', now()),
@@ -80,7 +80,7 @@ describe('GET /v1/schools/:schoolId', () => {
     expect(res.body).toEqual({
       id: SCHOOL_A,
       name: 'School A',
-      code: 'SCH-A',
+      code: 'sch9001',
       udiseCode: null,
       status: 'active',
     });

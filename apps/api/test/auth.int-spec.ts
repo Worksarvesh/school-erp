@@ -64,8 +64,8 @@ beforeAll(async () => {
   };
   await owner.query(`
     INSERT INTO schools (id, name, code, updated_at) VALUES
-      ('${SCHOOL_A}', 'School A', 'SCH-A', now()),
-      ('${SCHOOL_B}', 'School B', 'SCH-B', now());
+      ('${SCHOOL_A}', 'School A', 'sch9001', now()),
+      ('${SCHOOL_B}', 'School B', 'sch9002', now());
     INSERT INTO users (id, full_name, phone, email, status, updated_at) VALUES
       ('${ALICE}', 'Alice', '+919000000201', 'alice@example.test', 'active', now()),
       ('${BOB}', 'Bob', '+919000000202', NULL, 'disabled', now()),
@@ -128,7 +128,10 @@ describe('POST /v1/auth/login', () => {
     expect(res.body.error.code).toBe('validation_failed');
     expect(res.body.error.details.join(' ')).toMatch(/identifier/);
     expect(res.body.error.details.join(' ')).toMatch(/property extra should not exist/);
-    expect(JSON.stringify(res.body)).not.toContain('42');
+    // The random request id may contain "42" itself, so check everything but it.
+    const shown = { ...(res.body.error as Record<string, unknown>) };
+    delete shown.requestId;
+    expect(JSON.stringify(shown)).not.toContain('42');
   });
 
   it('writes audit events without the identifier the user typed', async () => {
@@ -161,8 +164,8 @@ describe('GET /v1/me', () => {
       email: 'alice@example.test',
       status: 'active',
       schools: [
-        { schoolId: SCHOOL_A, name: 'School A', code: 'SCH-A', roles: ['principal'] },
-        { schoolId: SCHOOL_B, name: 'School B', code: 'SCH-B', roles: ['teacher'] },
+        { schoolId: SCHOOL_A, name: 'School A', code: 'sch9001', roles: ['principal'] },
+        { schoolId: SCHOOL_B, name: 'School B', code: 'sch9002', roles: ['teacher'] },
       ],
     });
   });
@@ -304,7 +307,7 @@ describe('actions that need OTP (not built yet)', () => {
     expect(outcome(known)).toEqual({
       status: 501,
       code: 'not_enabled',
-      message: 'OTP is not enabled yet',
+      message: 'Password reset is not enabled yet',
     });
     expect(outcome(unknown)).toEqual(outcome(known));
   });

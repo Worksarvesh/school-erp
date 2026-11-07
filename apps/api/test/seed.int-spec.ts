@@ -70,7 +70,7 @@ describe('seedDemoData', () => {
       .set('Authorization', `Bearer ${res.body.accessToken}`)
       .expect(200);
     expect(me.body.schools).toEqual([
-      expect.objectContaining({ code: 'DEMO-SUNRISE', roles: ['principal'] }),
+      expect.objectContaining({ code: 'sch0001', roles: ['principal'] }),
     ]);
   });
 

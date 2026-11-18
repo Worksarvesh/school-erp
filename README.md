@@ -38,7 +38,7 @@ pnpm run check
 
 ## Contributing
 
-Short version: branch from `main`, open a PR with a Conventional Commits title, wait for CI, get one review, squash merge. Full guide: [docs/workflow.md](docs/workflow.md).
+Short version: branch from `main`, open a PR with a clear title (Conventional Commits recommended, not enforced), wait for CI, get one review, squash merge. Full guide: [docs/workflow.md](docs/workflow.md).
 
 ## Docs
 

@@ -1,4 +1,4 @@
-# ER diagrams (draft V1.1)
+# ER diagrams (draft V1.2)
 
 One diagram per module, key columns only (full columns in [TABLES.md](TABLES.md)). Every school table also has `school_id`; arrows between school tables are composite foreign keys `(school_id, x_id)`, so a row can never point into another school. `schools` is drawn only where it matters.
 
@@ -18,13 +18,18 @@ erDiagram
   school_verification_requests |o--o| school_verification_requests : resubmission
   schools ||--o{ username_sequences : "e and s counters"
   schools |o--o{ credential_issuances : "temp passwords issued"
+  schools |o--o{ data_erasure_requests : "platform erasure cases"
   permissions ||--o{ role_permissions : granted
+  permissions ||--o{ user_permission_grants : "grantable keys only"
+  users ||--o{ user_permission_grants : "explicit grant"
+  schools ||--o{ user_permission_grants : ""
 
   schools {
     uuid id PK
     text code UK
     school_status status
     text pin_code
+    smallint student_message_retention_years "default 1"
     uuid logo_file_id
   }
   users {
@@ -91,6 +96,20 @@ erDiagram
   permissions {
     uuid id PK
     text key UK
+    boolean grantable
+  }
+  data_erasure_requests {
+    uuid id PK
+    text case_reference UK
+    data_erasure_status status
+    text legal_outcome
+    text limitations
+  }
+  user_permission_grants {
+    uuid id PK
+    uuid user_id FK
+    uuid permission_id FK
+    timestamptz revoked_at "null = open"
   }
   role_permissions {
     uuid id PK
@@ -157,11 +176,14 @@ erDiagram
   users ||--o| students : "student login"
   students ||--o{ student_enrollments : "one per year"
   sections ||--o{ student_enrollments : contains
-  students ||--o{ student_guardians : "guardian mobiles"
-  student_guardians ||--o{ parent_student_links : "verified match"
+  students ||--o{ student_guardians : "legal guardians"
+  student_guardians ||--o{ guardian_link_codes : "single-use codes"
+  guardian_link_codes ||--o| parent_student_links : "redeemed into"
+  student_guardians ||--o{ parent_student_links : ""
   users ||--o{ parent_student_links : "parent account"
   students ||--o{ parent_student_links : "linked child"
   users |o--o{ staff : "employee login"
+  staff_designations |o--o{ staff : "non-teaching type"
   departments |o--o{ staff : groups
   staff ||--o{ teacher_subject_qualifications : "can teach"
   subjects ||--o{ teacher_subject_qualifications : ""
@@ -173,7 +195,9 @@ erDiagram
     uuid id PK
     uuid user_id UK
     text full_name
-    student_status status
+    text admission_number UK "required"
+    student_status status "admitted, active, inactive, transferred"
+    timestamptz admitted_at
     boolean management_approval_confirmed
     uuid confirmed_by_user_id
   }
@@ -191,18 +215,32 @@ erDiagram
     guardian_relation relation
     guardian_status status
   }
+  guardian_link_codes {
+    uuid id PK
+    uuid guardian_id FK
+    text code_hash "HMAC only"
+    timestamptz expires_at
+    smallint attempts
+    timestamptz used_at
+  }
   parent_student_links {
     uuid id PK
     uuid user_id FK
     uuid student_id FK
     uuid guardian_id FK
+    uuid link_code_id FK
     parent_link_status status
+  }
+  staff_designations {
+    uuid id PK
+    text name "unique per school"
+    record_status status "deactivate, never delete"
   }
   staff {
     uuid id PK
     uuid user_id FK
     staff_type staff_type
-    text designation "free text"
+    uuid designation_id FK "non-teaching only"
     staff_status status
   }
   departments {
@@ -232,7 +270,7 @@ erDiagram
   sections ||--o{ attendance_registers : "one per day"
   sections ||--o{ student_attendance : ""
   students ||--o{ student_attendance : "one per day"
-  student_attendance ||--o{ attendance_corrections : "admin fixes"
+  student_attendance ||--o{ attendance_corrections : "admin fixes (direct)"
   staff ||--o{ staff_attendance : "one per day"
   staff ||--o{ leave_requests : applies
   leave_types ||--o{ leave_requests : ""
@@ -258,6 +296,8 @@ erDiagram
     attendance_status old_status
     attendance_status new_status
     text reason
+    uuid corrected_by
+    timestamptz corrected_at
   }
   staff_attendance {
     uuid id PK
@@ -438,6 +478,12 @@ erDiagram
   sections |o--o{ notice_audiences : ""
   schools ||--o{ calendar_events : ""
   exams |o--o{ calendar_events : "exam dates"
+  sections |o--o{ student_messages : "section group"
+  academic_years ||--o{ student_messages : "retention unit"
+  staff ||--o{ student_message_section_grants : "non-teaching sender"
+  sections ||--o{ student_message_section_grants : "granted section"
+  schools ||--o{ student_messages : "school group"
+  students ||--o| student_message_read_states : "unread badge"
   users ||--o{ notifications : receives
   schools |o--o{ notifications : context
 
@@ -452,6 +498,29 @@ erDiagram
     uuid notice_id FK
     notice_audience_type audience_type
     staff_group staff_group
+  }
+  student_messages {
+    uuid id PK
+    student_message_audience audience "school or section"
+    uuid academic_year_id FK
+    uuid section_id FK "section only"
+    text body "1-2000 chars"
+    student_message_status status "published, withdrawn, archived"
+    uuid sender_user_id
+    role sender_role
+    timestamptz published_at
+  }
+  student_message_section_grants {
+    uuid id PK
+    uuid staff_id FK
+    uuid section_id FK
+    timestamptz revoked_at "null = open"
+  }
+  student_message_read_states {
+    uuid student_id PK
+    timestamptz school_read_at
+    uuid section_id
+    timestamptz section_read_at
   }
   calendar_events {
     uuid id PK
@@ -476,7 +545,7 @@ erDiagram
   }
 ```
 
-No conversations, messages, read receipts or notification preferences exist.
+Student messaging is one table and one-way: no conversations, participants, replies, reactions, per-message read receipts or group-membership rows (groups are resolved from active enrollments). No notification preferences exist.
 
 ## 9. Non-teaching staff
 
@@ -535,15 +604,12 @@ erDiagram
   }
 ```
 
-## 10. Import, files, documents, audit
+## 10. Import, files, audit
 
 ```mermaid
 erDiagram
   files ||--o{ import_jobs : "uploaded Excel"
   import_jobs ||--o{ import_rows : "row results"
-  files ||--o{ documents : ""
-  students |o--o{ documents : ""
-  staff |o--o{ documents : ""
 
   import_jobs {
     uuid id PK
@@ -563,12 +629,6 @@ erDiagram
     file_purpose purpose
     text storage_key UK "school_id/..."
     file_status status
-  }
-  documents {
-    uuid id PK
-    uuid file_id FK
-    text category
-    document_access access
   }
   audit_logs {
     uuid id PK

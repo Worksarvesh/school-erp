@@ -1,4 +1,6 @@
-// DRAFT V1.1 schema (Phase B design, 2026-11-07). NOT the live schema: apps/api/prisma/schema.prisma is.
+// DRAFT V1.2 schema (Phase B design 2026-11-07; scope update, decisions M1-D1 and C1-C4 approved 2026-11-18).
+// NOT the live schema:
+// apps/api/prisma/schema.prisma is.
 // Nothing here is migrated. Each build slice copies the models it needs into the live schema.
 //
 // Conventions (see README.md):
@@ -11,8 +13,11 @@
 // - Actor columns (created_by, marked_by, decided_by, ...) are plain user ids without a foreign key, as today.
 // - Partitioned tables (student_attendance, notifications, audit_logs) have the partition key in the primary key;
 //   partitions themselves are created in hand-written SQL.
-// - Removed from V1.1 on purpose: messaging, notification preferences, fees, admissions, discipline,
-//   IT staff/tickets/devices, transport, biometric, student documents, timetable rooms and breaks.
+// - Out of V1 on purpose (V1.2 scope, 2026-11-18): fees, admissions pipeline, discipline, IT staff (role, screens,
+//   tickets, devices), document management (staff, school and student documents), staff messaging, notification
+//   preferences, transport, biometric, timetable rooms and breaks.
+// - In V1 since V1.2: one-way student messaging (school group + class-section group, read-only for students),
+//   school-configured non-teaching designations, parent linking by single-use link code.
 
 generator client {
   provider     = "prisma-client"
@@ -28,20 +33,18 @@ datasource db {
 // Enums
 // ============================================================================================
 
-/// School roles. office_clerk, accountant and other_staff are DEPRECATED (no grants, not offered; dropped in a
-/// later contract migration). parent is never a membership role: it is the permission subject of the
-/// guardian-link path (CHECK on school_memberships).
+/// School roles (authorization). office_clerk, accountant and other_staff are REMOVED in V1.2: they still exist in
+/// the live enum and are dropped by a contract migration (README, migration plan). Job titles such as Librarian or
+/// Accountant are school-configured designations (staff_designations), never roles. parent is never a membership
+/// role: it is the permission subject of the guardian-link path (CHECK on school_memberships).
 enum Role {
   principal
   school_admin
   vice_principal
   teacher
   non_teaching_staff
-  office_clerk
-  accountant
   student
   parent
-  other_staff
 
   @@map("role")
 }
@@ -160,7 +163,14 @@ enum BloodGroup {
   @@map("blood_group")
 }
 
+/// Student LIFECYCLE status (separate from enrollment status and from the current section, which lives on the
+/// active student_enrollments row). Transitions (BUSINESS-RULES E15, enforced by trigger):
+///   create -> admitted; admitted -> active (first active enrollment); admitted -> inactive (admission cancelled);
+///   active -> inactive (left; active enrollment closed as withdrawn); active -> transferred (enrollment closed as
+///   transferred_out; terminal); inactive -> active (re-admission with a new enrollment).
+/// Invariant: status = active <=> exactly one active enrollment.
 enum StudentStatus {
+  admitted
   active
   inactive
   transferred
@@ -186,7 +196,7 @@ enum GuardianRelation {
   @@map("guardian_relation")
 }
 
-/// pending: entered by the student, not yet confirmed by Admin. Only active guardians create parent links.
+/// pending: entered by the student, not yet confirmed by Admin. Link codes are issued only for active guardians.
 enum GuardianStatus {
   pending
   active
@@ -203,6 +213,7 @@ enum GuardianSource {
   @@map("guardian_source")
 }
 
+/// A redeemed link code creates an active link at once (decision L1, 2026-11-18): no Admin confirmation step.
 enum ParentLinkStatus {
   active
   revoked
@@ -323,14 +334,17 @@ enum LessonPlanStatus {
   @@map("lesson_plan_status")
 }
 
+/// The canonical V1 approval types (seven; decision C1, 2026-11-18). Attendance correction is NOT an approval type:
+/// it is a direct, permission-controlled Admin operation (attendance_corrections). academic_year_change is decided
+/// by the Principal only (trigger on approval_requests).
 enum ApprovalType {
   teacher_addition
   teacher_update
   teacher_assignment_change
-  timetable
-  results
+  timetable_publication
+  results_publication
   staff_leave
-  academic_year_transition
+  academic_year_change
 
   @@map("approval_type")
 }
@@ -398,7 +412,8 @@ enum CalendarAudience {
   @@map("calendar_audience")
 }
 
-/// Push + in-app only. No "new message" event: messaging is not in V1.
+/// Push + in-app only. Student messages are NOT notifications rows: the worker sends a push from the outbox event
+/// student_message.published and the app reads the feed from student_messages. No staff-messaging events.
 enum NotificationEvent {
   timetable_published
   timetable_updated
@@ -499,9 +514,9 @@ enum ImportRowOutcome {
   @@map("import_row_outcome")
 }
 
+/// Infrastructure file handling only (document management is out of V1).
 enum FilePurpose {
   school_logo
-  admin_document
   import_file
 
   @@map("file_purpose")
@@ -513,14 +528,6 @@ enum FileStatus {
   deleted
 
   @@map("file_status")
-}
-
-/// Admin-side documents only. Students and parents never see documents in V1.
-enum DocumentAccess {
-  leadership
-  admin_only
-
-  @@map("document_access")
 }
 
 /// Drives role-scoped audit reads: VP cannot read admin_account or branding rows.
@@ -551,9 +558,45 @@ enum AuditModule {
   calendar
   non_teaching
   imports
-  documents
+  messaging
 
   @@map("audit_module")
+}
+
+/// school: every student of the school whose status is admitted or active. section: students whose ACTIVE
+/// enrollment is in student_messages.section_id. These are the only two group types.
+enum StudentMessageAudience {
+  school
+  section
+
+  @@map("student_message_audience")
+}
+
+/// Exceptional data-erasure request (decision C4). received -> verified -> legal_review -> approved | refused;
+/// approved -> completed | partially_completed. refused also covers "legally restricted".
+enum DataErasureStatus {
+  received
+  verified
+  legal_review
+  approved
+  refused
+  completed
+  partially_completed
+
+  @@map("data_erasure_status")
+}
+
+/// Message lifecycle (decision M5; README "Student message lifecycle"). No drafts or scheduling in V1.
+/// published: active, visible to its audience. withdrawn: retracted by the sender or a moderator, hidden from
+/// students at once, kept. archived: set by the retention job after the school's retention window, hidden from all
+/// school routes, kept. Scheduled archival never deletes. The only deletion is the exceptional, Super Admin-only
+/// erasure tied to an approved data_erasure_requests row (decision C4).
+enum StudentMessageStatus {
+  published
+  withdrawn
+  archived
+
+  @@map("student_message_status")
 }
 
 // ============================================================================================
@@ -563,24 +606,27 @@ enum AuditModule {
 /// The tenant. code is sch + 4+ digits from the global sequence school_code_seq (CHECK code ~ '^sch[0-9]{4,}$').
 /// Branding (name, logo, address, contact) is managed by the Principal and shown in the Student App.
 model School {
-  id           String       @id @default(uuid(7)) @db.Uuid
-  name         String
-  code         String       @unique
-  udiseCode    String?      @unique @map("udise_code")
-  status       SchoolStatus @default(active)
-  shardKey     Int          @default(0) @map("shard_key") @db.SmallInt
-  addressLine  String?      @map("address_line")
-  city         String?
-  state        String?
-  pinCode      String?      @map("pin_code")
-  contactPhone String?      @map("contact_phone")
-  contactEmail String?      @map("contact_email")
-  logoFileId   String?      @map("logo_file_id") @db.Uuid
-  timezone     String       @default("Asia/Kolkata")
-  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime     @updatedAt @map("updated_at") @db.Timestamptz
-  createdBy    String?      @map("created_by") @db.Uuid
-  updatedBy    String?      @map("updated_by") @db.Uuid
+  id                           String       @id @default(uuid(7)) @db.Uuid
+  name                         String
+  code                         String       @unique
+  udiseCode                    String?      @unique @map("udise_code")
+  status                       SchoolStatus @default(active)
+  shardKey                     Int          @default(0) @map("shard_key") @db.SmallInt
+  addressLine                  String?      @map("address_line")
+  city                         String?
+  state                        String?
+  pinCode                      String?      @map("pin_code")
+  contactPhone                 String?      @map("contact_phone")
+  contactEmail                 String?      @map("contact_email")
+  logoFileId                   String?      @map("logo_file_id") @db.Uuid
+  timezone                     String       @default("Asia/Kolkata")
+  /// Student messages stay visible for this many academic years (counting the year they were sent in), then are
+  /// archived, never deleted by the schedule. Approved default 1 (decision M5); configurable per school; CHECK 1..5.
+  studentMessageRetentionYears Int          @default(1) @map("student_message_retention_years") @db.SmallInt
+  createdAt                    DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                    DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy                    String?      @map("created_by") @db.Uuid
+  updatedBy                    String?      @map("updated_by") @db.Uuid
 
   memberships          SchoolMembership[]
   usernameSequences    UsernameSequence[]
@@ -592,10 +638,14 @@ model School {
   students             Student[]
   studentFieldDefs     StudentFieldDefinition[]
   departments          Department[]
+  staffDesignations    StaffDesignation[]
   staff                Staff[]
   leaveTypes           LeaveType[]
   approvalRequests     ApprovalRequest[]
   notices              Notice[]
+  studentMessages      StudentMessage[]
+  userPermissionGrants UserPermissionGrant[]
+  erasureRequests      DataErasureRequest[]
   calendarEvents       CalendarEvent[]
   notifications        Notification[]
   inventoryItems       InventoryItem[]
@@ -622,16 +672,17 @@ model User {
   createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz
 
-  memberships   SchoolMembership[]
-  credential    Credential?
-  sessions      Session[]
-  pushTokens    PushToken[]
-  platformStaff PlatformStaff?
-  parentLinks   ParentStudentLink[]
-  student       Student?
-  staff         Staff[]
-  verifications SchoolVerificationRequest[]
-  notifications Notification[]
+  memberships      SchoolMembership[]
+  credential       Credential?
+  sessions         Session[]
+  pushTokens       PushToken[]
+  platformStaff    PlatformStaff?
+  parentLinks      ParentStudentLink[]
+  student          Student?
+  staff            Staff[]
+  verifications    SchoolVerificationRequest[]
+  notifications    Notification[]
+  permissionGrants UserPermissionGrant[]
 
   @@map("users")
 }
@@ -788,6 +839,38 @@ model PlatformStaff {
   @@map("platform_staff")
 }
 
+/// A verified, documented data-erasure request (decision C4). Platform-owned; read and written only on the platform
+/// path by a Super Admin (RLS P with current_platform_role() = 'super_admin'); schools never see it. Erasing a
+/// student message is possible ONLY through SECURITY DEFINER platform_erase_student_message(request_id, message_id,
+/// reason), which requires an active super_admin platform_staff row, status = approved, the message's school =
+/// school_id, and writes an append-only audit row (case reference, reason, actor; never the body) in the same
+/// transaction. legal_outcome must be recorded before approved (CHECK). completed is set only when every listed
+/// store was handled; otherwise partially_completed with limitations NOT NULL (CHECK): erasure is never claimed for
+/// stores it could not reach (backups, devices that received a push).
+model DataErasureRequest {
+  id              String            @id @default(uuid(7)) @db.Uuid
+  schoolId        String?           @map("school_id") @db.Uuid
+  caseReference   String            @unique @map("case_reference")
+  requestSource   String            @map("request_source")
+  scope           String
+  status          DataErasureStatus @default(received)
+  verifiedBy      String?           @map("verified_by") @db.Uuid
+  verifiedAt      DateTime?         @map("verified_at") @db.Timestamptz
+  legalReviewedBy String?           @map("legal_reviewed_by") @db.Uuid
+  legalReviewedAt DateTime?         @map("legal_reviewed_at") @db.Timestamptz
+  legalOutcome    String?           @map("legal_outcome")
+  limitations     String?
+  completedAt     DateTime?         @map("completed_at") @db.Timestamptz
+  createdBy       String            @map("created_by") @db.Uuid
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  school School? @relation(fields: [schoolId], references: [id])
+
+  @@index([status, createdAt])
+  @@map("data_erasure_requests")
+}
+
 /// One role for one user in one school (several roles per person allowed; role switching = choosing one).
 /// CHECK role <> 'parent'. A teacher's membership is invited until TEACHER_ADDITION is approved.
 model SchoolMembership {
@@ -810,13 +893,18 @@ model SchoolMembership {
   @@map("school_memberships")
 }
 
+/// grantable: may be given to an individual member through user_permission_grants (reference data, set by the
+/// migration that seeds the key). V1 grantable keys: inventory.manage (SEED-PLAN). Never grantable: leadership,
+/// account, credential, approval-decision, branding and audit keys.
 model Permission {
   id          String   @id @default(uuid(7)) @db.Uuid
   key         String   @unique
   description String
+  grantable   Boolean  @default(false)
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  roles RolePermission[]
+  roles      RolePermission[]
+  userGrants UserPermissionGrant[]
 
   @@map("permissions")
 }
@@ -831,6 +919,33 @@ model RolePermission {
 
   @@unique([role, permissionId])
   @@map("role_permissions")
+}
+
+/// Explicit grant of ONE grantable permission to ONE member of ONE school (V1.2: e.g. inventory.manage for a named
+/// non-teaching member; designations never grant anything). The guard allows a route when the caller's active
+/// membership roles grant the key OR an open grant row exists for (school, user, key); both are read on every
+/// request, so a revoked grant stops authorizing at once. Granted and revoked by `permissions.grant` (Admin),
+/// audited; a trigger refuses permissions with grantable = false and users without an active staff membership.
+/// Partial unique (SQL): one open grant per (school_id, user_id, permission_id) WHERE revoked_at IS NULL.
+/// Never deleted: revoke instead.
+model UserPermissionGrant {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  schoolId     String    @map("school_id") @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  permissionId String    @map("permission_id") @db.Uuid
+  reason       String?
+  grantedBy    String    @map("granted_by") @db.Uuid
+  grantedAt    DateTime  @default(now()) @map("granted_at") @db.Timestamptz
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz
+  revokedBy    String?   @map("revoked_by") @db.Uuid
+  revokeReason String?   @map("revoke_reason")
+
+  school     School     @relation(fields: [schoolId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@index([schoolId, userId, revokedAt])
+  @@map("user_permission_grants")
 }
 
 // ============================================================================================
@@ -857,7 +972,7 @@ model AcademicYear {
   timetables  Timetable[]
   exams       Exam[]
   homework    Homework[]
-  documents   Document[]
+  messages    StudentMessage[]
 
   @@unique([schoolId, id])
   @@unique([schoolId, name])
@@ -923,8 +1038,8 @@ model Section {
   updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz
   createdBy      String?      @map("created_by") @db.Uuid
 
-  academicYear    AcademicYear         @relation(fields: [schoolId, academicYearId], references: [schoolId, id])
-  class           Class                @relation(fields: [schoolId, classId], references: [schoolId, id])
+  academicYear    AcademicYear                 @relation(fields: [schoolId, academicYearId], references: [schoolId, id])
+  class           Class                        @relation(fields: [schoolId, classId], references: [schoolId, id])
   enrollments     StudentEnrollment[]
   assignments     TeacherAssignment[]
   registers       AttendanceRegister[]
@@ -934,6 +1049,9 @@ model Section {
   homework        Homework[]
   lessonPlans     LessonPlan[]
   noticeAudiences NoticeAudience[]
+  studentMessages StudentMessage[]
+  messageReads    StudentMessageReadState[]
+  messageGrants   StudentMessageSectionGrant[]
 
   @@unique([schoolId, id])
   @@unique([schoolId, academicYearId, classId, name])
@@ -984,17 +1102,18 @@ model ClassSubject {
 // ============================================================================================
 
 /// One student in one school (Indian model). Login account = user_id (username sch0001s0001).
-/// Added by Admin only after offline management approval: CHECK management_approval_confirmed = true.
+/// Added by Admin only after offline management approval: CHECK management_approval_confirmed = true. Creation is
+/// the admission: status starts as admitted (decision ST1); see the StudentStatus transitions.
 /// Optional health fields and hobbies never block app use.
 model Student {
   id                          String        @id @default(uuid(7)) @db.Uuid
   schoolId                    String        @map("school_id") @db.Uuid
   userId                      String        @unique @map("user_id") @db.Uuid
   fullName                    String        @map("full_name")
-  admissionNumber             String?       @map("admission_number")
+  admissionNumber             String        @map("admission_number")
   dateOfBirth                 DateTime?     @map("date_of_birth") @db.Date
   gender                      Gender?
-  status                      StudentStatus @default(active)
+  status                      StudentStatus @default(admitted)
   studentMobile               String?       @map("student_mobile")
   email                       String?
   address                     String?
@@ -1006,6 +1125,9 @@ model Student {
   hobbies                     String?
   customFields                Json          @default("{}") @map("custom_fields")
   profileCompletedAt          DateTime?     @map("profile_completed_at") @db.Timestamptz
+  /// When the student was admitted (creation) or re-admitted (inactive -> active). School-group messages are shown
+  /// from this moment (decision C3); reset only by re-admission.
+  admittedAt                  DateTime      @default(now()) @map("admitted_at") @db.Timestamptz
   managementApprovalConfirmed Boolean       @map("management_approval_confirmed")
   confirmedByUserId           String        @map("confirmed_by_user_id") @db.Uuid
   confirmedAt                 DateTime      @map("confirmed_at") @db.Timestamptz
@@ -1014,8 +1136,8 @@ model Student {
   createdBy                   String?       @map("created_by") @db.Uuid
   updatedBy                   String?       @map("updated_by") @db.Uuid
 
-  school                School                 @relation(fields: [schoolId], references: [id])
-  user                  User                   @relation(fields: [userId], references: [id])
+  school                School                   @relation(fields: [schoolId], references: [id])
+  user                  User                     @relation(fields: [userId], references: [id])
   enrollments           StudentEnrollment[]
   guardians             StudentGuardian[]
   parentLinks           ParentStudentLink[]
@@ -1024,7 +1146,8 @@ model Student {
   marks                 MarksEntry[]
   results               StudentResult[]
   homeworkCompletions   HomeworkCompletion[]
-  documents             Document[]
+  linkCodes             GuardianLinkCode[]
+  messageReadState      StudentMessageReadState?
 
   @@unique([schoolId, id])
   @@unique([schoolId, admissionNumber])
@@ -1077,8 +1200,9 @@ model StudentEnrollment {
   @@map("student_enrollments")
 }
 
-/// Guardian contact on the student record. mobile (E.164) is what parent OTP login matches.
-/// Only status = active rows create parent links; student-entered rows start as pending.
+/// Guardian (legal relationship) on the student record. mobile (E.164) is contact data only: it never grants access
+/// (V1.2: parent access comes only from redeeming a guardian_link_codes row). Student-entered rows start as pending;
+/// link codes are issued only for active rows.
 model StudentGuardian {
   id          String           @id @default(uuid(7)) @db.Uuid
   schoolId    String           @map("school_id") @db.Uuid
@@ -1096,39 +1220,78 @@ model StudentGuardian {
   createdBy   String?          @map("created_by") @db.Uuid
   updatedBy   String?          @map("updated_by") @db.Uuid
 
-  student Student             @relation(fields: [schoolId, studentId], references: [schoolId, id])
-  links   ParentStudentLink[]
+  student   Student             @relation(fields: [schoolId, studentId], references: [schoolId, id])
+  links     ParentStudentLink[]
+  linkCodes GuardianLinkCode[]
 
   @@unique([schoolId, id])
   @@unique([schoolId, studentId, mobile])
-  @@index([mobile, status])
   @@map("student_guardians")
 }
 
-/// Parent user <-> student, derived from a verified OTP mobile matching an active guardian mobile.
-/// Created/refreshed at parent login; revoked when the guardian is removed or the mobile changes.
+/// Parent user <-> student. Created only when a parent with an OTP-verified mobile redeems a guardian_link_codes
+/// row (SECURITY DEFINER auth_redeem_link_code). Revoked by Admin, by the parent, or when the guardian row is
+/// removed (same transaction, audited). Revoked rows are kept; re-linking needs a new code.
 model ParentStudentLink {
   id           String           @id @default(uuid(7)) @db.Uuid
   schoolId     String           @map("school_id") @db.Uuid
   userId       String           @map("user_id") @db.Uuid
   studentId    String           @map("student_id") @db.Uuid
   guardianId   String           @map("guardian_id") @db.Uuid
+  linkCodeId   String           @map("link_code_id") @db.Uuid
   status       ParentLinkStatus @default(active)
   linkedAt     DateTime         @default(now()) @map("linked_at") @db.Timestamptz
   revokedAt    DateTime?        @map("revoked_at") @db.Timestamptz
+  revokedBy    String?          @map("revoked_by") @db.Uuid
   revokeReason String?          @map("revoke_reason")
 
-  user     User            @relation(fields: [userId], references: [id])
-  student  Student         @relation(fields: [schoolId, studentId], references: [schoolId, id])
-  guardian StudentGuardian @relation(fields: [schoolId, guardianId], references: [schoolId, id])
+  user     User             @relation(fields: [userId], references: [id])
+  student  Student          @relation(fields: [schoolId, studentId], references: [schoolId, id])
+  guardian StudentGuardian  @relation(fields: [schoolId, guardianId], references: [schoolId, id])
+  linkCode GuardianLinkCode @relation(fields: [schoolId, linkCodeId], references: [schoolId, id])
 
   @@unique([userId, guardianId])
+  @@unique([schoolId, linkCodeId])
   @@index([userId, status])
   @@index([schoolId, studentId])
   @@map("parent_student_links")
 }
 
-/// Configurable department labels (non-teaching dashboards, tasks, assets).
+/// Single-use, time-limited code that lets one parent account link to one student through one guardian row.
+/// Issued by Principal or Admin (guardians.link_codes.issue); the code (10 chars, unambiguous alphabet) is shown once and only
+/// HMAC-SHA256(code, LINK_CODE_HASH_SECRET) is stored. Redeemed with school code + admission number + code by a
+/// signed-in parent whose mobile is OTP-verified, through SECURITY DEFINER auth_redeem_link_code (constant-time
+/// compare, attempts counted per code; locked at max_attempts). Lifetime 7 days (decision L3). Issue, revoke,
+/// redemption and every failed redemption are audited (failures without the typed code).
+/// Partial unique (hand-written SQL): one open code per guardian WHERE used_at IS NULL AND revoked_at IS NULL.
+/// The app role has no DELETE; codes are kept as history.
+model GuardianLinkCode {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  schoolId     String    @map("school_id") @db.Uuid
+  studentId    String    @map("student_id") @db.Uuid
+  guardianId   String    @map("guardian_id") @db.Uuid
+  codeHash     String    @map("code_hash")
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz
+  attempts     Int       @default(0) @db.SmallInt
+  maxAttempts  Int       @default(5) @map("max_attempts") @db.SmallInt
+  usedAt       DateTime? @map("used_at") @db.Timestamptz
+  usedByUserId String?   @map("used_by_user_id") @db.Uuid
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz
+  revokedBy    String?   @map("revoked_by") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  createdBy    String    @map("created_by") @db.Uuid
+
+  student  Student            @relation(fields: [schoolId, studentId], references: [schoolId, id])
+  guardian StudentGuardian    @relation(fields: [schoolId, guardianId], references: [schoolId, id])
+  link     ParentStudentLink?
+
+  @@unique([schoolId, id])
+  @@index([schoolId, studentId])
+  @@index([schoolId, guardianId])
+  @@map("guardian_link_codes")
+}
+
+/// Configurable department labels (non-teaching dashboards, tasks, assets). Not a designation and not a role.
 model Department {
   id        String       @id @default(uuid(7)) @db.Uuid
   schoolId  String       @map("school_id") @db.Uuid
@@ -1150,16 +1313,42 @@ model Department {
   @@map("departments")
 }
 
+/// School-configured non-teaching staff types (examples only: Librarian, Receptionist, Lab Assistant). A designation
+/// is NOT an authorization role: no permission is ever derived from it (permissions come only from
+/// school_memberships.role -> role_permissions). Never deleted: the app role has no DELETE and staff points at it
+/// with ON DELETE RESTRICT; deactivate instead (status = inactive). Only active rows can be chosen for a new or
+/// changed staff member (trigger on staff). Unique name per school, case-insensitive (hand-written unique index on
+/// (school_id, lower(name))). Renames and (de)activations are audited with old/new values.
+model StaffDesignation {
+  id        String       @id @default(uuid(7)) @db.Uuid
+  schoolId  String       @map("school_id") @db.Uuid
+  name      String
+  status    RecordStatus @default(active)
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy String?      @map("created_by") @db.Uuid
+  updatedBy String?      @map("updated_by") @db.Uuid
+
+  school School  @relation(fields: [schoolId], references: [id])
+  staff  Staff[]
+
+  @@unique([schoolId, id])
+  @@index([schoolId, status])
+  @@map("staff_designations")
+}
+
 /// Every school employee with a username (VP, Admin, teaching, non-teaching; Principal optional).
-/// designation is FREE TEXT. user_id stays null until the account exists: for teachers, until TEACHER_ADDITION
-/// is approved (credentials only after approval).
+/// designation_id points at the school's own staff_designations row (composite FK, so never another school's).
+/// CHECK (staff_type = 'non_teaching') = (designation_id IS NOT NULL). Designation changes are audited (old/new id).
+/// user_id stays null until the account exists: for teachers, until TEACHER_ADDITION is approved (credentials only
+/// after approval).
 model Staff {
   id                 String      @id @default(uuid(7)) @db.Uuid
   schoolId           String      @map("school_id") @db.Uuid
   userId             String?     @map("user_id") @db.Uuid
   fullName           String      @map("full_name")
   staffType          StaffType   @map("staff_type")
-  designation        String
+  designationId      String?     @map("designation_id") @db.Uuid
   departmentId       String?     @map("department_id") @db.Uuid
   mobile             String?
   email              String?
@@ -1173,6 +1362,7 @@ model Staff {
 
   school             School                        @relation(fields: [schoolId], references: [id])
   user               User?                         @relation(fields: [userId], references: [id])
+  designation        StaffDesignation?             @relation(fields: [schoolId, designationId], references: [schoolId, id])
   department         Department?                   @relation(fields: [schoolId, departmentId], references: [schoolId, id])
   qualifications     TeacherSubjectQualification[]
   assignments        TeacherAssignment[]
@@ -1188,11 +1378,12 @@ model Staff {
   inventoryMovements InventoryMovement[]
   homework           Homework[]
   lessonPlans        LessonPlan[]
-  documents          Document[]
+  messageGrants      StudentMessageSectionGrant[]
 
   @@unique([schoolId, id])
   @@unique([schoolId, userId])
   @@index([schoolId, staffType, status])
+  @@index([schoolId, designationId])
   @@map("staff")
 }
 
@@ -1777,6 +1968,99 @@ model NoticeAudience {
   @@map("notice_audiences")
 }
 
+/// One-way message from staff to students (V1.2). Students read; they never send, reply, react or comment.
+/// Groups are NOT stored: audience school = every admitted or active student of the school; audience section =
+/// students whose active enrollment is in section_id. The reader's groups are resolved on the server from their
+/// student record and active enrollment. academic_year_id = the school's active year when sent (retention unit).
+/// Who may INSERT (decision M1) is enforced in the database by the restrictive policy R-send through
+/// can_publish_student_message(audience, section_id), evaluated at insert time, so a closed assignment or a revoked
+/// grant stops authorizing new messages at once: school audience = principal, vice_principal or school_admin
+/// membership; section audience = those three roles for any section, a teacher with an open teacher_assignments row
+/// for that section, or a non-teaching member with an open student_message_section_grants row for that section.
+/// Student visibility (decisions M4, C3; policy R-msg): school group = published rows with published_at >=
+/// students.admitted_at, for admitted and active students (so an admitted student without an enrollment still sees
+/// school-wide messages); section group = published rows of the CURRENT active section with published_at >= that
+/// enrollment's started_on, and nothing without an active enrollment. Earlier sections' messages are never shown.
+/// Audit rows for publish/withdraw/archive/erase never contain the body.
+/// CHECK (audience = 'school' AND section_id IS NULL) OR (audience = 'section' AND section_id IS NOT NULL).
+/// Text only, body 1..2000 characters after trim (CHECK). No attachments, drafts or scheduling in V1.
+/// Never edited after publishing: a wrong message is withdrawn (status, withdrawn_at, withdrawn_by and a non-blank
+/// withdraw_reason, all set together by CHECK) and disappears from students' feeds. sender_role is the membership
+/// role used to send (shown to students; audit). Who may send to which group: SEED-PLAN + OPEN-QUESTIONS M1.
+model StudentMessage {
+  id             String                 @id @default(uuid(7)) @db.Uuid
+  schoolId       String                 @map("school_id") @db.Uuid
+  academicYearId String                 @map("academic_year_id") @db.Uuid
+  audience       StudentMessageAudience
+  sectionId      String?                @map("section_id") @db.Uuid
+  body           String
+  status         StudentMessageStatus   @default(published)
+  senderUserId   String                 @map("sender_user_id") @db.Uuid
+  senderRole     Role                   @map("sender_role")
+  publishedAt    DateTime               @default(now()) @map("published_at") @db.Timestamptz
+  withdrawnAt    DateTime?              @map("withdrawn_at") @db.Timestamptz
+  withdrawnBy    String?                @map("withdrawn_by") @db.Uuid
+  withdrawReason String?                @map("withdraw_reason")
+  createdAt      DateTime               @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime               @updatedAt @map("updated_at") @db.Timestamptz
+
+  school       School       @relation(fields: [schoolId], references: [id])
+  academicYear AcademicYear @relation(fields: [schoolId, academicYearId], references: [schoolId, id])
+  section      Section?     @relation(fields: [schoolId, sectionId], references: [schoolId, id])
+
+  @@unique([schoolId, id])
+  @@index([schoolId, academicYearId, status])
+  @@index([schoolId, audience, status, publishedAt(sort: Desc)])
+  @@index([schoolId, sectionId, status, publishedAt(sort: Desc)])
+  @@index([schoolId, senderUserId, publishedAt(sort: Desc)])
+  @@map("student_messages")
+}
+
+/// Unread badge (decision M3): one row per student holding the last time they opened each of their two groups.
+/// Unread count = published messages visible to the student with published_at > the matching *_read_at.
+/// Not a read receipt: no per-message rows; senders and staff can never read it (RLS R-self-only denies every
+/// member context, not just the API). section_read_at counts only while section_id equals the student's current
+/// active section (reset on change).
+model StudentMessageReadState {
+  schoolId      String    @map("school_id") @db.Uuid
+  studentId     String    @map("student_id") @db.Uuid
+  schoolReadAt  DateTime? @map("school_read_at") @db.Timestamptz
+  sectionId     String?   @map("section_id") @db.Uuid
+  sectionReadAt DateTime? @map("section_read_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  student Student  @relation(fields: [schoolId, studentId], references: [schoolId, id])
+  section Section? @relation(fields: [schoolId, sectionId], references: [schoolId, id])
+
+  @@id([schoolId, studentId])
+  @@map("student_message_read_states")
+}
+
+/// Admin grant letting ONE non-teaching staff member publish to ONE class-section group (decision M1). Non-teaching
+/// staff have no section access otherwise and never get school-wide access. Trigger: the staff row must be
+/// staff_type = non_teaching and active. Partial unique (SQL): one open grant per (school_id, staff_id, section_id)
+/// WHERE revoked_at IS NULL. Revoking sets revoked_* and stops new messages at once (R-send reads it at insert).
+/// Sections are per academic year, so grants end with the year. Never deleted; audited.
+model StudentMessageSectionGrant {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  schoolId     String    @map("school_id") @db.Uuid
+  staffId      String    @map("staff_id") @db.Uuid
+  sectionId    String    @map("section_id") @db.Uuid
+  grantedBy    String    @map("granted_by") @db.Uuid
+  grantedAt    DateTime  @default(now()) @map("granted_at") @db.Timestamptz
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz
+  revokedBy    String?   @map("revoked_by") @db.Uuid
+  revokeReason String?   @map("revoke_reason")
+
+  staff   Staff   @relation(fields: [schoolId, staffId], references: [schoolId, id])
+  section Section @relation(fields: [schoolId, sectionId], references: [schoolId, id])
+
+  @@unique([schoolId, id])
+  @@index([schoolId, staffId, revokedAt])
+  @@index([schoolId, sectionId, revokedAt])
+  @@map("student_message_section_grants")
+}
+
 /// Holidays, exams, meetings, activities (holidays are calendar events, not a separate table).
 model CalendarEvent {
   id          String            @id @default(uuid(7)) @db.Uuid
@@ -2000,7 +2284,7 @@ model MaintenanceRequest {
 }
 
 // ============================================================================================
-// Import, files, documents
+// Import and files
 // ============================================================================================
 
 /// One Excel upload (3 templates). A teaching-staff import raises one TEACHER_ADDITION approval for the job;
@@ -2065,34 +2349,9 @@ model File {
 
   school     School      @relation(fields: [schoolId], references: [id])
   importJobs ImportJob[]
-  documents  Document[]
 
   @@unique([schoolId, id])
   @@map("files")
-}
-
-/// Admin-side documents (not student-facing). Optional link to a student, staff member or year.
-model Document {
-  id             String         @id @default(uuid(7)) @db.Uuid
-  schoolId       String         @map("school_id") @db.Uuid
-  fileId         String         @map("file_id") @db.Uuid
-  title          String
-  category       String
-  studentId      String?        @map("student_id") @db.Uuid
-  staffId        String?        @map("staff_id") @db.Uuid
-  academicYearId String?        @map("academic_year_id") @db.Uuid
-  access         DocumentAccess @default(admin_only)
-  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz
-  createdBy      String?        @map("created_by") @db.Uuid
-
-  file         File          @relation(fields: [schoolId, fileId], references: [schoolId, id])
-  student      Student?      @relation(fields: [schoolId, studentId], references: [schoolId, id])
-  staff        Staff?        @relation(fields: [schoolId, staffId], references: [schoolId, id])
-  academicYear AcademicYear? @relation(fields: [schoolId, academicYearId], references: [schoolId, id])
-
-  @@index([schoolId, category])
-  @@map("documents")
 }
 
 // ============================================================================================

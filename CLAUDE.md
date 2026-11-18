@@ -4,9 +4,9 @@ Rules for every session working in this repo. Source of truth: **System design v
 
 ## Current step
 
-**Slice 2B (principal OTP login, registration, verifier approval): done** on branch `feat/principal-verification`, stacked on `docs/v1.1-audit` (V1.1 audit + Phase B schema design), which is stacked on `feat/auth-sessions` (slice 2A). None merged yet: merge 2A, then docs, then 2B (rebase each onto `main`). V1.1 (`docs/decisions.md` "V1.1 decisions", `docs/system-design/schema/`) overrides the slice list and rules below where they conflict (parent linking, login methods, fees, roles); the full rewrite of this file waits for schema approval. **Next: slice 3.** Wait for the user's go-ahead; plan first and get approval before coding.
+**Slices 1, 2A and 2B are merged into `main`.** Phase 0 audit done (2026-11-18). V1.2 scope decisions (2026-11-18, `docs/decisions.md` "V1.2 scope decisions") are applied to the draft schema and its documents on branch `docs/v1.2-scope-update` (docs only). V1.2 overrides V1.1 and the rules below where they conflict (parent linking by link code, student messaging in, IT Staff / discipline / documents / fees out, school-configured designations, eight approval types). Open decisions blocking parts of the next slices: `docs/system-design/schema/OPEN-QUESTIONS.md` (M1 student-message sender scope, L1-L3, AC1, AY1, ST1, D1). **Next: Phase 1 sign-off, then slice 3.** Wait for the user's go-ahead; plan first and get approval before coding.
 
-Slices (V1.1 order): Step 1 tenancy core (done) · 2A credentials/sessions/audit/error shape (done) · 2B principal OTP + verification requests + verifier approval (done) · 3 school setup (academic years, classes, sections, subjects, staff, usernames, temp credentials, approvals engine; refuse OTP login for username accounts) · 4 students, enrollments, guardians, parent mobile+OTP links · 5 attendance (bulk, idempotent, monthly partitions), notices, notifications via outbox + BullMQ worker + push tokens · 6 homework, documents, non-teaching (no fees in V1.1) · 7 timetable, exams, marks entry, results · 8 hardening.
+Slices (V1.2 order): Step 1 tenancy core (done) · 2A credentials/sessions/audit/error shape (done) · 2B principal OTP + verification requests + verifier approval (done) · 3 school setup (academic years, classes, sections, subjects, staff, staff designations, usernames, temp credentials, approvals engine with the eight types; refuse OTP login for username accounts) · 4 students (admission number required), enrollments, guardians, parent link codes · 5 attendance (bulk, idempotent, monthly partitions), notices, one-way student messaging, notifications via outbox + BullMQ worker + push tokens · 6 homework, non-teaching (no fees, no documents in V1) · 7 timetable, substitutions (Admin and VP), exams, marks entry, results · 8 hardening.
 
 Workflow per slice: new branch `feat/<slice>` from an up-to-date `main` → short plan + design doubts, wait for approval → build (migrations, RLS, permissions seeded by migration, endpoints, DTOs, pagination, errors, audit, OpenAPI) → unit + integration tests (isolation suite must cover new routes/tables) → seed script updated → format/lint/typecheck/test/build green → update this marker, `docs/decisions.md`, `docs/api/<slice>.md` (PowerShell `Invoke-RestMethod` examples) → small commits → progress report, then stop.
 
@@ -34,7 +34,7 @@ Update this marker when a step starts or finishes.
 ## Architecture (design sections 2, 8)
 
 - **Modular monolith**: one NestJS API plus one worker, same codebase, different entrypoints. No microservices.
-- **Modules own their tables.** No module reads or writes another module's tables. Modules: `auth`, `tenancy`, `users`, `students`, `guardians`, `attendance`, `homework`, `notices`, `fees`, `notifications`, `files`, `audit`.
+- **Modules own their tables.** No module reads or writes another module's tables. Modules: `auth`, `tenancy`, `users`, `platform`, `academics`, `staff`, `students`, `guardians`, `attendance`, `timetable`, `exams`, `homework`, `approvals`, `notices`, `messaging` (one-way student messaging only), `notifications`, `non_teaching`, `files`, `audit`. No `fees`, `documents`, `discipline` or IT-staff module in V1.
 - **Cross-module calls** go through exported service interfaces, or domain events via the **outbox** (`outbox_events` written in the same transaction as the data change, then relayed to the queue). No shared repositories.
 - MVP queue: BullMQ on Redis. All jobs are idempotent, with retry and dead-letter handling.
 
@@ -62,7 +62,7 @@ Update this marker when a step starts or finishes.
 ## Identity and authorization (design section 4)
 
 - `users` are global (one person, one account). Access comes from `school_memberships(user_id, school_id, role, status)`.
-- Roles: principal, school_admin, vice_principal, teacher, non_teaching_staff, office_clerk, accountant, student, parent, other_staff.
+- Roles: principal, school_admin, vice_principal, teacher, non_teaching_staff, student, parent. `office_clerk`, `accountant`, `other_staff` remain in the live enum only until the V1.2 contract migration and get no grants. Non-teaching job titles are school-configured designations (`staff_designations`) and never grant permissions. There is no IT Staff role.
 - **Guards check permissions, never role names.** Permissions come from a `role -> permission` table (seeded defaults, per-school overrides later).
 - Passwords use argon2id. Access JWT lasts 15 min. Refresh tokens rotate and are stored hashed in `sessions`, with reuse detection. OTP only for registration, recovery and step-up.
 - Generic error messages (no account enumeration). Rate limits per IP, phone and account.
@@ -101,11 +101,11 @@ Update this marker when a step starts or finishes.
 ## Build order (design section 15)
 
 1. **Tenancy core**: schools, users, memberships, permissions, RLS, isolation test suite. Done.
-2. Auth and sessions, OTP, principal registration and verification. <- in progress (2A done; OTP deferred)
+2. Auth and sessions, OTP, principal registration and verification. Done (2A, 2B).
 3. School setup: sessions, classes, sections, subjects, staff.
 4. Students, enrollments, guardian linking.
 5. Attendance, notices, push notifications.
-6. Homework and submissions, basic fees records.
+6. Homework (completion only). Fees are out of V1 (V1.2).
 7. Hardening: audit, load test, backup restore test, security review.
 
 ## Open decisions (design section 16), do not decide alone

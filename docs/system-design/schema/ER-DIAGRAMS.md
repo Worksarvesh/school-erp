@@ -18,6 +18,7 @@ erDiagram
   school_verification_requests |o--o| school_verification_requests : resubmission
   schools ||--o{ username_sequences : "e and s counters"
   schools |o--o{ credential_issuances : "temp passwords issued"
+  schools |o--o{ data_erasure_requests : "platform erasure cases"
   permissions ||--o{ role_permissions : granted
   permissions ||--o{ user_permission_grants : "grantable keys only"
   users ||--o{ user_permission_grants : "explicit grant"
@@ -28,7 +29,7 @@ erDiagram
     text code UK
     school_status status
     text pin_code
-    smallint student_message_retention_years "proposed default 1"
+    smallint student_message_retention_years "default 1"
     uuid logo_file_id
   }
   users {
@@ -96,6 +97,13 @@ erDiagram
     uuid id PK
     text key UK
     boolean grantable
+  }
+  data_erasure_requests {
+    uuid id PK
+    text case_reference UK
+    data_erasure_status status
+    text legal_outcome
+    text limitations
   }
   user_permission_grants {
     uuid id PK
@@ -189,6 +197,7 @@ erDiagram
     text full_name
     text admission_number UK "required"
     student_status status "admitted, active, inactive, transferred"
+    timestamptz admitted_at
     boolean management_approval_confirmed
     uuid confirmed_by_user_id
   }

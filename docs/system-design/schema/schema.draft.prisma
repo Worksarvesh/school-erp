@@ -1,4 +1,5 @@
-// DRAFT V1.2 schema (Phase B design 2026-11-07, scope update and decisions M1-D1 2026-11-18). NOT the live schema:
+// DRAFT V1.2 schema (Phase B design 2026-11-07; scope update, decisions M1-D1 and C1-C4 approved 2026-11-18).
+// NOT the live schema:
 // apps/api/prisma/schema.prisma is.
 // Nothing here is migrated. Each build slice copies the models it needs into the live schema.
 //
@@ -333,10 +334,9 @@ enum LessonPlanStatus {
   @@map("lesson_plan_status")
 }
 
-/// Approval types. The 2026-11-18 list had eight, including attendance_correction; decision AC1 (same day) makes
-/// attendance correction a direct Admin action, so it is NOT an approval type here (conflict C1 in OPEN-QUESTIONS,
-/// awaiting confirmation; re-adding a value later is a safe expand migration). academic_year_change is decided by
-/// the Principal only (trigger on approval_requests).
+/// The canonical V1 approval types (seven; decision C1, 2026-11-18). Attendance correction is NOT an approval type:
+/// it is a direct, permission-controlled Admin operation (attendance_corrections). academic_year_change is decided
+/// by the Principal only (trigger on approval_requests).
 enum ApprovalType {
   teacher_addition
   teacher_update
@@ -563,8 +563,8 @@ enum AuditModule {
   @@map("audit_module")
 }
 
-/// school: every student with an active enrollment in the school. section: students whose ACTIVE enrollment is in
-/// student_messages.section_id. These are the only two group types.
+/// school: every student of the school whose status is admitted or active. section: students whose ACTIVE
+/// enrollment is in student_messages.section_id. These are the only two group types.
 enum StudentMessageAudience {
   school
   section
@@ -572,9 +572,25 @@ enum StudentMessageAudience {
   @@map("student_message_audience")
 }
 
-/// No drafts or scheduling in V1: a message is published when sent and can only be withdrawn afterwards.
-/// archived: set by the retention job after the school's retention window (schools.student_message_retention_years);
-/// hidden from students and senders, kept as a record. Rows are never hard-deleted as a normal operation.
+/// Exceptional data-erasure request (decision C4). received -> verified -> legal_review -> approved | refused;
+/// approved -> completed | partially_completed. refused also covers "legally restricted".
+enum DataErasureStatus {
+  received
+  verified
+  legal_review
+  approved
+  refused
+  completed
+  partially_completed
+
+  @@map("data_erasure_status")
+}
+
+/// Message lifecycle (decision M5; README "Student message lifecycle"). No drafts or scheduling in V1.
+/// published: active, visible to its audience. withdrawn: retracted by the sender or a moderator, hidden from
+/// students at once, kept. archived: set by the retention job after the school's retention window, hidden from all
+/// school routes, kept. Scheduled archival never deletes. The only deletion is the exceptional, Super Admin-only
+/// erasure tied to an approved data_erasure_requests row (decision C4).
 enum StudentMessageStatus {
   published
   withdrawn
@@ -604,8 +620,8 @@ model School {
   contactEmail                 String?      @map("contact_email")
   logoFileId                   String?      @map("logo_file_id") @db.Uuid
   timezone                     String       @default("Asia/Kolkata")
-  /// Student messages stay visible for this many academic years after the year they were sent in, then are
-  /// archived (not deleted). PROPOSED default 1, pending product confirmation (OPEN-QUESTIONS M5). CHECK 1..5.
+  /// Student messages stay visible for this many academic years (counting the year they were sent in), then are
+  /// archived, never deleted by the schedule. Approved default 1 (decision M5); configurable per school; CHECK 1..5.
   studentMessageRetentionYears Int          @default(1) @map("student_message_retention_years") @db.SmallInt
   createdAt                    DateTime     @default(now()) @map("created_at") @db.Timestamptz
   updatedAt                    DateTime     @updatedAt @map("updated_at") @db.Timestamptz
@@ -629,6 +645,7 @@ model School {
   notices              Notice[]
   studentMessages      StudentMessage[]
   userPermissionGrants UserPermissionGrant[]
+  erasureRequests      DataErasureRequest[]
   calendarEvents       CalendarEvent[]
   notifications        Notification[]
   inventoryItems       InventoryItem[]
@@ -820,6 +837,38 @@ model PlatformStaff {
   user User @relation(fields: [userId], references: [id])
 
   @@map("platform_staff")
+}
+
+/// A verified, documented data-erasure request (decision C4). Platform-owned; read and written only on the platform
+/// path by a Super Admin (RLS P with current_platform_role() = 'super_admin'); schools never see it. Erasing a
+/// student message is possible ONLY through SECURITY DEFINER platform_erase_student_message(request_id, message_id,
+/// reason), which requires an active super_admin platform_staff row, status = approved, the message's school =
+/// school_id, and writes an append-only audit row (case reference, reason, actor; never the body) in the same
+/// transaction. legal_outcome must be recorded before approved (CHECK). completed is set only when every listed
+/// store was handled; otherwise partially_completed with limitations NOT NULL (CHECK): erasure is never claimed for
+/// stores it could not reach (backups, devices that received a push).
+model DataErasureRequest {
+  id              String            @id @default(uuid(7)) @db.Uuid
+  schoolId        String?           @map("school_id") @db.Uuid
+  caseReference   String            @unique @map("case_reference")
+  requestSource   String            @map("request_source")
+  scope           String
+  status          DataErasureStatus @default(received)
+  verifiedBy      String?           @map("verified_by") @db.Uuid
+  verifiedAt      DateTime?         @map("verified_at") @db.Timestamptz
+  legalReviewedBy String?           @map("legal_reviewed_by") @db.Uuid
+  legalReviewedAt DateTime?         @map("legal_reviewed_at") @db.Timestamptz
+  legalOutcome    String?           @map("legal_outcome")
+  limitations     String?
+  completedAt     DateTime?         @map("completed_at") @db.Timestamptz
+  createdBy       String            @map("created_by") @db.Uuid
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  school School? @relation(fields: [schoolId], references: [id])
+
+  @@index([status, createdAt])
+  @@map("data_erasure_requests")
 }
 
 /// One role for one user in one school (several roles per person allowed; role switching = choosing one).
@@ -1076,6 +1125,9 @@ model Student {
   hobbies                     String?
   customFields                Json          @default("{}") @map("custom_fields")
   profileCompletedAt          DateTime?     @map("profile_completed_at") @db.Timestamptz
+  /// When the student was admitted (creation) or re-admitted (inactive -> active). School-group messages are shown
+  /// from this moment (decision C3); reset only by re-admission.
+  admittedAt                  DateTime      @default(now()) @map("admitted_at") @db.Timestamptz
   managementApprovalConfirmed Boolean       @map("management_approval_confirmed")
   confirmedByUserId           String        @map("confirmed_by_user_id") @db.Uuid
   confirmedAt                 DateTime      @map("confirmed_at") @db.Timestamptz
@@ -1917,17 +1969,19 @@ model NoticeAudience {
 }
 
 /// One-way message from staff to students (V1.2). Students read; they never send, reply, react or comment.
-/// Groups are NOT stored: audience school = every student with an active enrollment in the school; audience section =
+/// Groups are NOT stored: audience school = every admitted or active student of the school; audience section =
 /// students whose active enrollment is in section_id. The reader's groups are resolved on the server from their
-/// membership + active enrollment. academic_year_id = the school's active year when sent (retention unit).
+/// student record and active enrollment. academic_year_id = the school's active year when sent (retention unit).
 /// Who may INSERT (decision M1) is enforced in the database by the restrictive policy R-send through
 /// can_publish_student_message(audience, section_id), evaluated at insert time, so a closed assignment or a revoked
 /// grant stops authorizing new messages at once: school audience = principal, vice_principal or school_admin
 /// membership; section audience = those three roles for any section, a teacher with an open teacher_assignments row
 /// for that section, or a non-teaching member with an open student_message_section_grants row for that section.
-/// Student visibility (decision M4, policy R-msg): school group = published rows with published_at >= the start
-/// of the student's active enrollment; section group = published rows of the CURRENT active section with
-/// published_at >= that enrollment's started_on. Messages of earlier sections are never shown.
+/// Student visibility (decisions M4, C3; policy R-msg): school group = published rows with published_at >=
+/// students.admitted_at, for admitted and active students (so an admitted student without an enrollment still sees
+/// school-wide messages); section group = published rows of the CURRENT active section with published_at >= that
+/// enrollment's started_on, and nothing without an active enrollment. Earlier sections' messages are never shown.
+/// Audit rows for publish/withdraw/archive/erase never contain the body.
 /// CHECK (audience = 'school' AND section_id IS NULL) OR (audience = 'section' AND section_id IS NOT NULL).
 /// Text only, body 1..2000 characters after trim (CHECK). No attachments, drafts or scheduling in V1.
 /// Never edited after publishing: a wrong message is withdrawn (status, withdrawn_at, withdrawn_by and a non-blank

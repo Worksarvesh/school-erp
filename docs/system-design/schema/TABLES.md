@@ -2,13 +2,13 @@
 
 Generated from [schema.draft.prisma](schema.draft.prisma) plus hand-written notes. Column types are PostgreSQL types. Every school table also has the RLS policies in [RLS-MATRIX.md](RLS-MATRIX.md). Actor columns (`created_by`, `marked_by`, ...) hold user ids.
 
-**70 tables** (V1.2, 2026-11-18: +`staff_designations`, +`guardian_link_codes`, +`student_messages`, +`student_message_read_states`, +`student_message_section_grants`, +`user_permission_grants`; −`documents`). Status: _New_ (not yet built), _Extended_ (exists today, gains columns), _Existing_ (unchanged).
+**71 tables** (V1.2, 2026-11-18: +`staff_designations`, +`guardian_link_codes`, +`student_messages`, +`student_message_read_states`, +`student_message_section_grants`, +`user_permission_grants`, +`data_erasure_requests`; −`documents`). Status: _New_ (not yet built), _Extended_ (exists today, gains columns), _Existing_ (unchanged).
 
 Over 10 million rows a year at pilot scale (100 schools, ~2.5 lakh users): `student_attendance`, `notifications`, `audit_logs` (all partitioned by month), and `homework_completions` if every student is tracked for every homework (watch; partition later if needed).
 
 ## Contents
 
-- **Tenancy and identity:** `schools`, `users`, `credentials`, `credential_issuances`, `username_sequences`, `sessions`, `push_tokens`, `otp_challenges`, `school_verification_requests`, `platform_staff`, `school_memberships`, `permissions`, `role_permissions`, `user_permission_grants`
+- **Tenancy and identity:** `schools`, `users`, `credentials`, `credential_issuances`, `username_sequences`, `sessions`, `push_tokens`, `otp_challenges`, `school_verification_requests`, `platform_staff`, `data_erasure_requests`, `school_memberships`, `permissions`, `role_permissions`, `user_permission_grants`
 - **Academic setup:** `academic_years`, `school_timings`, `classes`, `sections`, `subjects`, `class_subjects`
 - **People:** `students`, `student_field_definitions`, `student_enrollments`, `student_guardians`, `parent_student_links`, `guardian_link_codes`, `departments`, `staff_designations`, `staff`, `teacher_subject_qualifications`, `teacher_assignments`
 - **Attendance and leave:** `attendance_registers`, `student_attendance`, `attendance_corrections`, `staff_attendance`, `leave_types`, `leave_requests`
@@ -36,27 +36,27 @@ School profile, directory entry and branding. The tenant. code is sch + 4+ digit
 | Expected size    | ~100 at pilot                                                              |
 | Keys and indexes | PK (id)                                                                    |
 
-| Column                            | Type          | Null | Default              | Notes                                            |
-| --------------------------------- | ------------- | ---- | -------------------- | ------------------------------------------------ |
-| `id`                              | uuid          | no   | UUIDv7 (app)         | PK                                               |
-| `name`                            | text          | no   |                      |                                                  |
-| `code`                            | text          | no   |                      | unique                                           |
-| `udise_code`                      | text          | yes  |                      | unique                                           |
-| `status`                          | school_status | no   | active               |                                                  |
-| `shard_key`                       | smallint      | no   | 0                    |                                                  |
-| `address_line`                    | text          | yes  |                      |                                                  |
-| `city`                            | text          | yes  |                      |                                                  |
-| `state`                           | text          | yes  |                      |                                                  |
-| `pin_code`                        | text          | yes  |                      |                                                  |
-| `contact_phone`                   | text          | yes  |                      |                                                  |
-| `contact_email`                   | text          | yes  |                      |                                                  |
-| `logo_file_id`                    | uuid          | yes  |                      |                                                  |
-| `timezone`                        | text          | no   | Asia/Kolkata         |                                                  |
-| `student_message_retention_years` | smallint      | no   | 1                    | CHECK 1..5; proposed default (OPEN-QUESTIONS M5) |
-| `created_at`                      | timestamptz   | no   | now()                |                                                  |
-| `updated_at`                      | timestamptz   | no   | set by app on update |                                                  |
-| `created_by`                      | uuid          | yes  |                      |                                                  |
-| `updated_by`                      | uuid          | yes  |                      |                                                  |
+| Column                            | Type          | Null | Default              | Notes                                      |
+| --------------------------------- | ------------- | ---- | -------------------- | ------------------------------------------ |
+| `id`                              | uuid          | no   | UUIDv7 (app)         | PK                                         |
+| `name`                            | text          | no   |                      |                                            |
+| `code`                            | text          | no   |                      | unique                                     |
+| `udise_code`                      | text          | yes  |                      | unique                                     |
+| `status`                          | school_status | no   | active               |                                            |
+| `shard_key`                       | smallint      | no   | 0                    |                                            |
+| `address_line`                    | text          | yes  |                      |                                            |
+| `city`                            | text          | yes  |                      |                                            |
+| `state`                           | text          | yes  |                      |                                            |
+| `pin_code`                        | text          | yes  |                      |                                            |
+| `contact_phone`                   | text          | yes  |                      |                                            |
+| `contact_email`                   | text          | yes  |                      |                                            |
+| `logo_file_id`                    | uuid          | yes  |                      |                                            |
+| `timezone`                        | text          | no   | Asia/Kolkata         |                                            |
+| `student_message_retention_years` | smallint      | no   | 1                    | CHECK 1..5; approved default (decision M5) |
+| `created_at`                      | timestamptz   | no   | now()                |                                            |
+| `updated_at`                      | timestamptz   | no   | set by app on update |                                            |
+| `created_by`                      | uuid          | yes  |                      |                                            |
+| `updated_by`                      | uuid          | yes  |                      |                                            |
 
 ### `users`
 
@@ -290,6 +290,39 @@ Company Super Admin and School Verifier. Company staff (Super Admin, School Veri
 | `created_at` | timestamptz   | no   | now()                |       |
 | `updated_at` | timestamptz   | no   | set by app on update |       |
 | `created_by` | uuid          | yes  |                      |       |
+
+### `data_erasure_requests`
+
+Verified, documented data-erasure request (decision C4). Platform-only (Super Admin); schools never see it. The only way to hard-delete a student message is SECURITY DEFINER `platform_erase_student_message(request_id, message_id, reason)`, which needs an active Super Admin, `status = approved`, a recorded `legal_outcome`, and the message's school = `school_id`; it writes an append-only audit row (case reference, reason, actor; never the body) in the same transaction. `completed` only when every listed store was handled; otherwise `partially_completed` with `limitations` NOT NULL (CHECK). Never claims erasure from stores it could not reach.
+
+| Item             | Value                                                          |
+| ---------------- | -------------------------------------------------------------- |
+| Status           | New                                                            |
+| Tenant column    | school_id nullable (platform-wide requests)                    |
+| Written by       | Super Admin (platform path)                                    |
+| Read by          | Super Admin                                                    |
+| Retention        | Kept (legal record of the erasure; contains no erased content) |
+| Expected size    | Rare                                                           |
+| Keys and indexes | PK (id); unique (case_reference); index (status, created_at)   |
+
+| Column              | Type                | Null | Default              | Notes  |
+| ------------------- | ------------------- | ---- | -------------------- | ------ |
+| `id`                | uuid                | no   | UUIDv7 (app)         | PK     |
+| `school_id`         | uuid                | yes  |                      |        |
+| `case_reference`    | text                | no   |                      | unique |
+| `request_source`    | text                | no   |                      |        |
+| `scope`             | text                | no   |                      |        |
+| `status`            | data_erasure_status | no   | received             |        |
+| `verified_by`       | uuid                | yes  |                      |        |
+| `verified_at`       | timestamptz         | yes  |                      |        |
+| `legal_reviewed_by` | uuid                | yes  |                      |        |
+| `legal_reviewed_at` | timestamptz         | yes  |                      |        |
+| `legal_outcome`     | text                | yes  |                      |        |
+| `limitations`       | text                | yes  |                      |        |
+| `completed_at`      | timestamptz         | yes  |                      |        |
+| `created_by`        | uuid                | no   |                      |        |
+| `created_at`        | timestamptz         | no   | now()                |        |
+| `updated_at`        | timestamptz         | no   | set by app on update |        |
 
 ### `school_memberships`
 
@@ -550,7 +583,7 @@ Which subjects a class studies.
 
 ### `students`
 
-Student record and profile. One student in one school (Indian model). Login account = user_id (username sch0001s0001). Admission number is REQUIRED (V1.2: the parent link-code flow asks for it). Student creation is the admission (no admissions pipeline) and sets `status = admitted`; `active` follows the first active enrollment (decision ST1). Lifecycle status, enrollment status and current section are three separate things (students.status, student_enrollments.status, student_enrollments.section_id): added by Admin only after offline management approval: CHECK management_approval_confirmed = true. Optional health fields and hobbies never block app use.
+Student record and profile. One student in one school (Indian model). Login account = user_id (username sch0001s0001). Admission number is REQUIRED (V1.2: the parent link-code flow asks for it). Student creation is the admission (no admissions pipeline) and sets `status = admitted`; `active` follows the first active enrollment (decision ST1). Lifecycle status, enrollment status and current section are three separate things (students.status, student_enrollments.status, student_enrollments.section_id). An admitted student without an active enrollment can sign in and sees their profile and school-wide messages only (decision C3). Students are added by Admin only after offline management approval: CHECK management_approval_confirmed = true. Optional health fields and hobbies never block app use.
 
 | Item             | Value                                                                                      |
 | ---------------- | ------------------------------------------------------------------------------------------ |
@@ -562,34 +595,35 @@ Student record and profile. One student in one school (Indian model). Login acco
 | Expected size    | ~2 lakh                                                                                    |
 | Keys and indexes | unique (school_id, id); unique (school_id, admission_number); index (school_id, full_name) |
 
-| Column                          | Type           | Null | Default              | Notes                                             |
-| ------------------------------- | -------------- | ---- | -------------------- | ------------------------------------------------- |
-| `id`                            | uuid           | no   | UUIDv7 (app)         | PK                                                |
-| `school_id`                     | uuid           | no   |                      |                                                   |
-| `user_id`                       | uuid           | no   |                      | unique                                            |
-| `full_name`                     | text           | no   |                      |                                                   |
-| `admission_number`              | text           | no   |                      |                                                   |
-| `date_of_birth`                 | date           | yes  |                      |                                                   |
-| `gender`                        | gender         | yes  |                      |                                                   |
-| `status`                        | student_status | no   | admitted             | lifecycle only; transitions in BUSINESS-RULES E15 |
-| `student_mobile`                | text           | yes  |                      |                                                   |
-| `email`                         | text           | yes  |                      |                                                   |
-| `address`                       | text           | yes  |                      |                                                   |
-| `emergency_contact_name`        | text           | yes  |                      |                                                   |
-| `emergency_contact_phone`       | text           | yes  |                      |                                                   |
-| `height_cm`                     | smallint       | yes  |                      |                                                   |
-| `weight_kg`                     | smallint       | yes  |                      |                                                   |
-| `blood_group`                   | blood_group    | yes  |                      |                                                   |
-| `hobbies`                       | text           | yes  |                      |                                                   |
-| `custom_fields`                 | jsonb          | no   | "{}"                 |                                                   |
-| `profile_completed_at`          | timestamptz    | yes  |                      |                                                   |
-| `management_approval_confirmed` | boolean        | no   |                      |                                                   |
-| `confirmed_by_user_id`          | uuid           | no   |                      |                                                   |
-| `confirmed_at`                  | timestamptz    | no   |                      |                                                   |
-| `created_at`                    | timestamptz    | no   | now()                |                                                   |
-| `updated_at`                    | timestamptz    | no   | set by app on update |                                                   |
-| `created_by`                    | uuid           | yes  |                      |                                                   |
-| `updated_by`                    | uuid           | yes  |                      |                                                   |
+| Column                          | Type           | Null | Default              | Notes                                                                        |
+| ------------------------------- | -------------- | ---- | -------------------- | ---------------------------------------------------------------------------- |
+| `id`                            | uuid           | no   | UUIDv7 (app)         | PK                                                                           |
+| `school_id`                     | uuid           | no   |                      |                                                                              |
+| `user_id`                       | uuid           | no   |                      | unique                                                                       |
+| `full_name`                     | text           | no   |                      |                                                                              |
+| `admission_number`              | text           | no   |                      | unique per school; required (link codes)                                     |
+| `date_of_birth`                 | date           | yes  |                      |                                                                              |
+| `gender`                        | gender         | yes  |                      |                                                                              |
+| `status`                        | student_status | no   | admitted             | lifecycle only; transitions in BUSINESS-RULES E15                            |
+| `student_mobile`                | text           | yes  |                      |                                                                              |
+| `email`                         | text           | yes  |                      |                                                                              |
+| `address`                       | text           | yes  |                      |                                                                              |
+| `emergency_contact_name`        | text           | yes  |                      |                                                                              |
+| `emergency_contact_phone`       | text           | yes  |                      |                                                                              |
+| `height_cm`                     | smallint       | yes  |                      |                                                                              |
+| `weight_kg`                     | smallint       | yes  |                      |                                                                              |
+| `blood_group`                   | blood_group    | yes  |                      |                                                                              |
+| `hobbies`                       | text           | yes  |                      |                                                                              |
+| `custom_fields`                 | jsonb          | no   | {}                   |                                                                              |
+| `profile_completed_at`          | timestamptz    | yes  |                      |                                                                              |
+| `admitted_at`                   | timestamptz    | no   | now()                | set at creation and re-admission; school-group messages shown from here (C3) |
+| `management_approval_confirmed` | boolean        | no   |                      |                                                                              |
+| `confirmed_by_user_id`          | uuid           | no   |                      |                                                                              |
+| `confirmed_at`                  | timestamptz    | no   |                      |                                                                              |
+| `created_at`                    | timestamptz    | no   | now()                |                                                                              |
+| `updated_at`                    | timestamptz    | no   | set by app on update |                                                                              |
+| `created_by`                    | uuid           | yes  |                      |                                                                              |
+| `updated_by`                    | uuid           | yes  |                      |                                                                              |
 
 ### `student_field_definitions`
 
@@ -1500,15 +1534,15 @@ Who a notice targets. CHECK: class -> class_id; section -> section_id; staff_gro
 
 ### `student_messages`
 
-One-way message to students (V1.2). Two group types: `school` (every student with an active enrollment) and `section` (students whose ACTIVE enrollment is in `section_id`). Groups are not stored; the server resolves a student's groups from membership and active enrollment, never from client ids. Students only read. Text only, 1-2000 characters (CHECK); no attachments, drafts or scheduling. Never edited after publishing: withdrawn with a reason (CHECK), and the row plus its audit trail are kept. **Sending rights (decision M1) are enforced in the database:** restrictive INSERT policy R-send calls `can_publish_student_message(audience, section_id)` at insert time (Principal, VP, Admin: school group and every section; teacher: only sections with an open `teacher_assignments` row; non-teaching: only sections with an open `student_message_section_grants` row; never the school group). **Visibility (decision M4):** a student sees school-group messages and current-section messages published on or after the start of their active enrollment; earlier sections' messages are never shown. Parents never see messages (decision M2). **Retention (decision M5):** rows of academic years older than `schools.student_message_retention_years` (proposed default 1) are set to `archived` by a worker job; no hard delete as a normal operation. Delivery: push from the outbox event `student_message.published`.
+One-way message to students (V1.2). Two group types: `school` (every admitted or active student of the school) and `section` (students whose ACTIVE enrollment is in `section_id`). Groups are not stored; the server resolves a student's groups from their student record and active enrollment, never from client ids. Students only read. Text only, 1-2000 characters (CHECK); no attachments, drafts or scheduling. **Sending (M1)** is enforced in the database: restrictive INSERT policy R-send calls `can_publish_student_message(audience, section_id)` at insert time (Principal, VP, Admin: school group and every section; teacher: only sections with an open `teacher_assignments` row; non-teaching: only sections with an open `student_message_section_grants` row, never the school group; otherwise 403 with no section details, decision C2). **Visibility (M4, C3):** school-group messages from `students.admitted_at`; current-section messages from the active enrollment's `started_on`; no section messages without an active enrollment; never earlier sections'. Parents never see messages (M2). **Lifecycle (M5, C4):** `published` (active) → `withdrawn` (retracted with a reason, hidden from students at once, kept) or `archived` (retention job, after `schools.student_message_retention_years`, default 1 academic year; hidden from all school routes, kept). The schedule never deletes. Hard deletion happens only through the Super Admin erasure function tied to an approved `data_erasure_requests` row. Audit rows never contain the body. Delivery: push from the outbox event `student_message.published` (payload: ids only).
 
 | Item             | Value                                                                                                                                                                                                                                       |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Status           | New                                                                                                                                                                                                                                         |
 | Tenant column    | school_id NOT NULL                                                                                                                                                                                                                          |
-| Written by       | Authorized senders (R-send); withdraw by sender or `student_messages.moderate`; archive by the retention job                                                                                                                                |
-| Read by          | Students (own groups, published, from enrollment start); senders (own); Principal, VP, Admin (`student_messages.read_all`)                                                                                                                  |
-| Retention        | Visible for the configured number of academic years, then archived; kept                                                                                                                                                                    |
+| Written by       | Authorized senders (R-send); withdraw by sender or `student_messages.moderate`; archive by the retention job; erase only by `platform_erase_student_message`                                                                                |
+| Read by          | Students (own groups, published, from admission / section start); senders (own); Principal, VP, Admin (`student_messages.read_all`)                                                                                                         |
+| Retention        | Active for the configured number of academic years (default 1), then archived; kept; deleted only by approved erasure                                                                                                                       |
 | Expected size    | ~50-100 per section per year                                                                                                                                                                                                                |
 | Keys and indexes | unique (school_id, id); index (school_id, academic_year_id, status); index (school_id, audience, status, published_at desc); index (school_id, section_id, status, published_at desc); index (school_id, sender_user_id, published_at desc) |
 

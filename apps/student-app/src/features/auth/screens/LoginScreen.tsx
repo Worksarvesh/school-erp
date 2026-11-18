@@ -5,8 +5,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Screen, Button, Input, useTheme } from '@school-erp/ui';
 import { useAuthStore } from '@school-erp/mobile-core';
-import { loginSchema, type LoginFormData } from '../schemas/auth.schema.js';
-import { MockStudentServices } from '../../../core/mocks/mock-services.js';
+import { loginSchema, type LoginFormData } from '../schemas/auth.schema';
+import { MockStudentServices } from '../../../core/mocks/mock-services';
 
 export function LoginScreen() {
   const { colors, spacing, typography } = useTheme();

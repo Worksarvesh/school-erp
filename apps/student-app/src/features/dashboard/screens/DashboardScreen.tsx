@@ -9,7 +9,7 @@ import type {
   HomeworkDto,
   NoticeDto,
 } from '@school-erp/api-client';
-import { MockStudentServices } from '../../../core/mocks/mock-services.js';
+import { MockStudentServices } from '../../../core/mocks/mock-services';
 
 export function DashboardScreen() {
   const { colors, spacing, typography, radii } = useTheme();

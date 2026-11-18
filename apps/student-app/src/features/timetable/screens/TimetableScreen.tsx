@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Screen, Header, Card, StateView, useTheme } from '@school-erp/ui';
 import type { TimetableSlotDto } from '@school-erp/api-client';
-import { MockStudentServices } from '../../../core/mocks/mock-services.js';
+import { MockStudentServices } from '../../../core/mocks/mock-services';
 
 const DAYS = [
   { label: 'Mon', value: 1 },

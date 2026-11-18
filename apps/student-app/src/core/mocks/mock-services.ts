@@ -11,7 +11,7 @@ import {
   mockNotices,
   mockNotifications,
   mockBroadcastThreads,
-} from './fixtures.js';
+} from './fixtures';
 import type {
   LoginRequestDto,
   LoginResponseDto,

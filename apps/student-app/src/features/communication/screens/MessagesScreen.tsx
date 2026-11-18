@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Screen, Header, Card, Badge, StateView, useTheme } from '@school-erp/ui';
 import type { ConversationThreadDto } from '@school-erp/api-client';
-import { MockStudentServices } from '../../../core/mocks/mock-services.js';
+import { MockStudentServices } from '../../../core/mocks/mock-services';
 
 export function MessagesScreen() {
   const { colors, spacing, typography } = useTheme();

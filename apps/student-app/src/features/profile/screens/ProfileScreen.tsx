@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Screen, Header, Card, Badge, Button, Input, StateView, useTheme } from '@school-erp/ui';
 import { useAuthStore } from '@school-erp/mobile-core';
 import type { StudentRecordDto } from '@school-erp/api-client';
-import { MockStudentServices } from '../../../core/mocks/mock-services.js';
+import { MockStudentServices } from '../../../core/mocks/mock-services';
 
 export function ProfileScreen() {
   const { colors, spacing, typography } = useTheme();

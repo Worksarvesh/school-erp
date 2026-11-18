@@ -4,7 +4,7 @@ import type { Href } from 'expo-router';
 import { useRouter } from 'expo-router';
 import { Screen, Header, Card, Badge, StateView, useTheme } from '@school-erp/ui';
 import type { NotificationDto } from '@school-erp/api-client';
-import { MockStudentServices } from '../../../core/mocks/mock-services.js';
+import { MockStudentServices } from '../../../core/mocks/mock-services';
 
 export function NotificationCenterScreen() {
   const { colors, spacing, typography } = useTheme();

@@ -26,7 +26,7 @@ function RootNavigationGate() {
     const inOnboarding = segments[0] === '(onboarding)';
 
     if (!isAuthenticated && !inAuthGroup) {
-      router.replace('/(auth)/login');
+      router.replace('/(auth)/role-selection');
     } else if (isAuthenticated && !hasCompletedOnboarding && !inOnboarding) {
       router.replace('/(onboarding)');
     } else if (isAuthenticated && hasCompletedOnboarding && (inAuthGroup || inOnboarding)) {

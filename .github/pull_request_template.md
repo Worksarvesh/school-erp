@@ -8,7 +8,7 @@
 
 ## Checklist
 
-- [ ] PR title follows Conventional Commits (e.g. `feat(api): add attendance endpoint`)
+- [ ] PR title is clear (Conventional Commits recommended, e.g. `feat(api): add attendance endpoint`; not enforced)
 - [ ] `pnpm run check` passes locally
 - [ ] Tests added or updated (or explained why not)
 - [ ] No secrets, tokens or real personal data committed

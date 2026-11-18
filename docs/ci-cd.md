@@ -6,7 +6,7 @@ Runs on pull requests to `main`, pushes to `main`, and manually.
 
 | Job                        | What it does                                                                                            |
 | -------------------------- | ------------------------------------------------------------------------------------------------------- |
-| PR title                   | Conventional Commits check (PRs only)                                                                   |
+| PR title                   | Advisory Conventional Commits check (PRs only): never fails, warns on a non-conforming title            |
 | Format, lint and typecheck | Prettier check, ESLint, `tsc`                                                                           |
 | Unit and integration tests | `pnpm run test` (workspaces that define `test`)                                                         |
 | API integration tests      | Docker Compose PostgreSQL, then `test:int` (incl. tenant isolation suite) and `test:e2e` for `apps/api` |

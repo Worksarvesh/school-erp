@@ -1,0 +1,35 @@
+{
+  "name": "@school-erp/mobile-core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared mobile infrastructure: SecureStore, Axios client, single-flight refresh, and session hydration",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@school-erp/api-client": "workspace:*",
+    "@school-erp/shared-types": "workspace:*",
+    "@tanstack/react-query": "^5.66.0",
+    "axios": "^1.7.9",
+    "zustand": "^5.0.3"
+  },
+  "peerDependencies": {
+    "expo-secure-store": "*",
+    "expo-constants": "*"
+  },
+  "devDependencies": {
+    "@school-erp/config": "workspace:*",
+    "@types/node": "^24.0.0",
+    "expo-constants": "~58.0.13",
+    "expo-secure-store": "~58.0.3",
+    "typescript": "^6.0.2",
+    "vitest": "^5.1.0"
+  }
+}

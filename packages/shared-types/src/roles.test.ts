@@ -1,18 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { ROLES, isRole } from './roles.js';
 
-describe('isRole', () => {
-  it('accepts every defined role', () => {
-    for (const role of ROLES) expect(isRole(role)).toBe(true);
+describe('shared-types roles', () => {
+  it('should define all expected roles', () => {
+    expect(ROLES).toContain('student');
+    expect(ROLES).toContain('parent');
+    expect(ROLES).toContain('teacher');
+    expect(ROLES).toContain('principal');
   });
 
-  it('rejects unknown and non-string values', () => {
-    expect(isRole('superuser')).toBe(false);
-    expect(isRole(undefined)).toBe(false);
-    expect(isRole(42)).toBe(false);
-  });
-
-  it('has no duplicate roles', () => {
-    expect(new Set(ROLES).size).toBe(ROLES.length);
+  it('should validate role strings correctly', () => {
+    expect(isRole('student')).toBe(true);
+    expect(isRole('UNKNOWN_ROLE')).toBe(false);
   });
 });

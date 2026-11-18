@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "Student App",
+    "slug": "student-app",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "studentapp",
+    "userInterfaceStyle": "light",
+    "ios": { "supportsTablet": false },
+    "android": { "predictiveBackGestureEnabled": false },
+    "web": { "bundler": "metro", "output": "single" },
+    "plugins": ["expo-router", "expo-font"],
+    "experiments": { "typedRoutes": false }
+  }
+}

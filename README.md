@@ -4,7 +4,7 @@ School ERP platform by Tensei Tech Pvt. Ltd. `school-erp` is a temporary identif
 
 ## Status
 
-Foundation only: monorepo, tooling and CI. Apps (`api`, `web`, `mobile`) are **not scaffolded yet**.
+Monorepo, tooling and CI. `apps/api` (NestJS) is in progress. `apps/student-app` (Expo) has its first UI screens on mock data, see [apps/student-app/README.md](apps/student-app/README.md). `apps/web` and the School Staff app are **not scaffolded yet**.
 
 ## Prerequisites (Windows PowerShell)
 

@@ -3,7 +3,7 @@
 - `main` is always releasable and protected. No direct pushes.
 - Work on short-lived branches from `main`: `feat/<short-name>`, `fix/<short-name>`, `docs/<short-name>`, `chore/<short-name>`.
 - One logical change per PR; keep PRs small.
-- PR title uses Conventional Commits: `feat(api): add attendance endpoint`. CI checks this. Merge method is **squash**, so the PR title becomes the commit on `main`.
+- PR titles are free-form. Conventional Commits (`feat(api): add attendance endpoint`) is recommended, and CI shows an advisory warning when a title does not follow it, but it never blocks a PR. Merge method is **squash**, so the PR title becomes the commit on `main`: keep it clear.
 - Branch protection on `main` (configure in GitHub settings): require a PR, require 1 approval, require the `CI passed` status check, require branches to be up to date, block force pushes, dismiss stale approvals.
 
 ## Daily flow (PowerShell)

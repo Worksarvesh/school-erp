@@ -1,0 +1,29 @@
+{
+  "name": "@school-erp/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "description": "API client contracts, DTO types, and error shapes",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@school-erp/shared-types": "workspace:*"
+  },
+  "devDependencies": {
+    "@school-erp/config": "workspace:*",
+    "@types/node": "^24.0.0",
+    "typescript": "^6.0.2",
+    "vitest": "^5.1.0"
+  }
+}

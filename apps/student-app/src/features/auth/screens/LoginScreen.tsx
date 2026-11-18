@@ -1,181 +1,181 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useRef } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import type { TextInputRef } from '@/components';
-import { PasswordField, PrimaryButton, ScreenContainer, TextField } from '@/components';
-import type { Role } from '@/state/session';
-import { landingRouteAfterSignIn, useSession } from '@/state/session';
-import { colors, iconSize, spacing, touch, typography } from '@/theme';
-import type { ParentLoginValues, StudentLoginValues } from '../validation';
-import { normalizeMobile, parentLoginSchema, studentLoginSchema } from '../validation';
+import { Screen, Button, Input, useTheme } from '@school-erp/ui';
+import { useAuthStore } from '@school-erp/mobile-core';
+import { loginSchema, type LoginFormData } from '../schemas/auth.schema.js';
+import { MockStudentServices } from '../../../core/mocks/mock-services.js';
 
-/**
- * "Login To your Account". Approved V1 sign-in methods:
- * - Student: school-issued username + password ("Forgot Password?" goes to Contact Admin).
- * - Parent: registered mobile number, then a one-time code (next screen).
- * MOCK: no network; any non-empty student credentials succeed.
- */
 export function LoginScreen() {
-  const params = useLocalSearchParams<{ role?: string }>();
-  const sessionRole = useSession((s) => s.role);
-  const role: Role =
-    params.role === 'parent' || (!params.role && sessionRole === 'parent') ? 'parent' : 'student';
-
-  return role === 'parent' ? <ParentLogin /> : <StudentLogin />;
-}
-
-function Header({ subtitle }: { subtitle: string }) {
-  return (
-    <View style={styles.header}>
-      <Text style={styles.title} accessibilityRole="header">
-        Login To your Account
-      </Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
-    </View>
-  );
-}
-
-function StudentLogin() {
+  const { colors, spacing, typography } = useTheme();
   const router = useRouter();
-  const signIn = useSession((s) => s.signIn);
-  const passwordRef = useRef<TextInputRef>(null);
-  const { control, handleSubmit, formState } = useForm<StudentLoginValues>({
-    resolver: zodResolver(studentLoginSchema),
-    defaultValues: { username: '', password: '' },
-    mode: 'onTouched',
+  const setSession = useAuthStore((state) => state.setSession);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      identifier: 'sch0001s0001',
+      password: 'password123',
+    },
   });
 
-  const onSubmit = handleSubmit(() => {
-    signIn('student');
-    router.replace(landingRouteAfterSignIn(useSession.getState()));
-  });
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      setIsLoading(true);
+      setErrorMessage(null);
+      const res = await MockStudentServices.login(data);
+      await setSession(res);
 
-  return (
-    <ScreenContainer
-      footer={<PrimaryButton testID="sign-in" label="Sign in" onPress={() => void onSubmit()} />}
-    >
-      <Header subtitle="Login using the username and password given by your school. You can add your other details after logging in." />
-      <View style={styles.form}>
-        <Controller
-          control={control}
-          name="username"
-          render={({ field }) => (
-            <TextField
-              testID="username"
-              label="Username"
-              icon="user"
-              placeholder="sch0001s0001"
-              autoCapitalize="none"
-              autoCorrect={false}
-              textContentType="username"
-              returnKeyType="next"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              onSubmitEditing={() => passwordRef.current?.focus()}
-              error={formState.errors.username?.message}
-            />
-          )}
-        />
-        <Controller
-          control={control}
-          name="password"
-          render={({ field }) => (
-            <PasswordField
-              ref={passwordRef}
-              testID="password"
-              label="Password"
-              placeholder="Enter your password"
-              returnKeyType="done"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              onSubmitEditing={() => void onSubmit()}
-              error={formState.errors.password?.message}
-            />
-          )}
-        />
-        <Pressable
-          testID="forgot-password"
-          accessibilityRole="link"
-          accessibilityLabel="Forgot password? Contact your school admin"
-          onPress={() => router.push('/contact-admin')}
-          style={styles.link}
-        >
-          <Text style={styles.linkText}>Forgot Password?</Text>
-          <Feather name="arrow-right" size={iconSize.sm} color={colors.primary} />
-        </Pressable>
-      </View>
-    </ScreenContainer>
-  );
-}
-
-function ParentLogin() {
-  const router = useRouter();
-  const { control, handleSubmit, formState } = useForm<ParentLoginValues>({
-    resolver: zodResolver(parentLoginSchema),
-    defaultValues: { mobile: '' },
-    mode: 'onTouched',
-  });
-
-  const onSubmit = handleSubmit((values) => {
-    router.push({ pathname: '/otp', params: { mobile: normalizeMobile(values.mobile) } });
-  });
-
-  return (
-    <ScreenContainer
-      footer={
-        <PrimaryButton
-          testID="send-otp"
-          label="Send code"
-          trailingIcon="arrow-right"
-          onPress={() => void onSubmit()}
-        />
+      const onboardingDone = useAuthStore.getState().hasCompletedOnboarding;
+      if (!onboardingDone) {
+        router.replace('/(onboarding)');
+      } else {
+        router.replace('/(tabs)');
       }
-    >
-      <Header subtitle="Enter the mobile number registered with your child's school. We will send you a one-time code." />
-      <View style={styles.form}>
-        <Controller
-          control={control}
-          name="mobile"
-          render={({ field }) => (
-            <TextField
-              testID="mobile"
-              label="Mobile number"
-              icon="phone"
-              prefix="+91"
-              placeholder="98765 43210"
-              keyboardType="phone-pad"
-              textContentType="telephoneNumber"
-              maxLength={11}
-              returnKeyType="done"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              onSubmitEditing={() => void onSubmit()}
-              error={formState.errors.mobile?.message}
-            />
-          )}
-        />
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Invalid student credentials';
+      setErrorMessage(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Screen scrollable contentContainerStyle={[styles.container, { padding: spacing.xl }]}>
+      <View style={styles.headerArea}>
+        <Text
+          style={[
+            styles.title,
+            {
+              color: colors.primary,
+              fontSize: typography.fontSizes['3xl'],
+              fontWeight: typography.fontWeights.bold,
+            },
+          ]}
+        >
+          Student Portal
+        </Text>
+        <Text
+          style={[
+            styles.subtitle,
+            {
+              color: colors.textSecondary,
+              fontSize: typography.fontSizes.base,
+              marginTop: spacing.xs,
+            },
+          ]}
+        >
+          Sign in with your school-issued username
+        </Text>
       </View>
-    </ScreenContainer>
+
+      {errorMessage ? (
+        <View
+          style={[
+            styles.errorBanner,
+            {
+              backgroundColor: colors.errorBg,
+              borderColor: colors.error,
+              padding: spacing.md,
+              marginBottom: spacing.base,
+            },
+          ]}
+        >
+          <Text style={{ color: colors.error, fontSize: typography.fontSizes.sm }}>
+            {errorMessage}
+          </Text>
+        </View>
+      ) : null}
+
+      <Controller
+        control={control}
+        name="identifier"
+        render={({ field: { onChange, onBlur, value } }) => (
+          <Input
+            label="School Username"
+            placeholder="e.g. sch0001s0001"
+            autoCapitalize="none"
+            value={value}
+            onBlur={onBlur}
+            onChangeText={onChange}
+            error={errors.identifier?.message}
+            testID="login-username-input"
+          />
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="password"
+        render={({ field: { onChange, onBlur, value } }) => (
+          <Input
+            label="Password"
+            placeholder="Enter your password"
+            isPassword
+            value={value}
+            onBlur={onBlur}
+            onChangeText={onChange}
+            error={errors.password?.message}
+            testID="login-password-input"
+          />
+        )}
+      />
+
+      <TouchableOpacity
+        onPress={() => router.push('/forgot-password-modal')}
+        style={[styles.forgotButton, { marginTop: spacing.xs, marginBottom: spacing.lg }]}
+        accessible={true}
+        accessibilityRole="button"
+        accessibilityLabel="Forgot Password assistance"
+      >
+        <Text
+          style={{
+            color: colors.primary,
+            fontSize: typography.fontSizes.sm,
+            fontWeight: typography.fontWeights.medium,
+            textAlign: 'right',
+          }}
+        >
+          Forgot Password?
+        </Text>
+      </TouchableOpacity>
+
+      <Button
+        label="Sign In"
+        onPress={handleSubmit(onSubmit)}
+        loading={isLoading}
+        size="lg"
+        testID="login-submit-button"
+      />
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.xxxl },
-  title: { ...typography.title, color: colors.textPrimary, textAlign: 'center' },
-  subtitle: { ...typography.subtitle, color: colors.textSecondary, textAlign: 'center' },
-  form: { gap: spacing.xl, marginTop: spacing.xxxl },
-  link: {
-    alignSelf: 'flex-end',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    minHeight: touch.minTarget,
+  container: {
+    justifyContent: 'center',
+    flexGrow: 1,
   },
-  linkText: { ...typography.label, color: colors.primary },
+  headerArea: {
+    marginBottom: 32,
+  },
+  title: {},
+  subtitle: {},
+  errorBanner: {
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  forgotButton: {
+    alignSelf: 'flex-end',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
 });

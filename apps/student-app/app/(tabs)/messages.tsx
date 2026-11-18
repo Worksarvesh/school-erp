@@ -1,3 +1,6 @@
-import { MessagesScreen } from '@/features/messages/screens/MessagesScreen';
+import React from 'react';
+import { MessagesScreen } from '../../src/features/communication/screens/MessagesScreen.js';
 
-export default MessagesScreen;
+export default function MessagesTabRoute() {
+  return <MessagesScreen />;
+}

@@ -1,33 +1,65 @@
+import React from 'react';
+import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
-import type { TabItem } from '@/components';
-import { BottomTabBar } from '@/components';
-
-/** Approved V1 Student App tabs (Fees is out of V1; no Focus tab). */
-const TABS: readonly TabItem[] = [
-  { key: 'home', label: 'Home', icon: 'home' },
-  { key: 'academic', label: 'Academic', icon: 'book-open' },
-  { key: 'messages', label: 'Messages', icon: 'message-circle' },
-  { key: 'profile', label: 'Profile', icon: 'user' },
-];
+import { useTheme } from '@school-erp/ui';
 
 export default function TabsLayout() {
+  const { colors, typography } = useTheme();
+
   return (
     <Tabs
-      screenOptions={{ headerShown: false }}
-      tabBar={({ state, navigateToTab }) => (
-        <BottomTabBar
-          items={TABS}
-          activeKey={state.routes[state.index]?.name ?? 'home'}
-          onSelect={(name) => {
-            const route = state.routes.find((r) => r.name === name);
-            if (route) navigateToTab(route.key);
-          }}
-        />
-      )}
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          minHeight: 60,
+          paddingBottom: 6,
+          paddingTop: 6,
+        },
+        tabBarLabelStyle: {
+          fontSize: typography.fontSizes.xs,
+          fontWeight: '600',
+        },
+      }}
     >
-      {TABS.map((t) => (
-        <Tabs.Screen key={t.key} name={t.key} options={{ title: t.label }} />
-      ))}
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>🏠</Text>,
+        }}
+      />
+      <Tabs.Screen
+        name="academic"
+        options={{
+          title: 'Academic',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>📚</Text>,
+        }}
+      />
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: 'Messages',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>💬</Text>,
+        }}
+      />
+      <Tabs.Screen
+        name="fees"
+        options={{
+          title: 'Fees',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>💳</Text>,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>👤</Text>,
+        }}
+      />
     </Tabs>
   );
 }

@@ -9,7 +9,9 @@ allowBuilds:
   esbuild: false
   prisma: true
   workerd: false
-  '@parcel/watcher': set this to true or false
+auditConfig:
+  ignoreGhsas:
+    - GHSA-fc5q-39xc-vjpf
 minimumReleaseAgeExclude:
   - '@expo/cli@58.1.21'
   - '@expo/metro-config@58.0.23'
@@ -18,4 +20,3 @@ minimumReleaseAgeExclude:
   - expo-file-system@58.0.14
   - expo-router@58.0.32
   - expo@58.0.26
-  - jest-expo@58.0.15

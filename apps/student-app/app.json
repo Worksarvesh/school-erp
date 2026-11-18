@@ -1,15 +1,28 @@
 {
   "expo": {
-    "name": "Student App",
-    "slug": "student-app",
-    "version": "0.1.0",
+    "name": "School ERP - Student",
+    "slug": "school-erp-student-app",
+    "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "studentapp",
-    "userInterfaceStyle": "light",
-    "ios": { "supportsTablet": false },
-    "android": { "predictiveBackGestureEnabled": false },
-    "web": { "bundler": "metro", "output": "single" },
-    "plugins": ["expo-router", "expo-font"],
-    "experiments": { "typedRoutes": false }
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "school-erp-student",
+    "splash": {
+      "backgroundColor": "#1E40AF"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.schoolerp.student"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1E40AF"
+      },
+      "package": "com.schoolerp.student"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": ["expo-router", "expo-secure-store"]
   }
 }

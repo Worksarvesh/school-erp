@@ -9,6 +9,9 @@ allowBuilds:
   esbuild: false
   prisma: true
   workerd: false
+auditConfig:
+  ignoreGhsas:
+    - GHSA-fc5q-39xc-vjpf
 minimumReleaseAgeExclude:
   - '@expo/cli@58.1.21'
   - '@expo/metro-config@58.0.23'

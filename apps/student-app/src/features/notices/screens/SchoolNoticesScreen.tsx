@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Screen, Header, Card, Badge, StateView, useTheme } from '@school-erp/ui';
 import type { NoticeDto } from '@school-erp/api-client';
-import { MockStudentServices } from '../../../core/mocks/mock-services.js';
+import { MockStudentServices } from '../../../core/mocks/mock-services';
 
 export function SchoolNoticesScreen() {
   const { colors, spacing, typography } = useTheme();

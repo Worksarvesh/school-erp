@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Screen, Header, Card, Badge, StateView, useTheme } from '@school-erp/ui';
 import type { HomeworkDto } from '@school-erp/api-client';
-import { MockStudentServices } from '../../../core/mocks/mock-services.js';
+import { MockStudentServices } from '../../../core/mocks/mock-services';
 
 export function HomeworkDetailScreen() {
   const { colors, spacing, typography } = useTheme();

@@ -20,6 +20,9 @@ env:
   CI: true
 
 jobs:
+  # Advisory only: PR titles are free-form. This job never fails; a title that is not in
+  # Conventional Commits format gets a warning annotation. It is not part of `CI passed`.
+  # The job id and name are unchanged so any status-check configuration that names it keeps working.
   pr-title:
     name: PR title (Conventional Commits)
     if: github.event_name == 'pull_request'
@@ -33,10 +36,13 @@ jobs:
         with:
           node-version-file: .node-version
           package-manager-cache: false
-      - name: Check PR title
+      - name: Check PR title (advisory, non-blocking)
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
-        run: node scripts/check-pr-title.mjs
+        run: |
+          if ! node scripts/check-pr-title.mjs; then
+            echo "::warning title=PR title (advisory)::Not in Conventional Commits format. This does not block the PR. Squash merge uses the title as the commit message on main, so a clear title is still recommended."
+          fi
 
   quality:
     name: Format, lint and typecheck

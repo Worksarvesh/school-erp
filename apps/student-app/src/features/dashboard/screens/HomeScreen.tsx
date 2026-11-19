@@ -1,21 +1,21 @@
 import { useRouter } from 'expo-router';
-import { Bell, BookOpen, Megaphone, School } from 'lucide-react-native';
+import { Bell, School } from 'lucide-react-native';
 import { useEffect, useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Avatar, Screen, useTheme, type ThemeContextValue } from '@school-erp/ui';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Screen, useTheme, type ThemeContextValue } from '@school-erp/ui';
 import { BigActionCard, QuickActionTile } from '@/components';
 import { findChild, mockParent, mockStudent } from '@/mock/student';
 import { useSession } from '@/state/session';
-import { mockNotices } from '../../../core/mocks/fixtures';
-import { formatLongDate, greetingFor, QUICK_ACTIONS } from '../quickActions';
+import { fonts } from '@/theme/fonts';
+import { homeImages } from '@/theme/images';
+import { comingSoon, formatLongDate, greetingFor, QUICK_ACTIONS } from '../quickActions';
 
-/** The two latest mock notices, title only (one line each on the card). */
-const LATEST_NOTICE_TITLES = mockNotices.slice(0, 2).map((n) => n.title);
+const IMG = homeImages;
 
 /**
- * Student App Home (V1.2): school header, greeting, bell, hero card, exactly 7 tiles and one
- * "School Notices" card. Parent mode adds a child switcher (2 mock children at different schools);
- * the header, greeting line and badges follow the selected child. MOCK data only.
+ * Student App Home, built to the approved Home design: purple school header, greeting with bell,
+ * "Ready to Learn?" hero, 8 quick-action tiles, School Notices card, and Career Guidance / Events
+ * cards. Parent mode adds a child switcher (2 mock children at different schools). MOCK data only.
  */
 export function HomeScreen() {
   const router = useRouter();
@@ -40,7 +40,7 @@ export function HomeScreen() {
   return (
     <Screen scrollable contentContainerStyle={styles.content}>
       <View style={styles.schoolHeader} accessibilityRole="header">
-        <School size={22} color={colors.primaryForeground} />
+        <School size={30} color={colors.primaryForeground} strokeWidth={2.2} />
         <Text style={styles.schoolName} numberOfLines={1}>
           {s.schoolName}
         </Text>
@@ -85,10 +85,12 @@ export function HomeScreen() {
       ) : null}
 
       <View style={styles.greetingRow}>
-        <Avatar name={name} size={44} />
+        <View style={styles.avatar}>
+          <Image source={IMG.avatar} style={styles.avatarImage} resizeMode="contain" />
+        </View>
         <View style={styles.greetingText}>
           <Text style={styles.greeting} numberOfLines={1}>
-            {greetingFor(now)}, {name}
+            {greetingFor(now)}, {name}!
           </Text>
           <Text style={styles.meta} numberOfLines={1}>
             {formatLongDate(now)}
@@ -109,14 +111,17 @@ export function HomeScreen() {
           onPress={() => router.push('/notifications')}
           style={styles.bell}
         >
-          <Bell size={24} color={colors.primary} />
+          <Bell size={24} color={colors.primary} strokeWidth={2.2} />
           {s.unreadNotices > 0 ? <View style={styles.dot} /> : null}
         </Pressable>
       </View>
 
       <View style={styles.hero}>
         <View style={styles.heroText}>
-          <Text style={styles.heroTitle}>Ready to Learn? ⭐</Text>
+          <View style={styles.heroTitleRow}>
+            <Text style={styles.heroTitle}>Ready to Learn?</Text>
+            <Image source={IMG.star} style={styles.star} resizeMode="contain" />
+          </View>
           <Text style={styles.heroSubtitle}>{s.heroSubtitle}</Text>
         </View>
         <View
@@ -124,7 +129,9 @@ export function HomeScreen() {
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
         >
-          <BookOpen size={36} color={colors.primary} />
+          <View style={styles.heroPanel} />
+          <Image source={IMG.books} style={styles.books} resizeMode="contain" />
+          <Image source={IMG.gradcap} style={styles.gradcap} resizeMode="contain" />
         </View>
       </View>
 
@@ -134,7 +141,7 @@ export function HomeScreen() {
             key={a.key}
             testID={`quick-${a.key}`}
             label={a.label}
-            icon={a.icon}
+            image={a.image}
             onPress={() => router.push(a.href)}
           />
         ))}
@@ -143,33 +150,48 @@ export function HomeScreen() {
       <BigActionCard
         testID="school-notices"
         title="School Notices"
-        icon={Megaphone}
+        image={IMG.notices}
         badge={s.unreadNotices}
-        previews={LATEST_NOTICE_TITLES}
         onPress={() => router.push('/notices')}
       />
+      <View style={styles.cardRow}>
+        <BigActionCard
+          testID="career-guidance"
+          title={'Career\nGuidance'}
+          image={IMG.career}
+          style={styles.halfCard}
+          onPress={() => router.push(comingSoon('Career Guidance'))}
+        />
+        <BigActionCard
+          testID="events"
+          title="Events"
+          image={IMG.events}
+          style={styles.halfCard}
+          onPress={() => router.push(comingSoon('Events'))}
+        />
+      </View>
     </Screen>
   );
 }
 
-function makeStyles({ colors, spacing, radii, typography }: ThemeContextValue) {
+function makeStyles({ colors, spacing, radii, isDark }: ThemeContextValue) {
   return StyleSheet.create({
-    content: { padding: spacing.base },
+    content: { padding: spacing.base, paddingBottom: spacing.xl },
     schoolHeader: {
-      minHeight: 52,
+      minHeight: 56,
       borderRadius: radii.full,
-      backgroundColor: colors.primaryDark,
+      backgroundColor: colors.primary,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: spacing.sm,
+      gap: spacing.md,
       paddingHorizontal: spacing.lg,
     },
     schoolName: {
       flexShrink: 1,
       color: colors.primaryForeground,
-      fontSize: typography.fontSizes.base,
-      fontWeight: typography.fontWeights.semibold,
+      fontSize: 22,
+      fontFamily: fonts.semibold,
     },
     switcher: { gap: spacing.sm, paddingTop: spacing.md },
     childChip: {
@@ -184,12 +206,8 @@ function makeStyles({ colors, spacing, radii, typography }: ThemeContextValue) {
       justifyContent: 'center',
     },
     childChipActive: { borderColor: colors.primary, backgroundColor: colors.primary },
-    childName: {
-      color: colors.text,
-      fontSize: typography.fontSizes.sm,
-      fontWeight: typography.fontWeights.semibold,
-    },
-    childSchool: { color: colors.textSecondary, fontSize: typography.fontSizes.xs },
+    childName: { color: colors.text, fontSize: 14, fontFamily: fonts.semibold },
+    childSchool: { color: colors.textSecondary, fontSize: 12, fontFamily: fonts.regular },
     childNameActive: { color: colors.primaryForeground },
     greetingRow: {
       flexDirection: 'row',
@@ -197,18 +215,26 @@ function makeStyles({ colors, spacing, radii, typography }: ThemeContextValue) {
       gap: spacing.md,
       marginTop: spacing.lg,
     },
-    greetingText: { flex: 1, gap: spacing.xxs },
-    greeting: {
-      color: colors.text,
-      fontSize: typography.fontSizes.base,
-      fontWeight: typography.fontWeights.semibold,
+    avatar: {
+      width: 48,
+      height: 48,
+      borderRadius: radii.full,
+      backgroundColor: isDark ? colors.surfaceSubtle : '#E3EEF9',
+      borderWidth: 2,
+      borderColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
     },
-    meta: { color: colors.textSecondary, fontSize: typography.fontSizes.xs },
+    avatarImage: { width: 36, height: 36 },
+    greetingText: { flex: 1, gap: 2 },
+    greeting: { color: colors.text, fontSize: 20, fontFamily: fonts.bold },
+    meta: { color: colors.textSecondary, fontSize: 12, fontFamily: fonts.regular },
     bell: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
     dot: {
       position: 'absolute',
-      top: spacing.sm,
-      right: spacing.sm,
+      top: 9,
+      right: 11,
       width: 8,
       height: 8,
       borderRadius: radii.full,
@@ -216,35 +242,52 @@ function makeStyles({ colors, spacing, radii, typography }: ThemeContextValue) {
     },
     hero: {
       marginTop: spacing.lg,
+      minHeight: 148,
       borderRadius: radii.xl,
-      backgroundColor: colors.surfaceSubtle,
-      padding: spacing.lg,
+      backgroundColor: isDark ? colors.surfaceSubtle : '#F1ECFB',
+      borderWidth: 1,
+      borderColor: isDark ? colors.border : '#FFFFFF',
+      paddingLeft: spacing.lg,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: spacing.md,
+      overflow: 'hidden',
+      shadowColor: '#5016A8',
+      shadowOpacity: 0.12,
+      shadowRadius: 16,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 4,
     },
-    heroText: { flex: 1, gap: spacing.sm },
-    heroTitle: {
-      color: colors.text,
-      fontSize: typography.fontSizes.base,
-      fontWeight: typography.fontWeights.semibold,
+    heroText: { flex: 1, gap: spacing.sm, paddingVertical: spacing.lg },
+    heroTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+    heroTitle: { color: colors.text, fontSize: 18, fontFamily: fonts.medium },
+    star: { width: 22, height: 22 },
+    heroSubtitle: {
+      color: colors.textSecondary,
+      fontSize: 12,
+      lineHeight: 18,
+      fontFamily: fonts.regular,
     },
-    heroSubtitle: { color: colors.textSecondary, fontSize: typography.fontSizes.xs },
-    heroArt: {
-      width: 72,
-      height: 72,
-      borderRadius: radii.xl,
-      backgroundColor: colors.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
+    heroArt: { width: 112, alignSelf: 'stretch', justifyContent: 'flex-end' },
+    heroPanel: {
+      position: 'absolute',
+      right: -24,
+      bottom: -10,
+      width: 120,
+      height: 96,
+      borderRadius: radii.md,
+      backgroundColor: isDark ? colors.surface : '#E6DEF7',
+      transform: [{ rotate: '-8deg' }],
     },
+    books: { position: 'absolute', right: 8, bottom: 10, width: 84, height: 84 },
+    gradcap: { position: 'absolute', right: 6, bottom: 66, width: 46, height: 46 },
     grid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       marginTop: spacing.lg,
       marginBottom: spacing.lg,
-      rowGap: spacing.sm,
-      justifyContent: 'flex-start',
+      rowGap: spacing.md,
     },
+    cardRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.md },
+    halfCard: { flex: 1 },
   });
 }

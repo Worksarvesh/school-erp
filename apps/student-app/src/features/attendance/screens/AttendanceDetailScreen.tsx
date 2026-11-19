@@ -1,191 +1,446 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Screen, Header, Card, Badge, StateView, useTheme } from '@school-erp/ui';
-import type { AttendanceSummaryDto, AttendanceRecordDto } from '@school-erp/api-client';
-import { MockStudentServices } from '../../../core/mocks/mock-services.js';
+import {
+  ArrowLeft,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  CircleCheck,
+} from 'lucide-react-native';
+import { useMemo, useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Screen, useTheme, type ThemeContextValue } from '@school-erp/ui';
+import { AttendanceSummary } from '@/features/attendance/components/AttendanceSummary';
+import { ACADEMIC_YEAR_START, mockDayStatus, type DayStatus } from '@/mock/attendance';
+import { fonts } from '@/theme/fonts';
 
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+const MONTHS_SHORT = MONTHS.map((m) => m.slice(0, 3));
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+/** Calendar dot colours (match the legend under the calendar). */
+const DOT: Record<DayStatus, string> = {
+  present: '#1F9D6B',
+  absent: '#F28B82',
+  holiday: '#2F80ED',
+};
+const STATUS_LABEL: Record<DayStatus, string> = {
+  present: 'Present',
+  absent: 'Absent',
+  holiday: 'Holiday',
+};
+const STATUS_PILL: Record<DayStatus, { fg: string; bg: string; border: string }> = {
+  present: { fg: '#15803D', bg: '#DCFCE7', border: '#86EFAC' },
+  absent: { fg: '#B91C1C', bg: '#FEE2E2', border: '#FCA5A5' },
+  holiday: { fg: '#1D4ED8', bg: '#DBEAFE', border: '#93C5FD' },
+};
+
+function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function firstOfMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+
+/** 6 x 7 grid of dates for the month view, starting on Sunday (days of other months included). */
+export function monthGrid(month: Date): Date[] {
+  const first = firstOfMonth(month);
+  const start = new Date(first.getFullYear(), first.getMonth(), 1 - first.getDay());
+  const lastDay = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+  const weeks = Math.ceil((first.getDay() + lastDay) / 7);
+  return Array.from(
+    { length: weeks * 7 },
+    (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i),
+  );
+}
+
+/** Months from the start of the academic year up to the current month, newest first. */
+export function pickerMonths(today: Date): Date[] {
+  const months: Date[] = [];
+  let m = firstOfMonth(today);
+  while (m >= ACADEMIC_YEAR_START) {
+    months.push(m);
+    m = new Date(m.getFullYear(), m.getMonth() - 1, 1);
+  }
+  return months;
+}
+
+const monthLabel = (d: Date) => `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+const shortDate = (d: Date) => `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+
+/**
+ * Attendance, built to the approved design: month picker on a lavender band, month calendar with
+ * a coloured dot per day, the status of the chosen day, and the Daily / Weekly / Monthly ring.
+ * MOCK data only.
+ */
 export function AttendanceDetailScreen() {
-  const { colors, spacing, typography, radii } = useTheme();
   const router = useRouter();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const { colors } = theme;
 
-  const [summary, setSummary] = useState<AttendanceSummaryDto | null>(null);
-  const [history, setHistory] = useState<AttendanceRecordDto[]>([]);
-  const [loading, setLoading] = useState(true);
+  const today = useMemo(() => startOfDay(new Date()), []);
+  const [month, setMonth] = useState(() => firstOfMonth(today));
+  const [selected, setSelected] = useState(today);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
-  const loadAttendance = async () => {
-    try {
-      setLoading(true);
-      const [sum, rec] = await Promise.all([
-        MockStudentServices.getAttendanceSummary(),
-        MockStudentServices.getAttendanceHistory(),
-      ]);
-      setSummary(sum);
-      setHistory(rec);
-    } finally {
-      setLoading(false);
-    }
+  const months = useMemo(() => pickerMonths(today), [today]);
+  const grid = useMemo(() => monthGrid(month), [month]);
+  const canPrev = firstOfMonth(month) > ACADEMIC_YEAR_START;
+  const canNext = firstOfMonth(month) < firstOfMonth(today);
+  const selectedStatus = mockDayStatus(selected, today);
+
+  const showMonth = (m: Date) => {
+    setMonth(firstOfMonth(m));
+    setPickerOpen(false);
   };
-
-  useEffect(() => {
-    loadAttendance();
-  }, []);
+  const shiftMonth = (delta: number) =>
+    setMonth(new Date(month.getFullYear(), month.getMonth() + delta, 1));
 
   return (
-    <Screen
-      header={<Header title="Attendance Record" showBack onBack={() => router.back()} />}
-      scrollable
-      contentContainerStyle={{ padding: spacing.base }}
-      onRefresh={loadAttendance}
-      refreshing={loading}
-    >
-      {loading ? (
-        <StateView state="loading" title="Loading attendance..." />
-      ) : summary ? (
-        <>
-          {/* Summary Card */}
-          <Card
-            variant="elevated"
-            style={[
-              styles.summaryCard,
-              { backgroundColor: colors.primary, borderRadius: radii.xl },
-            ]}
-          >
-            <Text style={{ color: '#BFDBFE', fontSize: typography.fontSizes.sm }}>
-              Academic Session {summary.academicYear}
-            </Text>
-            <Text
-              style={{
-                color: '#FFFFFF',
-                fontSize: typography.fontSizes['3xl'],
-                fontWeight: '700',
-                marginVertical: 4,
-              }}
-            >
-              {summary.percentage}%
-            </Text>
-            <View style={styles.metricRow}>
-              <View style={styles.metricBox}>
-                <Text style={{ color: '#E0E7FF', fontSize: typography.fontSizes.xs }}>
-                  Total Working Days
-                </Text>
-                <Text
-                  style={{
-                    color: '#FFFFFF',
-                    fontWeight: '700',
-                    fontSize: typography.fontSizes.base,
-                  }}
-                >
-                  {summary.totalDays}
-                </Text>
-              </View>
-              <View style={styles.metricBox}>
-                <Text style={{ color: '#E0E7FF', fontSize: typography.fontSizes.xs }}>Present</Text>
-                <Text
-                  style={{
-                    color: '#86EFAC',
-                    fontWeight: '700',
-                    fontSize: typography.fontSizes.base,
-                  }}
-                >
-                  {summary.presentDays}
-                </Text>
-              </View>
-              <View style={styles.metricBox}>
-                <Text style={{ color: '#E0E7FF', fontSize: typography.fontSizes.xs }}>Absent</Text>
-                <Text
-                  style={{
-                    color: '#FCA5A5',
-                    fontWeight: '700',
-                    fontSize: typography.fontSizes.base,
-                  }}
-                >
-                  {summary.absentDays}
-                </Text>
-              </View>
-            </View>
-          </Card>
+    <Screen scrollable contentContainerStyle={styles.content}>
+      <View style={styles.band} />
 
-          {/* Recent Attendance Logs */}
-          <Text
+      <View style={styles.header}>
+        <Pressable
+          testID="attendance-back"
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+          style={styles.headerButton}
+        >
+          <ArrowLeft size={24} color={colors.text} />
+        </Pressable>
+        <Text style={styles.title} accessibilityRole="header">
+          Attendance
+        </Text>
+        <View style={styles.headerButton} />
+      </View>
+
+      <Pressable
+        testID="month-picker"
+        accessibilityRole="button"
+        accessibilityLabel={`Month: ${monthLabel(month)}`}
+        accessibilityHint="Opens a list of months"
+        onPress={() => setPickerOpen(true)}
+        style={({ pressed }) => [styles.monthPill, pressed && styles.pressed]}
+      >
+        <CalendarDays size={16} color={colors.primary} />
+        <Text style={styles.monthPillText}>{monthLabel(month)}</Text>
+        <ChevronDown size={16} color={colors.textSecondary} />
+      </Pressable>
+
+      <View style={styles.calendarCard}>
+        <View style={styles.calendarHeader}>
+          <Pressable
+            testID="month-prev"
+            accessibilityRole="button"
+            accessibilityLabel="Previous month"
+            disabled={!canPrev}
+            onPress={() => shiftMonth(-1)}
+            style={[styles.arrow, !canPrev && styles.arrowDisabled]}
+          >
+            <ChevronLeft size={18} color={colors.text} />
+          </Pressable>
+          <Text style={styles.calendarTitle}>{monthLabel(month)}</Text>
+          <Pressable
+            testID="month-next"
+            accessibilityRole="button"
+            accessibilityLabel="Next month"
+            disabled={!canNext}
+            onPress={() => shiftMonth(1)}
+            style={[styles.arrow, !canNext && styles.arrowDisabled]}
+          >
+            <ChevronRight size={18} color={colors.text} />
+          </Pressable>
+        </View>
+
+        <View style={styles.weekRow}>
+          {WEEKDAYS.map((w) => (
+            <Text key={w} style={styles.weekday}>
+              {w}
+            </Text>
+          ))}
+        </View>
+
+        <View style={styles.grid}>
+          {grid.map((d) => {
+            const inMonth = d.getMonth() === month.getMonth();
+            const status = inMonth ? mockDayStatus(d, today) : null;
+            const isSelected = inMonth && d.getTime() === selected.getTime();
+            return (
+              <Pressable
+                key={d.getTime()}
+                testID={inMonth ? `day-${d.getDate()}` : undefined}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected, disabled: !inMonth }}
+                accessibilityLabel={`${shortDate(d)}${status ? `, ${STATUS_LABEL[status]}` : ''}`}
+                disabled={!inMonth}
+                onPress={() => setSelected(d)}
+                style={styles.cell}
+              >
+                <View style={[styles.dayCircle, isSelected && styles.dayCircleSelected]}>
+                  <Text
+                    style={[
+                      styles.dayText,
+                      !inMonth && styles.dayTextMuted,
+                      isSelected && styles.dayTextSelected,
+                    ]}
+                  >
+                    {d.getDate()}
+                  </Text>
+                </View>
+                <View style={[styles.dot, status ? { backgroundColor: DOT[status] } : null]} />
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <View style={styles.legendRow}>
+          {(['present', 'absent', 'holiday'] as const).map((s) => (
+            <View key={s} style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: DOT[s] }]} />
+              <Text style={styles.legendText}>{STATUS_LABEL[s]}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.statusCard} testID="attendance-status">
+        <View style={styles.statusText}>
+          <Text style={styles.statusTitle}>Attendance Status</Text>
+          <Text style={styles.statusDate}>({shortDate(selected)})</Text>
+        </View>
+        {selectedStatus ? (
+          <View
             style={[
-              styles.logTitle,
+              styles.statusPill,
               {
-                color: colors.text,
-                fontSize: typography.fontSizes.base,
-                fontWeight: '700',
-                marginVertical: spacing.md,
+                backgroundColor: STATUS_PILL[selectedStatus].bg,
+                borderColor: STATUS_PILL[selectedStatus].border,
               },
             ]}
           >
-            Recent Attendance Logs
-          </Text>
+            <CircleCheck size={16} color={STATUS_PILL[selectedStatus].fg} />
+            <Text style={[styles.statusPillText, { color: STATUS_PILL[selectedStatus].fg }]}>
+              {STATUS_LABEL[selectedStatus]}
+            </Text>
+          </View>
+        ) : (
+          <View style={[styles.statusPill, styles.statusPillNone]}>
+            <Text style={[styles.statusPillText, { color: colors.textSecondary }]}>Not marked</Text>
+          </View>
+        )}
+      </View>
 
-          {history.map((record) => (
-            <Card key={record.date} variant="outlined" style={styles.logCard}>
-              <View style={styles.logRow}>
-                <View>
-                  <Text
-                    style={{
-                      color: colors.text,
-                      fontWeight: '600',
-                      fontSize: typography.fontSizes.sm,
-                    }}
-                  >
-                    {record.date}
+      <View style={styles.summary}>
+        <AttendanceSummary />
+      </View>
+
+      <Modal
+        visible={pickerOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPickerOpen(false)}
+      >
+        <Pressable
+          style={styles.backdrop}
+          accessibilityRole="button"
+          accessibilityLabel="Close month list"
+          onPress={() => setPickerOpen(false)}
+        />
+        <SafeAreaView edges={['bottom']} style={styles.sheet}>
+          <Text style={styles.sheetTitle}>Select month</Text>
+          <ScrollView>
+            {months.map((m) => {
+              const active = m.getTime() === month.getTime();
+              return (
+                <Pressable
+                  key={m.getTime()}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  onPress={() => showMonth(m)}
+                  style={styles.sheetOption}
+                >
+                  <Text style={[styles.sheetOptionText, active && styles.sheetOptionActive]}>
+                    {monthLabel(m)}
                   </Text>
-                  {record.remarks ? (
-                    <Text
-                      style={{
-                        color: colors.textSecondary,
-                        fontSize: typography.fontSizes.xs,
-                        marginTop: 2,
-                      }}
-                    >
-                      {record.remarks}
-                    </Text>
-                  ) : null}
-                </View>
-                <Badge
-                  label={record.status.toUpperCase()}
-                  variant={
-                    record.status === 'present'
-                      ? 'success'
-                      : record.status === 'late'
-                        ? 'warning'
-                        : 'error'
-                  }
-                  size="sm"
-                />
-              </View>
-            </Card>
-          ))}
-        </>
-      ) : null}
+                  {active ? <Check size={18} color={colors.primary} /> : null}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  summaryCard: {
-    padding: 20,
-    marginBottom: 16,
-  },
-  metricRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-  },
-  metricBox: {
-    alignItems: 'center',
-  },
-  logTitle: {},
-  logCard: {
-    marginBottom: 8,
-  },
-  logRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-});
+function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
+  return StyleSheet.create({
+    content: { paddingHorizontal: spacing.base, paddingBottom: spacing.xl },
+    pressed: { opacity: 0.75 },
+    band: {
+      position: 'absolute',
+      top: 60,
+      left: 0,
+      right: 0,
+      height: 230,
+      backgroundColor: '#EEE7FB',
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: spacing.sm,
+    },
+    headerButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+    title: { color: colors.primary, fontSize: 22, fontFamily: fonts.semibold },
+    monthPill: {
+      marginTop: spacing.lg,
+      alignSelf: 'flex-start',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      minHeight: 36,
+      paddingHorizontal: spacing.md,
+      borderRadius: radii.lg,
+      backgroundColor: colors.surface,
+    },
+    monthPillText: { color: colors.text, fontSize: 13, fontFamily: fonts.semibold },
+    calendarCard: {
+      marginTop: spacing.lg,
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: spacing.base,
+      shadowColor: '#5016A8',
+      shadowOpacity: 0.1,
+      shadowRadius: 16,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 4,
+    },
+    calendarHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    arrow: {
+      width: 32,
+      height: 32,
+      borderRadius: radii.full,
+      backgroundColor: '#F4F4F5',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    arrowDisabled: { opacity: 0.35 },
+    calendarTitle: { color: colors.text, fontSize: 16, fontFamily: fonts.bold },
+    weekRow: { flexDirection: 'row', marginTop: spacing.md },
+    weekday: {
+      width: `${100 / 7}%`,
+      textAlign: 'center',
+      color: colors.textSecondary,
+      fontSize: 12,
+      fontFamily: fonts.medium,
+    },
+    grid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: spacing.xs },
+    cell: {
+      width: `${100 / 7}%`,
+      alignItems: 'center',
+      paddingVertical: 3,
+      minHeight: 40,
+    },
+    dayCircle: {
+      width: 28,
+      height: 28,
+      borderRadius: radii.full,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dayCircleSelected: { backgroundColor: colors.primary },
+    dayText: { color: colors.text, fontSize: 14, fontFamily: fonts.medium },
+    dayTextMuted: { color: '#C4C4CC' },
+    dayTextSelected: { color: colors.primaryForeground, fontFamily: fonts.semibold },
+    dot: { width: 5, height: 5, borderRadius: radii.full, marginTop: 1 },
+    legendRow: {
+      marginTop: spacing.md,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    legendDot: { width: 9, height: 9, borderRadius: radii.full },
+    legendText: { color: colors.textSecondary, fontSize: 11, fontFamily: fonts.medium },
+    statusCard: {
+      marginTop: spacing.lg,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.sm,
+      padding: spacing.base,
+      borderRadius: radii.xl,
+      backgroundColor: '#F4EFFC',
+      borderWidth: 1,
+      borderColor: '#E2D6F7',
+    },
+    statusText: { flex: 1 },
+    statusTitle: { color: colors.text, fontSize: 15, fontFamily: fonts.bold },
+    statusDate: {
+      color: colors.textSecondary,
+      fontSize: 12,
+      fontFamily: fonts.medium,
+      marginTop: 2,
+    },
+    statusPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 6,
+      borderRadius: radii.md,
+      borderWidth: 1,
+    },
+    statusPillNone: { backgroundColor: '#F4F4F5', borderColor: '#E4E4E7' },
+    statusPillText: { fontSize: 13, fontFamily: fonts.semibold },
+    summary: { marginTop: spacing.md },
+    backdrop: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)' },
+    sheet: {
+      maxHeight: '60%',
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: radii.xl,
+      borderTopRightRadius: radii.xl,
+      paddingHorizontal: spacing.base,
+      paddingTop: spacing.base,
+    },
+    sheetTitle: {
+      color: colors.text,
+      fontSize: 16,
+      fontFamily: fonts.bold,
+      marginBottom: spacing.sm,
+    },
+    sheetOption: {
+      minHeight: 48,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    sheetOptionText: { color: colors.text, fontSize: 15, fontFamily: fonts.medium },
+    sheetOptionActive: { color: colors.primary, fontFamily: fonts.semibold },
+  });
+}

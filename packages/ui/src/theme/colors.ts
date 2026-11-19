@@ -1,16 +1,16 @@
 export const lightPalette = {
   // Brand colors
-  primary: '#1E40AF', // Deep Royal Blue (Primary Brand)
-  primaryLight: '#3B82F6',
-  primaryDark: '#1E3A8A',
+  primary: '#5016A8', // Royal Purple (Primary Brand, Home design)
+  primaryLight: '#7C4DDB',
+  primaryDark: '#3F0F8C',
   primaryForeground: '#FFFFFF',
 
   // Surface & backgrounds
-  background: '#F8FAFC', // Slate 50
+  background: '#FFFFFF',
   surface: '#FFFFFF',
-  surfaceSubtle: '#F1F5F9', // Slate 100
-  border: '#E2E8F0', // Slate 200
-  borderFocus: '#2563EB',
+  surfaceSubtle: '#F4EFFB', // Lavender 50 (tile backgrounds)
+  border: '#E7E1F2',
+  borderFocus: '#6D28D9',
 
   // Typography
   text: '#0F172A', // Slate 900
@@ -33,17 +33,17 @@ export const lightPalette = {
 
 export const darkPalette = {
   // Brand colors
-  primary: '#3B82F6',
-  primaryLight: '#60A5FA',
-  primaryDark: '#1D4ED8',
-  primaryForeground: '#0F172A',
+  primary: '#8B5CF6',
+  primaryLight: '#A78BFA',
+  primaryDark: '#5B21B6',
+  primaryForeground: '#FFFFFF',
 
   // Surface & backgrounds
   background: '#0B0F19', // Dark Slate
   surface: '#151D2F',
-  surfaceSubtle: '#1E293B',
-  border: '#334155',
-  borderFocus: '#60A5FA',
+  surfaceSubtle: '#241B3A',
+  border: '#3A2F55',
+  borderFocus: '#A78BFA',
 
   // Typography
   text: '#F8FAFC',

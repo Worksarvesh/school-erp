@@ -1,32 +1,33 @@
-import type { LucideIcon } from 'lucide-react-native';
 import { ArrowRight } from 'lucide-react-native';
 import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type ImageSourcePropType,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { useTheme, type ThemeContextValue } from '@school-erp/ui';
+import { fonts } from '@/theme/fonts';
 
 interface BigActionCardProps {
   title: string;
-  icon: LucideIcon;
+  /** 3D icon image shown at the top left. */
+  image: ImageSourcePropType;
   onPress: () => void;
-  /** Optional count shown as a small badge (e.g. unread notices). */
+  /** Optional count shown as a small badge next to the title (e.g. unread notices). */
   badge?: number;
-  /** Optional short single-line previews shown under the title (e.g. latest notice titles). */
-  previews?: readonly string[];
+  style?: StyleProp<ViewStyle>;
   testID?: string;
 }
 
-/** Large primary-coloured card with an icon, a title and a round arrow button. */
-export function BigActionCard({
-  title,
-  icon: Icon,
-  onPress,
-  badge,
-  previews,
-  testID,
-}: BigActionCardProps) {
+/** Purple Home card: 3D icon on top, title at the bottom left, round white arrow at the right. */
+export function BigActionCard({ title, image, onPress, badge, style, testID }: BigActionCardProps) {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const { colors } = theme;
   const label = badge ? `${title}, ${badge} new` : title;
 
   return (
@@ -35,12 +36,10 @@ export function BigActionCard({
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, style, pressed && styles.pressed]}
     >
-      <View style={styles.iconBox}>
-        <Icon size={24} color={colors.primaryForeground} />
-      </View>
-      <View style={styles.body}>
+      <Image source={image} style={styles.image} resizeMode="contain" />
+      <View style={styles.bottomRow}>
         <View style={styles.titleRow}>
           <Text style={styles.title} numberOfLines={2}>
             {title}
@@ -51,67 +50,52 @@ export function BigActionCard({
             </View>
           ) : null}
         </View>
-        {previews?.map((line) => (
-          <Text key={line} style={styles.preview} numberOfLines={1} ellipsizeMode="tail">
-            {line}
-          </Text>
-        ))}
-      </View>
-      <View style={styles.arrow}>
-        <ArrowRight size={20} color={colors.primary} />
+        <View style={styles.arrow}>
+          <ArrowRight size={18} color={theme.colors.primary} strokeWidth={2.5} />
+        </View>
       </View>
     </Pressable>
   );
 }
 
-function makeStyles({ colors, spacing, radii, typography }: ThemeContextValue) {
+function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
   return StyleSheet.create({
     card: {
+      minHeight: 84,
       borderRadius: radii.xl,
       backgroundColor: colors.primary,
-      padding: spacing.lg,
-      gap: spacing.md,
-      marginBottom: spacing.lg,
-      flexDirection: 'row',
-      alignItems: 'center',
+      paddingHorizontal: spacing.base,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.md,
+      justifyContent: 'space-between',
+      gap: spacing.xs,
     },
     pressed: { opacity: 0.85 },
-    iconBox: {
-      width: 44,
-      height: 44,
-      borderRadius: radii.lg,
-      backgroundColor: colors.primaryLight,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    body: { flex: 1, gap: spacing.xs },
-    titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-    preview: { color: colors.primaryForeground, fontSize: typography.fontSizes.xs },
+    image: { width: 40, height: 40 },
+    bottomRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
+    titleRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
     title: {
       flexShrink: 1,
       color: colors.primaryForeground,
-      fontSize: typography.fontSizes.lg,
-      fontWeight: typography.fontWeights.bold,
+      fontSize: 15,
+      lineHeight: 19,
+      fontFamily: fonts.semibold,
     },
     badge: {
-      minWidth: 22,
-      height: 22,
-      paddingHorizontal: spacing.xs,
+      minWidth: 20,
+      height: 20,
+      paddingHorizontal: 6,
       borderRadius: radii.full,
-      backgroundColor: colors.surface,
+      backgroundColor: colors.error,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    badgeText: {
-      color: colors.error,
-      fontSize: typography.fontSizes.xs,
-      fontWeight: typography.fontWeights.bold,
-    },
+    badgeText: { color: '#FFFFFF', fontSize: 11, fontFamily: fonts.bold },
     arrow: {
-      width: 44,
-      height: 44,
+      width: 32,
+      height: 32,
       borderRadius: radii.full,
-      backgroundColor: colors.surface,
+      backgroundColor: '#FFFFFF',
       alignItems: 'center',
       justifyContent: 'center',
     },

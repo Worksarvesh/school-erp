@@ -10,10 +10,19 @@ interface SectionHeaderProps {
   tagTone?: 'muted' | 'accent' | 'success';
 }
 
-export function SectionHeader({ title, tag, tagIcon: TagIcon, tagTone = 'muted' }: SectionHeaderProps) {
+export function SectionHeader({
+  title,
+  tag,
+  tagIcon: TagIcon,
+  tagTone = 'muted',
+}: SectionHeaderProps) {
   const { colors, spacing, typography } = useTheme();
   const tone =
-    tagTone === 'accent' ? colors.warning : tagTone === 'success' ? colors.success : colors.textMuted;
+    tagTone === 'accent'
+      ? colors.warning
+      : tagTone === 'success'
+        ? colors.success
+        : colors.textMuted;
 
   return (
     <View

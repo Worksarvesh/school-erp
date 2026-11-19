@@ -46,12 +46,12 @@ Press `a` in the Expo terminal for Android or scan the QR code with Expo Go.
   `/(onboarding)/complete-profile`, everyone else to `/(tabs)` (`landingRouteAfterSignIn` in
   `src/state/session.ts`).
 
-| Group | Routes |
-| --- | --- |
-| `(auth)` | `splash`, `role-select`, `login`, `otp`, `contact-admin` |
-| `(onboarding)` | `complete-profile` |
-| `(tabs)` | `index` (Home), `academic`, `messages`, `profile` (`fees` kept on disk, hidden) |
-| root stack | `timetable`, `attendance`, `homework`, `examinations`, `examinations/results`, `syllabus`, `notices`, `notifications` |
+| Group          | Routes                                                                                                                |
+| -------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `(auth)`       | `splash`, `role-select`, `login`, `otp`, `contact-admin`                                                              |
+| `(onboarding)` | `complete-profile`                                                                                                    |
+| `(tabs)`       | `index` (Home), `academic`, `messages`, `profile` (`fees` kept on disk, hidden)                                       |
+| root stack     | `timetable`, `attendance`, `homework`, `examinations`, `examinations/results`, `syllabus`, `notices`, `notifications` |
 
 Route files are one-line re-exports; screens live in `src/features/<feature>/screens`.
 

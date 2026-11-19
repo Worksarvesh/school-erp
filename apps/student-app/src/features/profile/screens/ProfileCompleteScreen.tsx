@@ -87,15 +87,33 @@ export function ProfileCompleteScreen() {
         </View>
       }
     >
-      <Text style={{ color: colors.textSecondary, fontSize: typography.fontSizes.sm, marginBottom: spacing.sm }}>
-        Your school has already filled in your records. You can add the optional details now or later.
+      <Text
+        style={{
+          color: colors.textSecondary,
+          fontSize: typography.fontSizes.sm,
+          marginBottom: spacing.sm,
+        }}
+      >
+        Your school has already filled in your records. You can add the optional details now or
+        later.
       </Text>
       <ProgressBar percent={percent} accessibilityLabel={`Profile ${percent} percent complete`} />
-      <Text style={{ color: colors.textSecondary, fontSize: typography.fontSizes.xs, marginTop: spacing.xs }}>
+      <Text
+        style={{
+          color: colors.textSecondary,
+          fontSize: typography.fontSizes.xs,
+          marginTop: spacing.xs,
+        }}
+      >
         {percent}% complete
       </Text>
 
-      <SectionHeader title="School records" tag="Verified by School" tagIcon={BadgeCheck} tagTone="success" />
+      <SectionHeader
+        title="School records"
+        tag="Verified by School"
+        tagIcon={BadgeCheck}
+        tagTone="success"
+      />
       <Card variant="outlined">
         <ReadOnlyRow label="Parents' name" value={s.parent.name} />
         {parentMobileMissing ? (
@@ -107,7 +125,9 @@ export function ProfileCompleteScreen() {
               testID="parent-mobile"
               label="Parents' mobile number"
               placeholder="10-digit mobile number"
-              leftIcon={<Text style={{ color: colors.text, fontSize: typography.fontSizes.base }}>+91</Text>}
+              leftIcon={
+                <Text style={{ color: colors.text, fontSize: typography.fontSizes.base }}>+91</Text>
+              }
               keyboardType="number-pad"
               maxLength={10}
               value={parentMobile}
@@ -116,7 +136,10 @@ export function ProfileCompleteScreen() {
             />
           </View>
         ) : (
-          <ReadOnlyRow label="Parents' mobile number" value={`+91 ${formatMobile(s.parent.mobile)}`} />
+          <ReadOnlyRow
+            label="Parents' mobile number"
+            value={`+91 ${formatMobile(s.parent.mobile)}`}
+          />
         )}
         <ReadOnlyRow label="Gender" value={s.gender} />
         <ReadOnlyRow label="Date of birth" value={formatDisplayDate(s.dateOfBirth)} />
@@ -150,7 +173,15 @@ export function ProfileCompleteScreen() {
   );
 }
 
-function ReadOnlyRow({ label, value, last = false }: { label: string; value: string; last?: boolean }) {
+function ReadOnlyRow({
+  label,
+  value,
+  last = false,
+}: {
+  label: string;
+  value: string;
+  last?: boolean;
+}) {
   const { colors, spacing, typography } = useTheme();
   return (
     <View
@@ -162,8 +193,16 @@ function ReadOnlyRow({ label, value, last = false }: { label: string; value: str
         borderBottomColor: colors.border,
       }}
     >
-      <Text style={{ color: colors.textSecondary, fontSize: typography.fontSizes.xs }}>{label}</Text>
-      <Text style={{ color: colors.text, fontSize: typography.fontSizes.base, fontWeight: typography.fontWeights.medium }}>
+      <Text style={{ color: colors.textSecondary, fontSize: typography.fontSizes.xs }}>
+        {label}
+      </Text>
+      <Text
+        style={{
+          color: colors.text,
+          fontSize: typography.fontSizes.base,
+          fontWeight: typography.fontWeights.medium,
+        }}
+      >
         {value}
       </Text>
     </View>

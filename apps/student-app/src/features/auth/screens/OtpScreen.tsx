@@ -35,7 +35,8 @@ export function OtpScreen() {
     return () => clearTimeout(timer);
   }, [secondsLeft]);
 
-  const focusBox = (index: number) => inputs.current[Math.max(0, Math.min(OTP_LENGTH - 1, index))]?.focus();
+  const focusBox = (index: number) =>
+    inputs.current[Math.max(0, Math.min(OTP_LENGTH - 1, index))]?.focus();
 
   const onChangeBox = (index: number, text: string) => {
     const clean = text.replace(/\D/g, '');
@@ -120,14 +121,25 @@ export function OtpScreen() {
         >
           Enter the code
         </Text>
-        <Text style={{ color: colors.textSecondary, fontSize: typography.fontSizes.sm, textAlign: 'center' }}>
+        <Text
+          style={{
+            color: colors.textSecondary,
+            fontSize: typography.fontSizes.sm,
+            textAlign: 'center',
+          }}
+        >
           We sent a {OTP_LENGTH}-digit code to +91 {formatMobile(mobile)}.
         </Text>
       </View>
 
       <View
         accessibilityLabel={`One-time code, ${OTP_LENGTH} digits`}
-        style={{ flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm, marginTop: spacing['2xl'] }}
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          gap: spacing.sm,
+          marginTop: spacing['2xl'],
+        }}
       >
         {digits.map((digit, index) => (
           <TextInput
@@ -163,16 +175,31 @@ export function OtpScreen() {
         ))}
       </View>
 
-      <Text style={{ marginTop: spacing.md, color: colors.textSecondary, fontSize: typography.fontSizes.xs }}>
+      <Text
+        style={{
+          marginTop: spacing.md,
+          color: colors.textSecondary,
+          fontSize: typography.fontSizes.xs,
+        }}
+      >
         Demo build: any {OTP_LENGTH} digits work.
       </Text>
 
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.base }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: spacing.base,
+        }}
+      >
         <Pressable
           testID="resend-otp"
           accessibilityRole="button"
           accessibilityState={{ disabled: secondsLeft > 0 }}
-          accessibilityLabel={secondsLeft > 0 ? `Resend code in ${secondsLeft} seconds` : 'Resend code'}
+          accessibilityLabel={
+            secondsLeft > 0 ? `Resend code in ${secondsLeft} seconds` : 'Resend code'
+          }
           disabled={secondsLeft > 0}
           onPress={onResend}
           style={{ minHeight: 44, justifyContent: 'center' }}
@@ -193,7 +220,13 @@ export function OtpScreen() {
           onPress={() => router.back()}
           style={{ minHeight: 44, justifyContent: 'center' }}
         >
-          <Text style={{ color: colors.primary, fontSize: typography.fontSizes.sm, fontWeight: typography.fontWeights.medium }}>
+          <Text
+            style={{
+              color: colors.primary,
+              fontSize: typography.fontSizes.sm,
+              fontWeight: typography.fontWeights.medium,
+            }}
+          >
             Change number
           </Text>
         </Pressable>

@@ -19,7 +19,14 @@ export function ContactAdminScreen() {
       : 'For student safety and privacy, password resets for student accounts are handled directly by your school administration desk.';
 
   return (
-    <Screen contentContainerStyle={{ padding: spacing.xl, alignItems: 'center', justifyContent: 'center', gap: spacing.lg }}>
+    <Screen
+      contentContainerStyle={{
+        padding: spacing.xl,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.lg,
+      }}
+    >
       <View
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
@@ -45,7 +52,13 @@ export function ContactAdminScreen() {
       >
         Contact Your School Admin
       </Text>
-      <Text style={{ color: colors.textSecondary, fontSize: typography.fontSizes.sm, textAlign: 'center' }}>
+      <Text
+        style={{
+          color: colors.textSecondary,
+          fontSize: typography.fontSizes.sm,
+          textAlign: 'center',
+        }}
+      >
         {body}
       </Text>
       <View style={{ alignSelf: 'stretch', marginTop: spacing.lg }}>

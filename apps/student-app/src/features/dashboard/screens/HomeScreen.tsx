@@ -66,10 +66,16 @@ export function HomeScreen() {
                 onPress={() => selectChild(child.id)}
                 style={[styles.childChip, active && styles.childChipActive]}
               >
-                <Text style={[styles.childName, active && styles.childNameActive]} numberOfLines={1}>
+                <Text
+                  style={[styles.childName, active && styles.childNameActive]}
+                  numberOfLines={1}
+                >
                   {child.firstName}
                 </Text>
-                <Text style={[styles.childSchool, active && styles.childNameActive]} numberOfLines={1}>
+                <Text
+                  style={[styles.childSchool, active && styles.childNameActive]}
+                  numberOfLines={1}
+                >
                   {child.schoolName}
                 </Text>
               </Pressable>
@@ -113,7 +119,11 @@ export function HomeScreen() {
           <Text style={styles.heroTitle}>Ready to Learn? ⭐</Text>
           <Text style={styles.heroSubtitle}>{s.heroSubtitle}</Text>
         </View>
-        <View style={styles.heroArt} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <View
+          style={styles.heroArt}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
           <BookOpen size={36} color={colors.primary} />
         </View>
       </View>
@@ -181,7 +191,12 @@ function makeStyles({ colors, spacing, radii, typography }: ThemeContextValue) {
     },
     childSchool: { color: colors.textSecondary, fontSize: typography.fontSizes.xs },
     childNameActive: { color: colors.primaryForeground },
-    greetingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.lg },
+    greetingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      marginTop: spacing.lg,
+    },
     greetingText: { flex: 1, gap: spacing.xxs },
     greeting: {
       color: colors.text,

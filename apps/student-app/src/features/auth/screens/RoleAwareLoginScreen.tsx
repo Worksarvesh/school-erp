@@ -32,7 +32,14 @@ export function RoleAwareLoginScreen() {
 function LoginHeader({ subtitle }: { subtitle: string }) {
   const { colors, spacing, typography } = useTheme();
   return (
-    <View style={{ alignItems: 'center', gap: spacing.sm, marginTop: spacing['2xl'], marginBottom: spacing['2xl'] }}>
+    <View
+      style={{
+        alignItems: 'center',
+        gap: spacing.sm,
+        marginTop: spacing['2xl'],
+        marginBottom: spacing['2xl'],
+      }}
+    >
       <Text
         accessibilityRole="header"
         style={{
@@ -44,14 +51,30 @@ function LoginHeader({ subtitle }: { subtitle: string }) {
       >
         Login To your Account
       </Text>
-      <Text style={{ color: colors.textSecondary, fontSize: typography.fontSizes.sm, textAlign: 'center' }}>
+      <Text
+        style={{
+          color: colors.textSecondary,
+          fontSize: typography.fontSizes.sm,
+          textAlign: 'center',
+        }}
+      >
         {subtitle}
       </Text>
     </View>
   );
 }
 
-function TextLink({ label, onPress, testID, a11yLabel }: { label: string; onPress: () => void; testID?: string; a11yLabel?: string }) {
+function TextLink({
+  label,
+  onPress,
+  testID,
+  a11yLabel,
+}: {
+  label: string;
+  onPress: () => void;
+  testID?: string;
+  a11yLabel?: string;
+}) {
   const { colors, typography } = useTheme();
   return (
     <Pressable
@@ -61,7 +84,13 @@ function TextLink({ label, onPress, testID, a11yLabel }: { label: string; onPres
       onPress={onPress}
       style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-end' }}
     >
-      <Text style={{ color: colors.primary, fontSize: typography.fontSizes.sm, fontWeight: typography.fontWeights.medium }}>
+      <Text
+        style={{
+          color: colors.primary,
+          fontSize: typography.fontSizes.sm,
+          fontWeight: typography.fontWeights.medium,
+        }}
+      >
         {label}
       </Text>
     </Pressable>
@@ -112,7 +141,13 @@ function StudentLogin() {
       contentContainerStyle={{ padding: spacing.xl }}
       footer={
         <View style={{ padding: spacing.xl }}>
-          <Button testID="sign-in" label="Sign in" size="lg" loading={loading} onPress={() => void onSubmit()} />
+          <Button
+            testID="sign-in"
+            label="Sign in"
+            size="lg"
+            loading={loading}
+            onPress={() => void onSubmit()}
+          />
         </View>
       }
     >
@@ -198,7 +233,9 @@ function ParentLogin() {
         testID="mobile"
         label="Mobile number"
         placeholder="10-digit mobile number"
-        leftIcon={<Text style={{ color: colors.text, fontSize: typography.fontSizes.base }}>+91</Text>}
+        leftIcon={
+          <Text style={{ color: colors.text, fontSize: typography.fontSizes.base }}>+91</Text>
+        }
         keyboardType="number-pad"
         textContentType="telephoneNumber"
         autoComplete="tel"

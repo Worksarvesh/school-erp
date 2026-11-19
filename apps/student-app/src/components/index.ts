@@ -5,5 +5,6 @@ export { Dropdown } from './Dropdown';
 export { ProgressBar } from './ProgressBar';
 export { QuickActionTile } from './QuickActionTile';
 export { SectionHeader } from './SectionHeader';
-export { SelectCard } from './SelectCard';
+export { ROLE_SELECT_COLORS, SelectCard } from './SelectCard';
 export { WebColumn } from './WebColumn';
+export { HelpDeskIllustration, ParentsIllustration } from './RoleIllustrations';

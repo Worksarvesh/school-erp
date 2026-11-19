@@ -1,35 +1,59 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- React Native image assets are loaded with require() */
 import type { Href } from 'expo-router';
-import type { LucideIcon } from 'lucide-react-native';
-import {
-  Book,
-  Calendar,
-  ChartColumn,
-  FileText,
-  Megaphone,
-  PenLine,
-  SquareCheck,
-} from 'lucide-react-native';
+import type { ImageSourcePropType } from 'react-native';
 
 export interface QuickAction {
   key: string;
   label: string;
-  icon: LucideIcon;
-  href: Href;
+  /** 3D icon artwork from the approved design (assets/images/home). */
+  image: ImageSourcePropType;
+  /** Screen to open; undefined while the module has no screen yet. */
+  href?: Href;
 }
 
 /**
- * Home quick actions: exactly the 7 approved V1.2 tiles. Homework includes assignments (one
- * module). Not in V1: Sports, Puzzle, Career Guidance, Events, Focus, Fees.
- * Each tile opens the existing academic screens in the root stack.
+ * Home quick actions, in the approved design order (4 per row). Sports and Puzzle have no screen
+ * yet, so their tiles do nothing for now.
  */
 export const QUICK_ACTIONS: readonly QuickAction[] = [
-  { key: 'timetable', label: 'Time Table', icon: Calendar, href: '/timetable' },
-  { key: 'homework', label: 'Homework', icon: PenLine, href: '/homework' },
-  { key: 'attendance', label: 'Attendance', icon: SquareCheck, href: '/attendance' },
-  { key: 'exams', label: 'Exams', icon: FileText, href: '/examinations' },
-  { key: 'results', label: 'Results', icon: ChartColumn, href: '/examinations/results' },
-  { key: 'syllabus', label: 'Syllabus', icon: Book, href: '/syllabus' },
-  { key: 'notices', label: 'Notices', icon: Megaphone, href: '/notices' },
+  {
+    key: 'timetable',
+    label: 'Time Table',
+    image: require('../../../assets/images/home/timetable.png'),
+    href: '/timetable',
+  },
+  {
+    key: 'homework',
+    label: 'Home Work',
+    image: require('../../../assets/images/home/homework.png'),
+    href: '/homework',
+  },
+  {
+    key: 'attendance',
+    label: 'Attendance',
+    image: require('../../../assets/images/home/attendance.png'),
+    href: '/attendance',
+  },
+  {
+    key: 'assignments',
+    label: 'Assignments',
+    image: require('../../../assets/images/home/assignments.png'),
+    href: '/homework',
+  },
+  { key: 'sports', label: 'Sports', image: require('../../../assets/images/home/sports.png') },
+  {
+    key: 'syllabus',
+    label: 'Syllabus',
+    image: require('../../../assets/images/home/syllabus.png'),
+    href: '/syllabus',
+  },
+  { key: 'puzzle', label: 'Puzzle', image: require('../../../assets/images/home/puzzle.png') },
+  {
+    key: 'exam',
+    label: 'Exam',
+    image: require('../../../assets/images/home/exam.png'),
+    href: '/examinations',
+  },
 ];
 
 /** Greeting by local time of day. */

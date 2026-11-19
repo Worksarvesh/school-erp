@@ -10,12 +10,25 @@ const COLUMN_MAX_WIDTH = 480;
  * (browser, tablet). On phones it renders the children untouched. Used by the route-group
  * layouts, so every screen inside a group gets it without per-screen changes.
  */
-export function WebColumn({ children }: { children: ReactNode }) {
+export function WebColumn({
+  children,
+  backgroundColor,
+}: {
+  children: ReactNode;
+  /** Overrides the theme background behind and around the column. */
+  backgroundColor?: string;
+}) {
   const { width } = useWindowDimensions();
   const { colors } = useTheme();
   if (width <= WIDE_SCREEN_MIN) return <>{children}</>;
   return (
-    <View style={{ flex: 1, alignItems: 'center', backgroundColor: colors.background }}>
+    <View
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        backgroundColor: backgroundColor ?? colors.background,
+      }}
+    >
       <View style={{ flex: 1, width: '100%', maxWidth: COLUMN_MAX_WIDTH }}>{children}</View>
     </View>
   );

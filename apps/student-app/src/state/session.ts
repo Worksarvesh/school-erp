@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { SecureStorage } from '@school-erp/mobile-core';
-import type { BloodGroup } from '@/mock/student';
+import type { BloodGroup, Gender } from '@/mock/student';
 import { mockStudent } from '@/mock/student';
 
 /**
@@ -14,8 +14,21 @@ import { mockStudent } from '@/mock/student';
 export type AppRole = 'student' | 'parent';
 
 export interface OptionalProfile {
+  /** Required fields the student confirmed or corrected on the profile-completion screen. */
+  parentName?: string;
+  parentMobile?: string;
+  gender?: Gender;
+  /** ISO date (yyyy-mm-dd). */
+  dateOfBirth?: string;
   heightCm?: number;
   bloodGroup?: BloodGroup;
+  weightKg?: number;
+  studentMobile?: string;
+  email?: string;
+  address?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  hobbies?: string;
   /** Only when the school has no parent mobile on record; pending school confirmation. */
   pendingParentMobile?: string;
 }

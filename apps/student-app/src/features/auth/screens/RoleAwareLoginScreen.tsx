@@ -1,13 +1,13 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowRight, User } from 'lucide-react-native';
+import { Lock, Phone, User } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { Button, Input, Screen, useTheme } from '@school-erp/ui';
+import { Text, View } from 'react-native';
 import { useAuthStore } from '@school-erp/mobile-core';
 import { mockSignInResponse } from '@/mock/auth';
 import { MOCK_UNREGISTERED_PARENT_MOBILE } from '@/mock/student';
 import type { AppRole } from '@/state/session';
 import { useSession } from '@/state/session';
+import { AUTH, AuthButton, AuthField, AuthLink, AuthShell } from '../components/AuthKit';
 import { fieldErrors, normalizeMobile, parentLoginSchema, studentLoginSchema } from '../validation';
 
 /**
@@ -29,93 +29,33 @@ export function RoleAwareLoginScreen() {
   return role === 'parent' ? <ParentLogin /> : <StudentLogin />;
 }
 
-function LoginHeader({ subtitle }: { subtitle: string }) {
-  const { colors, spacing, typography } = useTheme();
-  return (
-    <View
-      style={{
-        alignItems: 'center',
-        gap: spacing.sm,
-        marginTop: spacing['2xl'],
-        marginBottom: spacing['2xl'],
-      }}
-    >
-      <Text
-        accessibilityRole="header"
-        style={{
-          color: colors.text,
-          fontSize: typography.fontSizes['2xl'],
-          fontWeight: typography.fontWeights.bold,
-          textAlign: 'center',
-        }}
-      >
-        Login To your Account
-      </Text>
-      <Text
-        style={{
-          color: colors.textSecondary,
-          fontSize: typography.fontSizes.sm,
-          textAlign: 'center',
-        }}
-      >
-        {subtitle}
-      </Text>
-    </View>
-  );
-}
-
-function TextLink({
-  label,
-  onPress,
-  testID,
-  a11yLabel,
-}: {
-  label: string;
-  onPress: () => void;
-  testID?: string;
-  a11yLabel?: string;
-}) {
-  const { colors, typography } = useTheme();
-  return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="link"
-      accessibilityLabel={a11yLabel ?? label}
-      onPress={onPress}
-      style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-end' }}
-    >
-      <Text
-        style={{
-          color: colors.primary,
-          fontSize: typography.fontSizes.sm,
-          fontWeight: typography.fontWeights.medium,
-        }}
-      >
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
-function ChangeRoleLink() {
-  const router = useRouter();
-  return (
-    <TextLink
-      testID="change-role"
-      label="Not you? Change role"
-      onPress={() => router.replace('/(auth)/role-select')}
-    />
-  );
-}
-
 function StudentLogin() {
   const router = useRouter();
-  const { colors, spacing } = useTheme();
   const setSession = useAuthStore((s) => s.setSession);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+
+  /** Validates one field when the user leaves it, so errors show before pressing Sign in. */
+  const validateField = (field: 'username' | 'password', value: string) => {
+    const result = studentLoginSchema.safeParse({ username, password, [field]: value });
+    const message = result.success ? undefined : fieldErrors(result.error)[field];
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (message) next[field] = message;
+      else delete next[field];
+      return next;
+    });
+  };
+
+  const clearError = (field: 'username' | 'password') =>
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
 
   const onSubmit = async () => {
     const result = studentLoginSchema.safeParse({ username, password });
@@ -136,61 +76,66 @@ function StudentLogin() {
   };
 
   return (
-    <Screen
-      scrollable
-      contentContainerStyle={{ padding: spacing.xl }}
-      footer={
-        <View style={{ padding: spacing.xl }}>
-          <Button
-            testID="sign-in"
-            label="Sign in"
-            size="lg"
-            loading={loading}
-            onPress={() => void onSubmit()}
-          />
-        </View>
+    <AuthShell
+      title="Login To your Account"
+      subtitle={
+        'Login using your phone number or Email ID.\nYou can add your other details after logging in.'
       }
+      onBack={() => router.replace('/(auth)/role-select')}
     >
-      <LoginHeader subtitle="Login using the username and password given by your school. You can add your other details after logging in." />
-      <Input
+      <AuthField
         testID="username"
-        label="Username"
-        placeholder="sch0001s0001"
-        leftIcon={<User size={18} color={colors.textSecondary} />}
+        label="User ID / Email"
+        placeholder="Enter your Email"
+        icon={<User size={22} color={AUTH.icon} />}
         autoCapitalize="none"
         autoCorrect={false}
         textContentType="username"
         returnKeyType="next"
+        keyboardType="email-address"
         value={username}
-        onChangeText={setUsername}
+        onChangeText={(t) => {
+          setUsername(t);
+          clearError('username');
+        }}
+        onBlur={() => validateField('username', username)}
         error={errors.username}
       />
-      <Input
+      <AuthField
         testID="password"
         label="Password"
         placeholder="Enter your password"
+        icon={<Lock size={22} color={AUTH.icon} />}
         isPassword
         textContentType="password"
         returnKeyType="done"
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(t) => {
+          setPassword(t);
+          clearError('password');
+        }}
+        onBlur={() => validateField('password', password)}
         onSubmitEditing={() => void onSubmit()}
         error={errors.password}
       />
-      <TextLink
+      <AuthLink
         testID="forgot-password"
         label="Forgot Password?"
         a11yLabel="Forgot password? Contact your school admin"
         onPress={() => router.push('/(auth)/contact-admin')}
       />
-      <ChangeRoleLink />
-    </Screen>
+      <AuthButton
+        testID="sign-in"
+        label="Sign in"
+        loading={loading}
+        onPress={() => void onSubmit()}
+      />
+    </AuthShell>
   );
 }
 
 function ParentLogin() {
   const router = useRouter();
-  const { colors, spacing, radii, typography } = useTheme();
   const [mobile, setMobile] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [noAccount, setNoAccount] = useState(false);
@@ -213,29 +158,18 @@ function ParentLogin() {
   };
 
   return (
-    <Screen
-      scrollable
-      contentContainerStyle={{ padding: spacing.xl }}
-      footer={
-        <View style={{ padding: spacing.xl }}>
-          <Button
-            testID="send-otp"
-            label="Send OTP"
-            size="lg"
-            rightIcon={<ArrowRight size={18} color={colors.primaryForeground} />}
-            onPress={onSendOtp}
-          />
-        </View>
+    <AuthShell
+      title="Login To your Account"
+      subtitle={
+        "Enter the mobile number registered with your child's school.\nWe will send you a one-time code."
       }
+      onBack={() => router.replace('/(auth)/role-select')}
     >
-      <LoginHeader subtitle="Enter the mobile number registered with your child's school. We will send you a one-time code." />
-      <Input
+      <AuthField
         testID="mobile"
         label="Mobile number"
         placeholder="10-digit mobile number"
-        leftIcon={
-          <Text style={{ color: colors.text, fontSize: typography.fontSizes.base }}>+91</Text>
-        }
+        icon={<Phone size={22} color={AUTH.icon} />}
         keyboardType="number-pad"
         textContentType="telephoneNumber"
         autoComplete="tel"
@@ -251,25 +185,13 @@ function ParentLogin() {
       />
 
       {noAccount ? (
-        <View
-          testID="no-account"
-          accessibilityLiveRegion="polite"
-          style={{
-            gap: spacing.md,
-            padding: spacing.base,
-            borderRadius: radii.md,
-            borderWidth: 1,
-            borderColor: colors.error,
-            backgroundColor: colors.errorBg,
-          }}
-        >
-          <Text style={{ color: colors.error, fontSize: typography.fontSizes.sm }}>
+        <View testID="no-account" accessibilityLiveRegion="polite" style={{ marginBottom: 18 }}>
+          <Text style={{ color: AUTH.error, fontSize: 13, marginBottom: 6 }}>
             No account found for this number. Please contact your school.
           </Text>
-          <Button
+          <AuthLink
             testID="contact-school"
             label="Contact School"
-            variant="outline"
             onPress={() =>
               router.push({ pathname: '/(auth)/contact-admin', params: { reason: 'no-account' } })
             }
@@ -277,7 +199,7 @@ function ParentLogin() {
         </View>
       ) : null}
 
-      <ChangeRoleLink />
-    </Screen>
+      <AuthButton testID="send-otp" label="Send OTP" trailingArrow onPress={onSendOtp} />
+    </AuthShell>
   );
 }

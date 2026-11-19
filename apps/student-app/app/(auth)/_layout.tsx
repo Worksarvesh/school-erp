@@ -4,7 +4,7 @@ import { WebColumn } from '@/components';
 
 export default function AuthLayout() {
   return (
-    <WebColumn>
+    <WebColumn backgroundColor="#FFFFFF">
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="splash" />
         <Stack.Screen name="role-select" />

@@ -3,6 +3,14 @@ import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useTheme } from '@school-erp/ui';
 
+/** The only visible tabs, in order. */
+export const TABS = [
+  { name: 'index', title: 'Home', icon: '🏠' },
+  { name: 'academic', title: 'Academic', icon: '📚' },
+  { name: 'messages', title: 'Messages', icon: '💬' },
+  { name: 'profile', title: 'Profile', icon: '👤' },
+] as const;
+
 export default function TabsLayout() {
   const { colors, typography } = useTheme();
 
@@ -25,41 +33,18 @@ export default function TabsLayout() {
         },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>🏠</Text>,
-        }}
-      />
-      <Tabs.Screen
-        name="academic"
-        options={{
-          title: 'Academic',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>📚</Text>,
-        }}
-      />
-      <Tabs.Screen
-        name="messages"
-        options={{
-          title: 'Messages',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>💬</Text>,
-        }}
-      />
-      <Tabs.Screen
-        name="fees"
-        options={{
-          title: 'Fees',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>💳</Text>,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>👤</Text>,
-        }}
-      />
+      {TABS.map((tab) => (
+        <Tabs.Screen
+          key={tab.name}
+          name={tab.name}
+          options={{
+            title: tab.title,
+            tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>{tab.icon}</Text>,
+          }}
+        />
+      ))}
+      {/* Fees is out of V1 (V1.2): the file is kept but hidden from the tab bar. */}
+      <Tabs.Screen name="fees" options={{ href: null }} />
     </Tabs>
   );
 }

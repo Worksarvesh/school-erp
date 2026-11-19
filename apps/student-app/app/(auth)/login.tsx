@@ -1,6 +1,6 @@
 import React from 'react';
-import { LoginScreen } from '../../src/features/auth/screens/LoginScreen.js';
+import { RoleAwareLoginScreen } from '../../src/features/auth/screens/RoleAwareLoginScreen';
 
 export default function LoginRoute() {
-  return <LoginScreen />;
+  return <RoleAwareLoginScreen />;
 }

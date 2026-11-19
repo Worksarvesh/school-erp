@@ -4,12 +4,14 @@ import { useRouter } from 'expo-router';
 import { Screen, Header, Card, Badge, Button, Input, StateView, useTheme } from '@school-erp/ui';
 import { useAuthStore } from '@school-erp/mobile-core';
 import type { StudentRecordDto } from '@school-erp/api-client';
-import { MockStudentServices } from '../../../core/mocks/mock-services.js';
+import { useSession } from '@/state/session';
+import { MockStudentServices } from '../../../core/mocks/mock-services';
 
 export function ProfileScreen() {
   const { colors, spacing, typography } = useTheme();
   const router = useRouter();
   const logout = useAuthStore((state) => state.logout);
+  const role = useSession((s) => s.role);
 
   const [student, setStudent] = useState<StudentRecordDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,7 +73,7 @@ export function ProfileScreen() {
 
   const handleLogout = async () => {
     await logout();
-    router.replace('/(auth)/login');
+    router.replace('/(auth)/splash');
   };
 
   if (loading) {
@@ -101,6 +103,15 @@ export function ProfileScreen() {
       scrollable
       contentContainerStyle={{ padding: spacing.base }}
     >
+      {role === 'student' && (
+        <Card variant="outlined" style={styles.sectionCard}>
+          <Button
+            label="Complete your profile"
+            variant="secondary"
+            onPress={() => router.push('/(onboarding)/complete-profile')}
+          />
+        </Card>
+      )}
       {/* 1. School-Controlled Fields (Read-Only) */}
       <Card variant="outlined" style={styles.sectionCard}>
         <View style={styles.sectionHeaderRow}>

@@ -1,6 +1,6 @@
 import React from 'react';
-import { DashboardScreen } from '../../src/features/dashboard/screens/DashboardScreen.js';
+import { HomeScreen } from '../../src/features/dashboard/screens/HomeScreen';
 
 export default function HomeTabRoute() {
-  return <DashboardScreen />;
+  return <HomeScreen />;
 }

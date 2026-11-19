@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, Screen, StateView, useTheme } from '@school-erp/ui';
 import { queryClient, useAuthStore } from '@school-erp/mobile-core';
+import { landingRouteAfterSignIn, useSession } from '@/state/session';
 
 function RootNavigationGate() {
   const { isDark } = useTheme();
@@ -12,29 +13,32 @@ function RootNavigationGate() {
 
   const isHydrating = useAuthStore((state) => state.isHydrating);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const hasCompletedOnboarding = useAuthStore((state) => state.hasCompletedOnboarding);
+  const sessionHydrated = useSession((state) => state.isHydrated);
+  const role = useSession((state) => state.role);
+  const profilePromptSeen = useSession((state) => state.profilePromptSeen);
   const hydrateSession = useAuthStore((state) => state.hydrateSession);
 
   useEffect(() => {
     hydrateSession();
+    void useSession.getState().hydrate();
   }, [hydrateSession]);
 
   useEffect(() => {
-    if (isHydrating) return;
+    if (isHydrating || !sessionHydrated) return;
 
     const inAuthGroup = segments[0] === '(auth)';
-    const inOnboarding = segments[0] === '(onboarding)';
 
     if (!isAuthenticated && !inAuthGroup) {
-      router.replace('/(auth)/login');
-    } else if (isAuthenticated && !hasCompletedOnboarding && !inOnboarding) {
-      router.replace('/(onboarding)');
-    } else if (isAuthenticated && hasCompletedOnboarding && (inAuthGroup || inOnboarding)) {
-      router.replace('/(tabs)');
+      router.replace('/(auth)/splash');
+    } else if (isAuthenticated && inAuthGroup) {
+      // Signed in: students see the profile prompt once, everyone else goes Home.
+      // (onboarding) and (tabs) are never redirected, so a student can open the profile
+      // screen themselves from the Profile tab.
+      router.replace(landingRouteAfterSignIn({ role, profilePromptSeen }));
     }
-  }, [isHydrating, isAuthenticated, hasCompletedOnboarding, segments, router]);
+  }, [isHydrating, sessionHydrated, isAuthenticated, role, profilePromptSeen, segments, router]);
 
-  if (isHydrating) {
+  if (isHydrating || !sessionHydrated) {
     return (
       <Screen>
         <StateView state="loading" title="Starting School Portal..." />

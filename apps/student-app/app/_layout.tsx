@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, Screen, StateView, useTheme } from '@school-erp/ui';
 import { queryClient, useAuthStore } from '@school-erp/mobile-core';
 import { landingRouteAfterSignIn, useSession } from '@/state/session';
+import { FONT_ASSETS } from '@/theme/fonts';
 
 function RootNavigationGate() {
   const { isDark } = useTheme();
@@ -17,6 +19,9 @@ function RootNavigationGate() {
   const role = useSession((state) => state.role);
   const profilePromptSeen = useSession((state) => state.profilePromptSeen);
   const hydrateSession = useAuthStore((state) => state.hydrateSession);
+  // A font load error falls back to the system font instead of blocking the app.
+  const [fontsLoaded, fontError] = useFonts(FONT_ASSETS);
+  const fontsReady = fontsLoaded || fontError !== null;
 
   useEffect(() => {
     hydrateSession();
@@ -38,7 +43,7 @@ function RootNavigationGate() {
     }
   }, [isHydrating, sessionHydrated, isAuthenticated, role, profilePromptSeen, segments, router]);
 
-  if (isHydrating || !sessionHydrated) {
+  if (isHydrating || !sessionHydrated || !fontsReady) {
     return (
       <Screen>
         <StateView state="loading" title="Starting School Portal..." />
@@ -77,6 +82,8 @@ function RootNavigationGate() {
         <Stack.Screen name="syllabus" options={{ headerShown: false, presentation: 'card' }} />
         <Stack.Screen name="notices/index" options={{ headerShown: false, presentation: 'card' }} />
         <Stack.Screen name="notices/[id]" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="coming-soon" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="assignments" options={{ headerShown: false, presentation: 'card' }} />
 
         {/* Modals & Bottom Sheets */}
         <Stack.Screen
@@ -101,7 +108,8 @@ function RootNavigationGate() {
 export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
+      {/* The approved design is light only: ignore the phone/browser dark mode. */}
+      <ThemeProvider initialMode="light">
         <RootNavigationGate />
       </ThemeProvider>
     </QueryClientProvider>

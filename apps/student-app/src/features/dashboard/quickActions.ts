@@ -11,6 +11,11 @@ export interface QuickAction {
   href?: Href;
 }
 
+/** Placeholder screen for items in the designs that are not built in V1.2. */
+export function comingSoon(title: string): Href {
+  return { pathname: '/coming-soon', params: { title } };
+}
+
 /**
  * Home quick actions, in the approved design order (4 per row). Sports and Puzzle have no screen
  * yet, so their tiles do nothing for now.
@@ -38,7 +43,7 @@ export const QUICK_ACTIONS: readonly QuickAction[] = [
     key: 'assignments',
     label: 'Assignments',
     image: require('../../../assets/images/home/assignments.png'),
-    href: '/homework',
+    href: '/assignments',
   },
   { key: 'sports', label: 'Sports', image: require('../../../assets/images/home/sports.png') },
   {

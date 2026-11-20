@@ -26,3 +26,14 @@ export const homeImages = {
   tabFees: require('../../assets/home/tab-fees.png'),
   tabProfile: require('../../assets/home/tab-profile.png'),
 } satisfies Record<string, ImageSourcePropType>;
+
+/** Puzzle module artwork, cut from the approved Puzzle design (assets/puzzle). */
+export const puzzleImages = {
+  hero: require('../../assets/puzzle/hero.png'),
+  word: require('../../assets/puzzle/word.png'),
+  sudoku: require('../../assets/puzzle/sudoku.png'),
+  math: require('../../assets/puzzle/math.png'),
+  jigsaw: require('../../assets/puzzle/jigsaw.png'),
+  logic: require('../../assets/puzzle/logic.png'),
+  crossword: require('../../assets/puzzle/crossword.png'),
+} satisfies Record<string, ImageSourcePropType>;

@@ -1,141 +1,166 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Screen, Header, Card, Badge, StateView, useTheme } from '@school-erp/ui';
-import type { SyllabusSubjectDto } from '@school-erp/api-client';
-import { MockStudentServices } from '../../../core/mocks/mock-services.js';
+import { ChevronRight, Sun } from 'lucide-react-native';
+import { useState } from 'react';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Screen, StateView } from '@school-erp/ui';
+import { mockSyllabusSubjects, syllabusProgress, type MockSyllabusSubject } from '@/mock/syllabus';
+import { fonts } from '@/theme/fonts';
+import { homeImages } from '@/theme/images';
+import { ProgressBar, ProgressRing, SyllabusHeader, subjectStyle } from '../components/SyllabusKit';
 
+/** Matches subject name or teacher, ignoring case. */
+export function matchesSubject(subject: MockSyllabusSubject, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return [subject.name, subject.teacher].some((s) => s.toLowerCase().includes(q));
+}
+
+/**
+ * Syllabus home, built to the approved design: "Learn, Grow, Achieve" banner and one card per
+ * subject with teacher, chapter progress bar and percentage ring. Cards open the chapter list.
+ * MOCK data only.
+ */
 export function SyllabusScreen() {
-  const { colors, spacing, typography, radii } = useTheme();
   const router = useRouter();
-
-  const [syllabusList, setSyllabusList] = useState<SyllabusSubjectDto[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    MockStudentServices.getSyllabus()
-      .then(setSyllabusList)
-      .finally(() => setLoading(false));
-  }, []);
+  const [searching, setSearching] = useState(false);
+  const [query, setQuery] = useState('');
+  const subjects = mockSyllabusSubjects.filter((s) => matchesSubject(s, query));
 
   return (
-    <Screen
-      header={<Header title="Syllabus Tracker" showBack onBack={() => router.back()} />}
-      scrollable
-      contentContainerStyle={{ padding: spacing.base }}
-    >
-      <Text
-        style={{
-          color: colors.textSecondary,
-          fontSize: typography.fontSizes.sm,
-          marginBottom: spacing.md,
+    <Screen scrollable contentContainerStyle={styles.content}>
+      <SyllabusHeader
+        title="Syllabus"
+        testID="syllabus"
+        searching={searching}
+        query={query}
+        placeholder="Search subjects or teachers"
+        onSearchChange={setQuery}
+        onToggleSearch={() => {
+          if (searching) setQuery('');
+          setSearching((s) => !s);
         }}
-      >
-        Curriculum progress and chapter completion checklists for the current academic session.
-      </Text>
+      />
 
-      {loading ? (
-        <StateView state="loading" title="Loading syllabus..." />
+      <View style={styles.banner}>
+        <View style={styles.bannerArt}>
+          <Image source={homeImages.books} style={styles.books} resizeMode="contain" />
+        </View>
+        <View style={styles.bannerTextBox}>
+          <Text style={styles.bannerText}>Learn</Text>
+          <Text style={styles.bannerText}>Grow</Text>
+          <Text style={styles.bannerText}>Achieve 💜</Text>
+        </View>
+        <Sun size={20} color="#2F6FED" style={styles.sun} />
+      </View>
+
+      <View style={styles.sectionRow}>
+        <Text style={styles.sectionTitle}>Subjects</Text>
+        <Text style={styles.sectionCount}>{subjects.length} Subjects</Text>
+      </View>
+
+      {subjects.length === 0 ? (
+        <StateView state="empty" title="No subjects found" description="Try another search." />
       ) : (
-        syllabusList.map((subject) => (
-          <Card key={subject.id} variant="elevated" style={styles.subjectCard}>
-            <View style={styles.cardHeader}>
-              <Text
-                style={[
-                  styles.subjectTitle,
-                  { color: colors.text, fontSize: typography.fontSizes.base, fontWeight: '700' },
-                ]}
+        <View style={styles.list}>
+          {subjects.map((s) => {
+            const { done, total, percent } = syllabusProgress(s);
+            const look = subjectStyle(s.name);
+            const Icon = look.icon;
+            return (
+              <Pressable
+                key={s.id}
+                testID={`syllabus-subject-${s.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`${s.name}, ${done} of ${total} chapters, ${percent} percent`}
+                onPress={() => router.push({ pathname: '/syllabus/[id]', params: { id: s.id } })}
+                style={({ pressed }) => [styles.card, pressed && styles.pressed]}
               >
-                {subject.subjectName}
-              </Text>
-              <Badge
-                label={`${subject.completionPercentage}% Completed`}
-                variant="info"
-                size="sm"
-              />
-            </View>
-
-            {/* Progress Bar */}
-            <View
-              style={[
-                styles.progressTrack,
-                {
-                  backgroundColor: colors.surfaceSubtle,
-                  borderRadius: radii.full,
-                  marginVertical: spacing.sm,
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.progressBar,
-                  {
-                    backgroundColor: colors.primary,
-                    borderRadius: radii.full,
-                    width: `${subject.completionPercentage}%`,
-                  },
-                ]}
-              />
-            </View>
-
-            <View style={{ marginTop: spacing.xs }}>
-              {subject.topics.map((topic) => (
-                <View key={topic.id} style={styles.topicRow}>
-                  <Text
-                    style={{
-                      color: topic.isCompleted ? colors.success : colors.textMuted,
-                      marginRight: 8,
-                      fontSize: 14,
-                    }}
-                  >
-                    {topic.isCompleted ? '✓' : '○'}
-                  </Text>
-                  <Text
-                    style={{
-                      color: topic.isCompleted ? colors.textSecondary : colors.text,
-                      fontSize: typography.fontSizes.xs,
-                      flex: 1,
-                      textDecorationLine: topic.isCompleted ? 'line-through' : 'none',
-                    }}
-                  >
-                    {topic.title}
-                  </Text>
-                  {topic.expectedDate ? (
-                    <Text style={{ color: colors.textMuted, fontSize: 10 }}>
-                      Est: {topic.expectedDate}
-                    </Text>
-                  ) : null}
+                <View style={[styles.tile, { backgroundColor: look.tile }]}>
+                  <Icon size={20} color="#FFFFFF" />
                 </View>
-              ))}
-            </View>
-          </Card>
-        ))
+                <View style={styles.cardBody}>
+                  <Text style={styles.subject}>{s.name}</Text>
+                  <Text style={styles.teacher}>Teacher: {s.teacher}</Text>
+                  <View style={styles.bar}>
+                    <ProgressBar percent={percent} color={look.accent} />
+                  </View>
+                  <Text style={styles.chapters}>
+                    {done} / {total} Chapters
+                  </Text>
+                </View>
+                <ProgressRing percent={percent} color={look.accent} />
+                <ChevronRight size={18} color="#6B7280" />
+              </Pressable>
+            );
+          })}
+        </View>
       )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  subjectCard: {
-    marginBottom: 14,
-  },
-  cardHeader: {
+  content: { paddingBottom: 24 },
+  banner: {
+    marginHorizontal: 16,
+    marginTop: 4,
+    height: 104,
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingHorizontal: 18,
+    borderRadius: 16,
+    backgroundColor: '#E3EEFC',
+  },
+  bannerArt: { width: 72, height: 80, alignItems: 'center', justifyContent: 'center' },
+  books: { width: 72, height: 72 },
+  bannerTextBox: { flex: 1 },
+  bannerText: {
+    color: '#1E3A8A',
+    fontSize: 16,
+    lineHeight: 21,
+    fontFamily: fonts.semibold,
+    fontStyle: 'italic',
+  },
+  sun: { position: 'absolute', top: 12, right: 14 },
+  sectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    marginHorizontal: 16,
+    marginTop: 18,
   },
-  subjectTitle: {},
-  progressTrack: {
-    height: 8,
-    width: '100%',
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-  },
-  topicRow: {
+  sectionTitle: { color: '#111827', fontSize: 15, fontFamily: fonts.bold },
+  sectionCount: { color: '#6B7280', fontSize: 11, fontFamily: fonts.regular },
+  list: { paddingHorizontal: 16, paddingTop: 10, gap: 10 },
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 5,
+    gap: 12,
+    paddingVertical: 12,
+    paddingLeft: 12,
+    paddingRight: 8,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F1F1F4',
+    shadowColor: '#1F2937',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
+  pressed: { backgroundColor: '#FAFAFB' },
+  tile: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardBody: { flex: 1 },
+  subject: { color: '#111827', fontSize: 14, fontFamily: fonts.bold },
+  teacher: { color: '#6B7280', fontSize: 10.5, fontFamily: fonts.regular, marginTop: 1 },
+  bar: { marginTop: 6 },
+  chapters: { color: '#6B7280', fontSize: 9.5, fontFamily: fonts.regular, marginTop: 4 },
 });

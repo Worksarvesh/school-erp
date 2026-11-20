@@ -2,12 +2,12 @@ import type { Href } from 'expo-router';
 import { useRouter } from 'expo-router';
 import type { LucideIcon } from 'lucide-react-native';
 import {
+  ArrowLeft,
   BookOpen,
   CalendarDays,
   ChevronRight,
   FileText,
   LibraryBig,
-  Menu,
   SquarePlay,
 } from 'lucide-react-native';
 import { useMemo } from 'react';
@@ -82,13 +82,13 @@ export function AcademicHubScreen() {
     <Screen scrollable contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Pressable
-          testID="academic-menu"
+          testID="academic-back"
           accessibilityRole="button"
-          accessibilityLabel="Menu"
-          onPress={() => router.push(comingSoon('Menu'))}
+          accessibilityLabel="Go back to Home"
+          onPress={() => router.navigate('/')}
           style={styles.headerButton}
         >
-          <Menu size={24} color={colors.text} />
+          <ArrowLeft size={22} color={colors.text} />
         </Pressable>
         <Text style={styles.title} accessibilityRole="header">
           Academic

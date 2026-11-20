@@ -12,5 +12,6 @@ apps/api/src/generated
 # Tool-managed agent skill files
 .agents/
 .claude/skills/
+apps/*/.claude/skills/
 .cursor/skills/
 .devin/skills/

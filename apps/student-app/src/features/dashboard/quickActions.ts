@@ -1,72 +1,62 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- React Native image assets are loaded with require() */
 import type { Href } from 'expo-router';
 import type { ImageSourcePropType } from 'react-native';
-import { homeImages } from '@/theme/images';
 
 export interface QuickAction {
   key: string;
   label: string;
-  /** 3D icon (Fluent Emoji, MIT, see assets/home/LICENSE.md). */
+  /** 3D icon artwork from the approved design (assets/images/home). */
   image: ImageSourcePropType;
-  href: Href;
+  /** Screen to open; undefined while the module has no screen yet. */
+  href?: Href;
 }
 
-/** Placeholder screen for items in the Home design that are not built in V1.2. */
+/** Placeholder screen for items in the designs that are not built in V1.2. */
 export function comingSoon(title: string): Href {
   return { pathname: '/coming-soon', params: { title } };
 }
 
 /**
- * Home quick actions, in the order of the approved Home design (2 rows of 4).
- * Sports and Puzzle are not in V1.2 and open a
- * "Coming soon" placeholder (UI only, no backend).
+ * Home quick actions, in the approved design order (4 per row). Sports and Puzzle have no screen
+ * yet, so their tiles do nothing for now.
  */
 export const QUICK_ACTIONS: readonly QuickAction[] = [
   {
     key: 'timetable',
     label: 'Time Table',
-    image: homeImages.timetable,
+    image: require('../../../assets/images/home/timetable.png'),
     href: '/timetable',
   },
   {
     key: 'homework',
     label: 'Home Work',
-    image: homeImages.homework,
+    image: require('../../../assets/images/home/homework.png'),
     href: '/homework',
   },
   {
     key: 'attendance',
     label: 'Attendance',
-    image: homeImages.attendance,
+    image: require('../../../assets/images/home/attendance.png'),
     href: '/attendance',
   },
   {
     key: 'assignments',
     label: 'Assignments',
-    image: homeImages.assignments,
+    image: require('../../../assets/images/home/assignments.png'),
     href: '/assignments',
   },
-  {
-    key: 'sports',
-    label: 'Sports',
-    image: homeImages.sports,
-    href: comingSoon('Sports'),
-  },
+  { key: 'sports', label: 'Sports', image: require('../../../assets/images/home/sports.png') },
   {
     key: 'syllabus',
     label: 'Syllabus',
-    image: homeImages.syllabus,
+    image: require('../../../assets/images/home/syllabus.png'),
     href: '/syllabus',
   },
+  { key: 'puzzle', label: 'Puzzle', image: require('../../../assets/images/home/puzzle.png') },
   {
-    key: 'puzzle',
-    label: 'Puzzle',
-    image: homeImages.puzzle,
-    href: comingSoon('Puzzle'),
-  },
-  {
-    key: 'exams',
+    key: 'exam',
     label: 'Exam',
-    image: homeImages.exam,
+    image: require('../../../assets/images/home/exam.png'),
     href: '/examinations',
   },
 ];

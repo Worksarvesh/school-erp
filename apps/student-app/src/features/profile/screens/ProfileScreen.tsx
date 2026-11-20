@@ -1,347 +1,180 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+/* eslint-disable @typescript-eslint/no-require-imports -- React Native image assets are loaded with require() */
 import { useRouter } from 'expo-router';
-import { Screen, Header, Card, Badge, Button, Input, StateView, useTheme } from '@school-erp/ui';
+import { StatusBar } from 'expo-status-bar';
+import { ChevronRight, IdCard, Info, User } from 'lucide-react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@school-erp/mobile-core';
-import type { StudentRecordDto } from '@school-erp/api-client';
 import { useSession } from '@/state/session';
-import { MockStudentServices } from '../../../core/mocks/mock-services';
+import { ProfileTopBar } from '../components/ProfileTopBar';
+import { profileSections, profileSummary, type SectionId } from '../profileData';
 
+const BLUE = '#1D4ED8';
+
+/**
+ * Profile tab: header card (photo, name, academic year, class and roll chips) and the five
+ * sections. Each row opens the section screen. MOCK data only.
+ */
 export function ProfileScreen() {
-  const { colors, spacing, typography } = useTheme();
   const router = useRouter();
-  const logout = useAuthStore((state) => state.logout);
-  const role = useSession((s) => s.role);
+  const logout = useAuthStore((s) => s.logout);
+  const saved = useSession((s) => s.optionalProfile);
+  const summary = profileSummary(saved);
+  const sections = profileSections(saved);
 
-  const [student, setStudent] = useState<StudentRecordDto | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const open = (id: SectionId) =>
+    router.push({ pathname: '/profile-section/[section]', params: { section: id } });
 
-  // Editable state
-  const [mobile, setMobile] = useState('');
-  const [email, setEmail] = useState('');
-  const [address, setAddress] = useState('');
-  const [emergencyName, setEmergencyName] = useState('');
-  const [emergencyPhone, setEmergencyPhone] = useState('');
-  const [bloodGroup, setBloodGroup] = useState('');
-  const [hobbies, setHobbies] = useState('');
-
-  const loadProfile = async () => {
-    try {
-      setLoading(true);
-      const data = await MockStudentServices.getStudentRecord();
-      setStudent(data);
-      setMobile(data.studentMobile || '');
-      setEmail(data.email || '');
-      setAddress(data.address || '');
-      setEmergencyName(data.emergencyContactName || '');
-      setEmergencyPhone(data.emergencyContactPhone || '');
-      setBloodGroup(data.bloodGroup || '');
-      setHobbies(data.hobbies || '');
-    } catch {
-      // Handled by StateView
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
-  const handleSaveEditable = async () => {
-    try {
-      setSaving(true);
-      const updated = await MockStudentServices.updateEditableProfile({
-        studentMobile: mobile,
-        email,
-        address,
-        emergencyContactName: emergencyName,
-        emergencyContactPhone: emergencyPhone,
-        bloodGroup,
-        hobbies,
-      });
-      setStudent(updated);
-      Alert.alert('Profile Updated', 'Your personal details have been saved.');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to save changes';
-      Alert.alert('Error', msg);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleLogout = async () => {
+  const onLogout = async () => {
     await logout();
     router.replace('/(auth)/splash');
   };
 
-  if (loading) {
-    return (
-      <Screen header={<Header title="My Profile" />}>
-        <StateView state="loading" title="Loading profile..." />
-      </Screen>
-    );
-  }
-
-  if (!student) {
-    return (
-      <Screen header={<Header title="My Profile" />}>
-        <StateView
-          state="error"
-          title="Profile not found"
-          actionLabel="Retry"
-          onAction={loadProfile}
-        />
-      </Screen>
-    );
-  }
-
   return (
-    <Screen
-      header={<Header title="My Profile" />}
-      scrollable
-      contentContainerStyle={{ padding: spacing.base }}
-    >
-      {role === 'student' && (
-        <Card variant="outlined" style={styles.sectionCard}>
-          <Button
-            label="Complete your profile"
-            variant="secondary"
-            onPress={() => router.push('/(onboarding)/complete-profile')}
-          />
-        </Card>
-      )}
-      {/* 1. School-Controlled Fields (Read-Only) */}
-      <Card variant="outlined" style={styles.sectionCard}>
-        <View style={styles.sectionHeaderRow}>
-          <Text
-            style={[
-              styles.sectionTitle,
-              { color: colors.primary, fontSize: typography.fontSizes.base, fontWeight: '700' },
-            ]}
-          >
-            School-Controlled Identity (Read-Only)
-          </Text>
-          <Badge label="Verified" variant="success" size="sm" />
+    <SafeAreaView edges={['top']} style={styles.root}>
+      <StatusBar style="dark" />
+      <ProfileTopBar title="Profile" onBack={() => router.replace('/(tabs)')} />
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.card}>
+          <View style={styles.band} />
+          <View style={styles.photoRing}>
+            <Image
+              source={require('../../../../assets/images/profile/photo.png')}
+              accessibilityLabel="Profile photo"
+              style={styles.photo}
+            />
+          </View>
+          <Text style={styles.name}>{summary.fullName}</Text>
+          <Text style={styles.year}>{summary.academicYear}</Text>
+          <View style={styles.chips}>
+            <Chip label={summary.classLabel} />
+            <Chip label={summary.rollLabel} />
+          </View>
         </View>
-        <Text
-          style={{
-            color: colors.textSecondary,
-            fontSize: typography.fontSizes.xs,
-            marginBottom: spacing.sm,
-          }}
+
+        <View style={styles.menu}>
+          {sections.map((section, i) => (
+            <Pressable
+              key={section.id}
+              testID={`profile-${section.id}`}
+              accessibilityRole="button"
+              accessibilityLabel={section.title}
+              onPress={() => open(section.id)}
+              style={[styles.row, i < sections.length - 1 && styles.rowDivider]}
+            >
+              <View style={[styles.iconCircle, section.id === 'parent' && styles.iconCircleGrey]}>
+                {section.id === 'parent' ? (
+                  <Info size={24} color="#374151" />
+                ) : (
+                  <User size={24} color={BLUE} />
+                )}
+              </View>
+              <Text style={styles.rowLabel}>{rowLabel(section.id, section.title)}</Text>
+              <ChevronRight size={22} color="#374151" />
+            </Pressable>
+          ))}
+        </View>
+
+        <Pressable
+          testID="log-out"
+          accessibilityRole="button"
+          accessibilityLabel="Log out"
+          onPress={() => void onLogout()}
+          style={styles.logout}
         >
-          Class, section, and roll number are derived from your active academic enrollment.
-        </Text>
+          <Text style={styles.logoutText}>Log Out</Text>
+        </Pressable>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
 
-        <View style={styles.gridRow}>
-          <View style={styles.fieldItem}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Full Name</Text>
-            <Text style={[styles.val, { color: colors.text }]}>{student.fullName}</Text>
-          </View>
-          <View style={styles.fieldItem}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Admission Number</Text>
-            <Text style={[styles.val, { color: colors.text }]}>{student.admissionNumber}</Text>
-          </View>
-        </View>
+/** The design lists the last row in lower case ("safety"). */
+function rowLabel(id: SectionId, title: string) {
+  return id === 'safety' ? 'safety' : title;
+}
 
-        <View style={styles.gridRow}>
-          <View style={styles.fieldItem}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Class & Section</Text>
-            <Text style={[styles.val, { color: colors.text }]}>
-              {student.className} - {student.sectionName}
-            </Text>
-          </View>
-          <View style={styles.fieldItem}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Roll Number</Text>
-            <Text style={[styles.val, { color: colors.text }]}>{student.rollNumber}</Text>
-          </View>
-        </View>
-
-        <View style={styles.gridRow}>
-          <View style={styles.fieldItem}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Date of Birth</Text>
-            <Text style={[styles.val, { color: colors.text }]}>{student.dateOfBirth}</Text>
-          </View>
-          <View style={styles.fieldItem}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Gender</Text>
-            <Text style={[styles.val, { color: colors.text }]}>
-              {student.gender || 'Not specified'}
-            </Text>
-          </View>
-        </View>
-      </Card>
-
-      {/* 2. Mandatory Student Record (School-recorded Parent Details) */}
-      <Card variant="outlined" style={styles.sectionCard}>
-        <Text
-          style={[
-            styles.sectionTitle,
-            {
-              color: colors.text,
-              fontSize: typography.fontSizes.base,
-              fontWeight: '700',
-              marginBottom: spacing.xs,
-            },
-          ]}
-        >
-          Parent Record (School Registered)
-        </Text>
-        <Text
-          style={{
-            color: colors.textSecondary,
-            fontSize: typography.fontSizes.xs,
-            marginBottom: spacing.sm,
-          }}
-        >
-          Registered parent details. Guardian user accounts are separate legal entities.
-        </Text>
-
-        <View style={styles.gridRow}>
-          <View style={styles.fieldItem}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Father's Name</Text>
-            <Text style={[styles.val, { color: colors.text }]}>
-              {student.fatherName || 'Not recorded'}
-            </Text>
-          </View>
-          <View style={styles.fieldItem}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Mother's Name</Text>
-            <Text style={[styles.val, { color: colors.text }]}>
-              {student.motherName || 'Not recorded'}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.gridRow}>
-          <View style={styles.fieldItem}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>
-              Registered Parent Mobile
-            </Text>
-            <Text style={[styles.val, { color: colors.text }]}>
-              {student.registeredParentMobile || 'Not recorded'}
-            </Text>
-          </View>
-        </View>
-      </Card>
-
-      {/* 3. Optional Student-Editable Fields */}
-      <Card variant="outlined" style={styles.sectionCard}>
-        <Text
-          style={[
-            styles.sectionTitle,
-            {
-              color: colors.text,
-              fontSize: typography.fontSizes.base,
-              fontWeight: '700',
-              marginBottom: spacing.xs,
-            },
-          ]}
-        >
-          Personal & Emergency Details (Student Editable)
-        </Text>
-        <Text
-          style={{
-            color: colors.textSecondary,
-            fontSize: typography.fontSizes.xs,
-            marginBottom: spacing.md,
-          }}
-        >
-          Optional information. Updating these never blocks your dashboard access.
-        </Text>
-
-        <Input
-          label="Student Mobile"
-          value={mobile}
-          onChangeText={setMobile}
-          placeholder="+91..."
-          keyboardType="phone-pad"
-        />
-        <Input
-          label="Student Email"
-          value={email}
-          onChangeText={setEmail}
-          placeholder="student@example.com"
-          keyboardType="email-address"
-        />
-        <Input
-          label="Residential Address"
-          value={address}
-          onChangeText={setAddress}
-          placeholder="Current home address"
-        />
-        <Input
-          label="Emergency Contact Name"
-          value={emergencyName}
-          onChangeText={setEmergencyName}
-          placeholder="Name of emergency contact"
-        />
-        <Input
-          label="Emergency Contact Phone"
-          value={emergencyPhone}
-          onChangeText={setEmergencyPhone}
-          placeholder="+91..."
-          keyboardType="phone-pad"
-        />
-        <Input
-          label="Blood Group"
-          value={bloodGroup}
-          onChangeText={setBloodGroup}
-          placeholder="e.g. B+, O+"
-        />
-        <Input
-          label="Hobbies"
-          value={hobbies}
-          onChangeText={setHobbies}
-          placeholder="e.g. Cricket, Music, Robotics"
-        />
-
-        <Button
-          label="Save Changes"
-          onPress={handleSaveEditable}
-          loading={saving}
-          variant="primary"
-          style={{ marginTop: spacing.sm }}
-        />
-      </Card>
-
-      {/* Logout Action */}
-      <Button
-        label="Log Out"
-        onPress={handleLogout}
-        variant="destructive"
-        size="lg"
-        style={{ marginTop: spacing.md, marginBottom: spacing.xl }}
-      />
-    </Screen>
+function Chip({ label }: { label: string }) {
+  return (
+    <View style={styles.chip}>
+      <IdCard size={18} color={BLUE} />
+      <Text style={styles.chipText}>{label}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionCard: {
-    marginBottom: 16,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  root: { flex: 1, backgroundColor: '#FFFFFF' },
+  content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 130 },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     alignItems: 'center',
+    paddingBottom: 22,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
   },
-  sectionTitle: {},
-  gridRow: {
+  band: { alignSelf: 'stretch', height: 96, backgroundColor: '#9B80D0' },
+  photoRing: {
+    marginTop: -62,
+    width: 126,
+    height: 126,
+    borderRadius: 63,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  photo: { width: 112, height: 112, borderRadius: 56 },
+  name: { color: '#111827', fontSize: 24, fontWeight: '600', marginTop: 14 },
+  year: { color: '#4B5563', fontSize: 17, marginTop: 4 },
+  chips: { flexDirection: 'row', gap: 14, marginTop: 18 },
+  chip: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 6,
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#E3EEFF',
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
-  fieldItem: {
-    flex: 1,
-    marginRight: 8,
+  chipText: { color: BLUE, fontSize: 15, fontWeight: '700' },
+  menu: {
+    marginTop: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    shadowColor: '#000000',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
   },
-  label: {
-    fontSize: 12,
-    marginBottom: 2,
+  row: {
+    minHeight: 65,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    paddingHorizontal: 16,
   },
-  val: {
-    fontSize: 14,
-    fontWeight: '600',
+  rowDivider: { borderBottomWidth: 1, borderBottomColor: '#F1F2F6' },
+  iconCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#ECEEFB',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  iconCircleGrey: { backgroundColor: '#ECECF3' },
+  rowLabel: { flex: 1, color: '#111827', fontSize: 18 },
+  logout: { alignSelf: 'center', marginTop: 22, paddingVertical: 12, paddingHorizontal: 20 },
+  logoutText: { color: '#DC2626', fontSize: 15, fontWeight: '600' },
 });

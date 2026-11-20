@@ -1,16 +1,19 @@
 import { useRouter } from 'expo-router';
-import { ArrowRight, BookOpen, Users } from 'lucide-react-native';
+import { StatusBar } from 'expo-status-bar';
+import { ArrowRight } from 'lucide-react-native';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
-import { Button, Screen, useTheme } from '@school-erp/ui';
-import { SelectCard } from '@/components';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ParentsIllustration, ROLE_SELECT_COLORS as C, SelectCard } from '@/components';
 import type { AppRole } from '@/state/session';
 import { useSession } from '@/state/session';
 
-/** "Tell Us About Yourself": pick Student or Parents, then continue to the matching login. */
+/**
+ * "Tell Us About Yourself": pick Student or Parents, then continue to the matching login.
+ * Always white with a violet Continue button, whatever the device theme (approved design).
+ */
 export function RoleSelectScreen() {
   const router = useRouter();
-  const { colors, spacing, typography } = useTheme();
   const [role, setRole] = useState<AppRole | null>(null);
 
   const onContinue = () => {
@@ -20,65 +23,84 @@ export function RoleSelectScreen() {
   };
 
   return (
-    <Screen
-      contentContainerStyle={{ padding: spacing.xl }}
-      footer={
-        <View style={{ padding: spacing.xl }}>
-          <Button
-            testID="role-continue"
-            label="Continue"
-            size="lg"
-            disabled={!role}
-            rightIcon={<ArrowRight size={18} color={colors.primaryForeground} />}
-            accessibilityLabel="Continue to sign in"
-            onPress={onContinue}
-          />
+    <SafeAreaView style={styles.root}>
+      <StatusBar style="dark" />
+      <View style={styles.body}>
+        <View style={styles.header}>
+          <Text accessibilityRole="header" style={styles.title}>
+            Tell Us About Yourself
+          </Text>
+          <Text style={styles.subtitle}>
+            Tell us a little about yourself so we can get to know you better.
+          </Text>
         </View>
-      }
-    >
-      <View style={{ alignItems: 'center', gap: spacing.sm, marginTop: spacing['2xl'] }}>
-        <Text
-          accessibilityRole="header"
-          style={{
-            color: colors.text,
-            fontSize: typography.fontSizes['2xl'],
-            fontWeight: typography.fontWeights.bold,
-            textAlign: 'center',
-          }}
-        >
-          Tell Us About Yourself
-        </Text>
-        <Text
-          style={{
-            color: colors.textSecondary,
-            fontSize: typography.fontSizes.sm,
-            textAlign: 'center',
-          }}
-        >
-          Choose how you will use the app.
-        </Text>
-      </View>
 
-      <View style={{ flex: 1, justifyContent: 'center', paddingVertical: spacing['2xl'] }}>
-        <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', gap: spacing.md }}>
+        <View accessibilityRole="radiogroup" style={styles.cards}>
           <SelectCard
             testID="role-student"
             title="Student"
-            description="Sign in with the username your school gave you."
-            illustrationIcon={BookOpen}
+            description="Are you planning to use our platform for learning?"
+            illustration={null}
             selected={role === 'student'}
             onPress={() => setRole('student')}
           />
           <SelectCard
             testID="role-parent"
             title="Parents"
-            description="Sign in with your registered mobile number."
-            illustrationIcon={Users}
+            description="Learning through engaging meaningful experiences."
+            illustration={<ParentsIllustration />}
             selected={role === 'parent'}
             onPress={() => setRole('parent')}
           />
         </View>
       </View>
-    </Screen>
+
+      <View style={styles.footer}>
+        <Pressable
+          testID="role-continue"
+          accessibilityRole="button"
+          accessibilityLabel="Continue to sign in"
+          accessibilityState={{ disabled: !role }}
+          disabled={!role}
+          onPress={onContinue}
+          style={[styles.button, !role && styles.buttonDisabled]}
+        >
+          <Text style={styles.buttonLabel}>Continue</Text>
+          <ArrowRight size={16} color="#FFFFFF" />
+        </Pressable>
+      </View>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: C.background },
+  body: { flex: 1, paddingHorizontal: 20 },
+  header: { alignItems: 'center', marginTop: 72, paddingHorizontal: 12 },
+  title: { color: C.title, fontSize: 24, fontWeight: '700', textAlign: 'center' },
+  subtitle: {
+    color: C.subtitle,
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  cards: { flexDirection: 'row', gap: 14, marginTop: 56 },
+  footer: { paddingHorizontal: 20, paddingBottom: 24 },
+  button: {
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: C.accent,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: C.accent,
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  buttonDisabled: { backgroundColor: C.accentDisabled, shadowOpacity: 0, elevation: 0 },
+  buttonLabel: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
+});

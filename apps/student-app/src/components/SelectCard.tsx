@@ -1,32 +1,40 @@
-import type { LucideIcon } from 'lucide-react-native';
 import { Check } from 'lucide-react-native';
-import { useMemo } from 'react';
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useTheme, type ThemeContextValue } from '@school-erp/ui';
+
+/** Fixed light palette for the onboarding role-select design (white background, violet accent). */
+export const ROLE_SELECT_COLORS = {
+  background: '#FFFFFF',
+  title: '#111827',
+  subtitle: '#6B7280',
+  cardBorder: '#E5E7EB',
+  cardBorderSelected: '#8B8B96',
+  cardTitle: '#111827',
+  cardText: '#6B7280',
+  accent: '#7B1CF6',
+  accentDisabled: '#C9A8FA',
+  illustrationBg: '#F3F2FF',
+} as const;
 
 interface SelectCardProps {
   title: string;
   description: string;
-  /** Icon drawn inside the illustration placeholder until real artwork exists. */
-  illustrationIcon: LucideIcon;
+  /** Artwork shown at the top of the card (see RoleIllustrations). */
+  illustration: ReactNode;
   selected: boolean;
   onPress: () => void;
   testID?: string;
 }
 
-/** Selectable option card: primary border and a check badge when selected. */
+/** Selectable option card: grey border and a soft shadow when selected. */
 export function SelectCard({
   title,
   description,
-  illustrationIcon: Icon,
+  illustration,
   selected,
   onPress,
   testID,
 }: SelectCardProps) {
-  const theme = useTheme();
-  const styles = useMemo(() => makeStyles(theme), [theme]);
-  const { colors } = theme;
-
   return (
     <Pressable
       testID={testID}
@@ -38,63 +46,70 @@ export function SelectCard({
     >
       {selected ? (
         <View style={styles.badge}>
-          <Check size={14} color={colors.primaryForeground} />
+          <Check size={12} color="#FFFFFF" />
         </View>
       ) : null}
-      <View style={styles.illustration}>
-        <Icon size={32} color={colors.primary} />
-      </View>
+      <View style={styles.illustration}>{illustration}</View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.description}>{description}</Text>
     </Pressable>
   );
 }
 
-function makeStyles({ colors, spacing, radii, typography }: ThemeContextValue) {
-  return StyleSheet.create({
-    card: {
-      flex: 1,
-      minHeight: 180,
-      alignItems: 'center',
-      gap: spacing.sm,
-      padding: spacing.base,
-      borderRadius: radii.xl,
-      borderWidth: 1.5,
-      borderColor: colors.border,
-      backgroundColor: colors.surface,
-    },
-    cardSelected: { borderColor: colors.primary, backgroundColor: colors.surfaceSubtle },
-    badge: {
-      position: 'absolute',
-      top: spacing.sm,
-      right: spacing.sm,
-      width: 22,
-      height: 22,
-      borderRadius: radii.full,
-      backgroundColor: colors.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    illustration: {
-      width: 72,
-      height: 72,
-      marginTop: spacing.sm,
-      borderRadius: radii.lg,
-      backgroundColor: colors.surfaceSubtle,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    title: {
-      color: colors.text,
-      fontSize: typography.fontSizes.base,
-      fontWeight: typography.fontWeights.semibold,
-      textAlign: 'center',
-    },
-    description: {
-      color: colors.textSecondary,
-      fontSize: typography.fontSizes.xs,
-      lineHeight: typography.lineHeights.tight,
-      textAlign: 'center',
-    },
-  });
-}
+const styles = StyleSheet.create({
+  card: {
+    flex: 1,
+    minHeight: 190,
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: ROLE_SELECT_COLORS.cardBorder,
+    backgroundColor: '#FFFFFF',
+  },
+  cardSelected: {
+    borderWidth: 1.5,
+    borderColor: ROLE_SELECT_COLORS.cardBorderSelected,
+    shadowColor: '#000000',
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  badge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: ROLE_SELECT_COLORS.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  illustration: {
+    width: 76,
+    height: 76,
+    borderRadius: 14,
+    backgroundColor: ROLE_SELECT_COLORS.illustrationBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
+  title: {
+    color: ROLE_SELECT_COLORS.cardTitle,
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  description: {
+    color: ROLE_SELECT_COLORS.cardText,
+    fontSize: 11,
+    lineHeight: 15,
+    textAlign: 'center',
+  },
+});

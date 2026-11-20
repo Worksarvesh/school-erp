@@ -12,35 +12,38 @@ import type {
   NotificationDto,
   ConversationThreadDto,
 } from '@school-erp/api-client';
+import { mockStudent } from '../../mock/student';
 
 export const mockStudentRecord: StudentRecordDto = {
   id: '018e3a2b-c4d5-7e8f-9a0b-student001',
   schoolId: '018e3a2b-c4d5-7e8f-9a0b-school0001',
   userId: '018e3a2b-c4d5-7e8f-9a0b-user0000001',
-  fullName: 'Aarav Sharma',
+  // School-recorded identity: single source of truth is src/mock/student.ts, so Home, onboarding
+  // and the Profile tab always show the same student.
+  fullName: mockStudent.fullName,
   admissionNumber: 'SCH-2024-0412',
-  dateOfBirth: '2010-08-14',
-  gender: 'male',
+  dateOfBirth: mockStudent.dateOfBirth,
+  gender: mockStudent.gender.toLowerCase() as 'male' | 'female' | 'other',
   status: 'active',
   // Mandatory parent record
-  fatherName: 'Vikram Sharma',
-  motherName: 'Priya Sharma',
-  registeredParentMobile: '+919876543210',
+  fatherName: mockStudent.parent.name,
+  motherName: 'Mrs. Meena Patil',
+  registeredParentMobile: mockStudent.parent.mobile ? `+91${mockStudent.parent.mobile}` : null,
   // Active enrollment (derived)
-  className: 'Class 10',
-  sectionName: 'Section A',
-  rollNumber: '14',
+  className: `Class ${mockStudent.className}`,
+  sectionName: `Section ${mockStudent.section}`,
+  rollNumber: String(mockStudent.rollNumber),
   // Optional editable fields
-  studentMobile: '+919876500001',
-  email: 'aarav.sharma@example.com',
-  address: 'Flat 402, Green Valley Apartments, New Delhi',
-  emergencyContactName: 'Vikram Sharma (Father)',
-  emergencyContactPhone: '+919876543210',
-  heightCm: 168,
-  weightKg: 58,
-  bloodGroup: 'B+',
-  hobbies: 'Cricket, Robotics, Guitar',
-  profileCompletedAt: '2026-09-01T10:00:00Z',
+  studentMobile: '',
+  email: '',
+  address: '',
+  emergencyContactName: '',
+  emergencyContactPhone: '',
+  heightCm: null,
+  weightKg: null,
+  bloodGroup: '',
+  hobbies: '',
+  profileCompletedAt: null,
 };
 
 export const mockTimetableSlots: TimetableSlotDto[] = [

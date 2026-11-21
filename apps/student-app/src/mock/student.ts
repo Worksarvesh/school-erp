@@ -23,6 +23,9 @@ export const MOCK_UNREGISTERED_PARENT_MOBILE = '9000000000';
 const REGISTERED_PARENT_MOBILE = '9876543210';
 const PARENT_NAME = 'Mr. Suresh Patil';
 
+/** Mother's mobile, 10 digits without +91 (shown on Profile > Parent & Guardian). */
+export const MOCK_MOTHER_MOBILE = '9876501234';
+
 export interface MockStudent {
   id: string;
   /** School-issued username (approved format sch0001s0001). */

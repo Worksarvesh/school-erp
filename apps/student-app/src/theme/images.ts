@@ -36,6 +36,8 @@ export const puzzleImages = {
   jigsaw: require('../../assets/puzzle/jigsaw.png'),
   logic: require('../../assets/puzzle/logic.png'),
   crossword: require('../../assets/puzzle/crossword.png'),
+} satisfies Record<string, ImageSourcePropType>;
+
 /** Sports screen artwork, cropped from the approved design (assets/sports). */
 export const sportsImages = {
   banner: require('../../assets/sports/banner.png'),

@@ -11,7 +11,7 @@ export const ROLE_SELECT_COLORS = {
   cardBorderSelected: '#8B8B96',
   cardTitle: '#111827',
   cardText: '#6B7280',
-  accent: '#7B1CF6',
+  accent: '#4B18AA',
   accentDisabled: '#C9A8FA',
   illustrationBg: '#F3F2FF',
 } as const;

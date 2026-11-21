@@ -12,7 +12,7 @@ import { useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Screen, useTheme, type ThemeContextValue } from '@school-erp/ui';
-import { AttendanceSummary } from '@/features/attendance/components/AttendanceSummary';
+import { AttendanceInsights } from '@/features/attendance/components/AttendanceInsights';
 import { ACADEMIC_YEAR_START, mockDayStatus, type DayStatus } from '@/mock/attendance';
 import { fonts } from '@/theme/fonts';
 
@@ -33,16 +33,15 @@ const MONTHS = [
 const MONTHS_SHORT = MONTHS.map((m) => m.slice(0, 3));
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-/** Calendar dot colours (match the legend under the calendar). */
-const DOT: Record<DayStatus, string> = {
-  present: '#1F9D6B',
-  absent: '#F28B82',
-  holiday: '#2F80ED',
-};
 const STATUS_LABEL: Record<DayStatus, string> = {
   present: 'Present',
   absent: 'Absent',
   holiday: 'Holiday',
+};
+const DOT_COLOR: Record<DayStatus, string> = {
+  present: '#16A34A',
+  absent: '#E11D2E',
+  holiday: '#2F80ED',
 };
 const STATUS_PILL: Record<DayStatus, { fg: string; bg: string; border: string }> = {
   present: { fg: '#15803D', bg: '#DCFCE7', border: '#86EFAC' },
@@ -70,15 +69,9 @@ export function monthGrid(month: Date): Date[] {
   );
 }
 
-/** Months from the start of the academic year up to the current month, newest first. */
-export function pickerMonths(today: Date): Date[] {
-  const months: Date[] = [];
-  let m = firstOfMonth(today);
-  while (m >= ACADEMIC_YEAR_START) {
-    months.push(m);
-    m = new Date(m.getFullYear(), m.getMonth() - 1, 1);
-  }
-  return months;
+/** All 12 months of the calendar year (January to December), in order. */
+export function pickerMonths(): Date[] {
+  return Array.from({ length: 12 }, (_, i) => new Date(ACADEMIC_YEAR_START.getFullYear(), i, 1));
 }
 
 const monthLabel = (d: Date) => `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
@@ -86,7 +79,7 @@ const shortDate = (d: Date) => `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d
 
 /**
  * Attendance, built to the approved design: month picker on a lavender band, month calendar with
- * a coloured dot per day, the status of the chosen day, and the Daily / Weekly / Monthly ring.
+ * the status of the chosen day, and the Weekly / Monthly / Yearly ring with chart.
  * MOCK data only.
  */
 export function AttendanceDetailScreen() {
@@ -100,10 +93,11 @@ export function AttendanceDetailScreen() {
   const [selected, setSelected] = useState(today);
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  const months = useMemo(() => pickerMonths(today), [today]);
+  const months = useMemo(() => pickerMonths(), []);
   const grid = useMemo(() => monthGrid(month), [month]);
-  const canPrev = firstOfMonth(month) > ACADEMIC_YEAR_START;
-  const canNext = firstOfMonth(month) < firstOfMonth(today);
+  const canPrev = firstOfMonth(month) > (months[0] ?? ACADEMIC_YEAR_START);
+  const lastMonth = months[months.length - 1] ?? firstOfMonth(today);
+  const canNext = firstOfMonth(month) < lastMonth;
   const selectedStatus = mockDayStatus(selected, today);
 
   const showMonth = (m: Date) => {
@@ -184,6 +178,7 @@ export function AttendanceDetailScreen() {
             const inMonth = d.getMonth() === month.getMonth();
             const status = inMonth ? mockDayStatus(d, today) : null;
             const isSelected = inMonth && d.getTime() === selected.getTime();
+            const isToday = inMonth && d.getTime() === today.getTime();
             return (
               <Pressable
                 key={d.getTime()}
@@ -195,8 +190,15 @@ export function AttendanceDetailScreen() {
                 onPress={() => setSelected(d)}
                 style={styles.cell}
               >
-                <View style={[styles.dayCircle, isSelected && styles.dayCircleSelected]}>
+                <View
+                  style={[
+                    styles.dayCircle,
+                    isToday && styles.dayCircleToday,
+                    isSelected && styles.dayCircleSelected,
+                  ]}
+                >
                   <Text
+                    allowFontScaling={false}
                     style={[
                       styles.dayText,
                       !inMonth && styles.dayTextMuted,
@@ -206,17 +208,22 @@ export function AttendanceDetailScreen() {
                     {d.getDate()}
                   </Text>
                 </View>
-                <View style={[styles.dot, status ? { backgroundColor: DOT[status] } : null]} />
+                <View
+                  style={[
+                    styles.dot,
+                    status ? { backgroundColor: DOT_COLOR[status] } : styles.dotNone,
+                  ]}
+                />
               </Pressable>
             );
           })}
         </View>
 
         <View style={styles.legendRow}>
-          {(['present', 'absent', 'holiday'] as const).map((s) => (
-            <View key={s} style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: DOT[s] }]} />
-              <Text style={styles.legendText}>{STATUS_LABEL[s]}</Text>
+          {(['present', 'absent', 'holiday'] as const).map((k) => (
+            <View key={k} style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: DOT_COLOR[k] }]} />
+              <Text style={styles.legendText}>{STATUS_LABEL[k]}</Text>
             </View>
           ))}
         </View>
@@ -250,7 +257,7 @@ export function AttendanceDetailScreen() {
       </View>
 
       <View style={styles.summary}>
-        <AttendanceSummary />
+        <AttendanceInsights selected={selected} month={month} today={today} />
       </View>
 
       <Modal
@@ -270,6 +277,7 @@ export function AttendanceDetailScreen() {
           <ScrollView>
             {months.map((m) => {
               const active = m.getTime() === month.getTime();
+              const isCurrent = m.getTime() === firstOfMonth(today).getTime();
               return (
                 <Pressable
                   key={m.getTime()}
@@ -278,7 +286,13 @@ export function AttendanceDetailScreen() {
                   onPress={() => showMonth(m)}
                   style={styles.sheetOption}
                 >
-                  <Text style={[styles.sheetOptionText, active && styles.sheetOptionActive]}>
+                  <Text
+                    style={[
+                      styles.sheetOptionText,
+                      (active || isCurrent) && styles.sheetOptionActive,
+                      isCurrent && styles.sheetOptionCurrent,
+                    ]}
+                  >
                     {monthLabel(m)}
                   </Text>
                   {active ? <Check size={18} color={colors.primary} /> : null}
@@ -329,7 +343,7 @@ function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
       backgroundColor: colors.surface,
       borderRadius: 20,
       padding: spacing.base,
-      shadowColor: '#5016A8',
+      shadowColor: '#4B18AA',
       shadowOpacity: 0.1,
       shadowRadius: 16,
       shadowOffset: { width: 0, height: 4 },
@@ -362,29 +376,41 @@ function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
     cell: {
       width: `${100 / 7}%`,
       alignItems: 'center',
-      paddingVertical: 3,
-      minHeight: 40,
+      paddingVertical: 4,
+      minHeight: 56,
     },
     dayCircle: {
-      width: 28,
-      height: 28,
-      borderRadius: radii.full,
+      width: 38,
+      height: 38,
+      borderRadius: 19,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    dayCircleSelected: { backgroundColor: colors.primary },
-    dayText: { color: colors.text, fontSize: 14, fontFamily: fonts.medium },
-    dayTextMuted: { color: '#C4C4CC' },
-    dayTextSelected: { color: colors.primaryForeground, fontFamily: fonts.semibold },
-    dot: { width: 5, height: 5, borderRadius: radii.full, marginTop: 1 },
+    dot: { width: 6, height: 6, borderRadius: 3, marginTop: 2 },
+    dotNone: { backgroundColor: 'transparent' },
     legendRow: {
-      marginTop: spacing.md,
       flexDirection: 'row',
-      justifyContent: 'space-between',
+      justifyContent: 'space-around',
+      marginTop: spacing.md,
+      paddingTop: spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
     },
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    legendDot: { width: 9, height: 9, borderRadius: radii.full },
-    legendText: { color: colors.textSecondary, fontSize: 11, fontFamily: fonts.medium },
+    legendDot: { width: 10, height: 10, borderRadius: 5 },
+    legendText: { color: colors.text, fontSize: 12, fontFamily: fonts.medium },
+    dayCircleToday: { borderWidth: 1.5, borderColor: colors.primary },
+    dayCircleSelected: { backgroundColor: colors.primary },
+    dayText: {
+      color: colors.text,
+      fontSize: 15,
+      lineHeight: 20,
+      textAlign: 'center',
+      includeFontPadding: false,
+      fontFamily: fonts.medium,
+    },
+    dayTextMuted: { color: '#C4C4CC' },
+    dayTextSelected: { color: colors.primaryForeground, fontFamily: fonts.semibold },
     statusCard: {
       marginTop: spacing.lg,
       flexDirection: 'row',
@@ -419,7 +445,7 @@ function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
     summary: { marginTop: spacing.md },
     backdrop: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)' },
     sheet: {
-      maxHeight: '60%',
+      maxHeight: '88%',
       backgroundColor: colors.surface,
       borderTopLeftRadius: radii.xl,
       borderTopRightRadius: radii.xl,
@@ -441,6 +467,7 @@ function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
       borderBottomColor: colors.border,
     },
     sheetOptionText: { color: colors.text, fontSize: 15, fontFamily: fonts.medium },
+    sheetOptionCurrent: { fontFamily: fonts.bold },
     sheetOptionActive: { color: colors.primary, fontFamily: fonts.semibold },
   });
 }

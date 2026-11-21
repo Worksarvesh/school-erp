@@ -19,7 +19,7 @@ import { formatLongDate, greetingFor, QUICK_ACTIONS } from '../quickActions';
 
 /** Fixed light palette for Home (approved design: white page, deep-violet cards). */
 const HOME = {
-  deep: '#4A1CA5',
+  deep: '#4B18AA',
   text: '#111827',
   muted: '#6B7280',
   tileBg: '#F7F3FF',
@@ -28,7 +28,7 @@ const HOME = {
 } as const;
 
 const SOFT_SHADOW = {
-  shadowColor: '#4A1CA5',
+  shadowColor: '#4B18AA',
   shadowOpacity: 0.14,
   shadowRadius: 12,
   shadowOffset: { width: 0, height: 4 },

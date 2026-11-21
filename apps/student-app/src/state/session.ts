@@ -20,6 +20,11 @@ export interface OptionalProfile {
   gender?: Gender;
   /** ISO date (yyyy-mm-dd). */
   dateOfBirth?: string;
+  /** Parent & Guardian screen: the Parent's name / mobile above plus these. */
+  motherName?: string;
+  motherMobile?: string;
+  guardianName?: string;
+  guardianMobile?: string;
   heightCm?: number;
   bloodGroup?: BloodGroup;
   weightKg?: number;

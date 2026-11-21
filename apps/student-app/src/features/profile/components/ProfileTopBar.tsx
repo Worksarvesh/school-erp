@@ -15,7 +15,7 @@ export function ProfileTopBar({ title, onBack }: { title: string; onBack: () => 
       >
         <ArrowLeft size={26} color="#111827" />
       </Pressable>
-      <Text accessibilityRole="header" style={styles.title} numberOfLines={1}>
+      <Text accessibilityRole="header" style={styles.title} numberOfLines={2}>
         {title}
       </Text>
       <View style={styles.back} />
@@ -25,7 +25,7 @@ export function ProfileTopBar({ title, onBack }: { title: string; onBack: () => 
 
 const styles = StyleSheet.create({
   bar: {
-    height: 56,
+    minHeight: 64,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -38,5 +38,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   back: { width: 32, alignItems: 'flex-start' },
-  title: { flex: 1, textAlign: 'center', color: '#5B3FB5', fontSize: 22, fontWeight: '800' },
+  title: {
+    flex: 1,
+    textAlign: 'center',
+    color: '#4B18AA',
+    fontSize: 24,
+    lineHeight: 28,
+    fontWeight: '800',
+  },
 });

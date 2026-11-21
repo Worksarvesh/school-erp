@@ -152,3 +152,56 @@ export function validateRequiredProfile(values: {
   }
   return errors;
 }
+
+export type ParentGuardianKey =
+  'parentName' | 'parentMobile' | 'motherName' | 'motherMobile' | 'guardianName' | 'guardianMobile';
+
+const PAIRS: readonly {
+  name: ParentGuardianKey;
+  mobile: ParentGuardianKey;
+  who: string;
+}[] = [
+  { name: 'parentName', mobile: 'parentMobile', who: "parent's" },
+  { name: 'motherName', mobile: 'motherMobile', who: "mother's" },
+  { name: 'guardianName', mobile: 'guardianMobile', who: "guardian's" },
+];
+
+/**
+ * Frontend checks for the Parent & Guardian screen. A name and its mobile number go together, and
+ * at least one such pair (parent, mother or guardian) is mandatory. The `form` key carries the
+ * "add at least one" message.
+ */
+export function validateParentGuardian(
+  values: Record<ParentGuardianKey, string>,
+): Record<string, string> {
+  const errors: Record<string, string> = {};
+  let complete = 0;
+  for (const pair of PAIRS) {
+    const name = values[pair.name].trim();
+    const mobile = values[pair.mobile];
+    let ok = true;
+    if (name && !PARENT_NAME_PATTERN.test(name)) {
+      errors[pair.name] = 'Use letters only (2-60 characters)';
+      ok = false;
+    }
+    if (mobile) {
+      if (!/^\d{10}$/.test(mobile)) errors[pair.mobile] = 'Mobile number must be exactly 10 digits';
+      else if (!/^[6-9]/.test(mobile))
+        errors[pair.mobile] = 'Mobile number must start with 6, 7, 8 or 9';
+      if (errors[pair.mobile]) ok = false;
+    }
+    if (name && !mobile) {
+      errors[pair.mobile] = `Enter the ${pair.who} mobile number`;
+      ok = false;
+    }
+    if (mobile && !name) {
+      errors[pair.name] = `Enter the ${pair.who} name`;
+      ok = false;
+    }
+    if (ok && name && mobile) complete += 1;
+  }
+  if (complete === 0 && Object.keys(errors).length === 0) {
+    errors.form = 'Add at least one name with its mobile number';
+  }
+  return errors;
+}

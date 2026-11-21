@@ -108,6 +108,12 @@ function RootNavigationGate() {
           options={{ headerShown: false, presentation: 'card' }}
         />
         <Stack.Screen name="puzzle" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="assignments" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen name="sports" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen
+          name="community/[id]"
+          options={{ headerShown: false, presentation: 'card' }}
+        />
 
         {/* Modals & Bottom Sheets */}
         <Stack.Screen

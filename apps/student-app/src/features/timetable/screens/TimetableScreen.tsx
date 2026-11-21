@@ -10,6 +10,7 @@ import { homeImages } from '@/theme/images';
 
 const DAY_MS = 86_400_000;
 const WEEKDAY_SHORT = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+const DAY_LABEL = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DURATION_GREEN = '#2E6B34';
 const DURATION_GREEN_BG = '#E3F1E4';
 const LUNCH_DOT = '#16A34A';
@@ -19,20 +20,17 @@ function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-/** Today, or the next Monday when today is Saturday or Sunday (no classes at weekends). */
+/** Today, or the next Monday when today is Sunday (school runs Monday to Saturday). */
 export function schoolDayFor(date: Date): Date {
   const d = startOfDay(date);
-  const day = d.getDay();
-  if (day === 6) return new Date(d.getTime() + 2 * DAY_MS);
-  if (day === 0) return new Date(d.getTime() + DAY_MS);
-  return d;
+  return d.getDay() === 0 ? new Date(d.getTime() + DAY_MS) : d;
 }
 
-/** Monday to Friday of the week that contains `date`. */
+/** Monday to Saturday of the week that contains `date`. */
 export function weekDays(date: Date): Date[] {
   const d = startOfDay(date);
   const monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
-  return [0, 1, 2, 3, 4].map(
+  return [0, 1, 2, 3, 4, 5].map(
     (i) => new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i),
   );
 }
@@ -67,7 +65,7 @@ export function formatDuration(minutes: number): string {
 
 /**
  * Time Table, built to the approved design: back arrow, centred title and photo, date with week
- * number and Today button, Monday-Friday strip, and a Time / Subject / Teacher table with breaks
+ * number and "Today" or the selected day's name, Monday-Saturday strip, and a Time / Subject / Teacher table with breaks
  * and a NOW marker on the running period. MOCK data only.
  */
 export function TimetableScreen() {
@@ -120,20 +118,14 @@ export function TimetableScreen() {
       </View>
 
       <View style={styles.dateRow}>
-        <View style={styles.dateText}>
-          <Text style={styles.date}>{formatLongDate(selected)}</Text>
-          <Text style={styles.week}>• Week {termWeek(selected)}</Text>
+        <Text style={styles.date} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+          {formatLongDate(selected)}
+        </Text>
+        <View testID="timetable-day-pill" style={styles.todayButton}>
+          <Text style={styles.todayText}>{isToday ? 'Today' : DAY_LABEL[selected.getDay()]}</Text>
         </View>
-        <Pressable
-          testID="timetable-today"
-          accessibilityRole="button"
-          accessibilityLabel="Show today"
-          onPress={() => setSelected(schoolDayFor(new Date()))}
-          style={({ pressed }) => [styles.todayButton, pressed && styles.pressed]}
-        >
-          <Text style={styles.todayText}>Today</Text>
-        </Pressable>
       </View>
+      <Text style={styles.week}>• Week {termWeek(selected)}</Text>
 
       <View style={styles.weekStrip} accessibilityRole="tablist">
         {days.map((d) => {
@@ -286,12 +278,11 @@ function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
     dateRow: {
       marginTop: spacing.xs,
       flexDirection: 'row',
-      alignItems: 'flex-start',
+      alignItems: 'center',
       justifyContent: 'space-between',
       gap: spacing.sm,
     },
-    dateText: { flex: 1 },
-    date: { color: colors.text, fontSize: 20, fontFamily: fonts.semibold },
+    date: { flex: 1, color: colors.text, fontSize: 20, fontFamily: fonts.semibold },
     week: { color: colors.textSecondary, fontSize: 12, fontFamily: fonts.medium, marginTop: 2 },
     todayButton: {
       minHeight: 32,

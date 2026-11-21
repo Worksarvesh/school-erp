@@ -19,6 +19,8 @@ export function comingSoon(title: string): Href {
 /**
  * Home quick actions, in the approved design order (4 per row). Sports has no screen yet, so
  * its tile does nothing for now.
+ * Home quick actions, in the approved design order (4 per row). Puzzle has no screen yet, so its
+ * tile does nothing for now.
  */
 export const QUICK_ACTIONS: readonly QuickAction[] = [
   {
@@ -45,7 +47,12 @@ export const QUICK_ACTIONS: readonly QuickAction[] = [
     image: require('../../../assets/images/home/assignments.png'),
     href: '/assignments',
   },
-  { key: 'sports', label: 'Sports', image: require('../../../assets/images/home/sports.png') },
+  {
+    key: 'sports',
+    label: 'Sports',
+    image: require('../../../assets/images/home/sports.png'),
+    href: '/sports',
+  },
   {
     key: 'syllabus',
     label: 'Syllabus',

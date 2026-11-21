@@ -215,9 +215,7 @@ export function ExamTimetableScreen() {
             {selected && selectedExams.length === 0 ? (
               <Text style={styles.noExam}>No exam on this day</Text>
             ) : (
-              selectedExams.map((exam) => (
-                <ExamCard key={exam.id} exam={exam} pill={EXAM_COLOR} />
-              ))
+              selectedExams.map((exam) => <ExamCard key={exam.id} exam={exam} pill={EXAM_COLOR} />)
             )}
           </View>
         </>

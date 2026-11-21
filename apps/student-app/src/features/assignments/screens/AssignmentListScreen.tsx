@@ -1,53 +1,58 @@
 import { useRouter } from 'expo-router';
-import { ArrowLeft, CalendarDays, Check, ChevronRight, Search } from 'lucide-react-native';
+import { ArrowLeft, CalendarDays, ChevronRight, Menu, Search, X } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Screen, StateView, useTheme, type ThemeContextValue } from '@school-erp/ui';
 import { mockAssignments, type MockAssignment } from '@/mock/assignments';
 import { fonts } from '@/theme/fonts';
+import {
+  CalendarSheet,
+  FilterMenuSheet,
+  OptionSheet,
+  type FilterKind,
+} from '../components/AssignmentSheets';
+import { assignmentTab, sameDay, useSubmissions, type AssignmentTab } from '../submissions';
 
-type Tab = 'upcoming' | 'past';
-type DueFilter = 'all' | 'week' | 'month';
-
-const TABS: readonly { key: Tab; label: string }[] = [
+const TABS: readonly { key: AssignmentTab; label: string }[] = [
   { key: 'upcoming', label: 'Upcoming' },
   { key: 'past', label: 'Past' },
-];
-const DUE_FILTERS: readonly { key: DueFilter; label: string }[] = [
-  { key: 'all', label: 'All dates' },
-  { key: 'week', label: 'Due within 7 days of today' },
-  { key: 'month', label: 'Due this month' },
+  { key: 'submitted', label: 'Submitted' },
 ];
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 const LINK_BLUE = '#2563EB';
-const DAY_MS = 86_400_000;
 
-/** Upcoming: due today or later. Past: due before today. */
-export function isUpcoming(a: MockAssignment, today: Date): boolean {
-  const t = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-  return a.dueOn.getTime() >= t;
-}
+/** One active filter at a time, chosen from the ☰ menu or the calendar button. */
+export type AssignmentFilter =
+  | { kind: 'calendar'; date: Date }
+  | { kind: 'subject'; value: string }
+  | { kind: 'chapter'; value: string };
 
 export function matchesSearch(a: MockAssignment, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
-  return [a.subject, a.title, a.description].some((s) => s.toLowerCase().includes(q));
+  return [a.subject, a.chapter, a.title, a.description].some((s) => s.toLowerCase().includes(q));
 }
 
-export function matchesDueFilter(a: MockAssignment, filter: DueFilter, today: Date): boolean {
-  if (filter === 'all') return true;
-  if (filter === 'month') {
-    return a.dueOn.getMonth() === today.getMonth() && a.dueOn.getFullYear() === today.getFullYear();
-  }
-  const t = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-  return Math.abs(a.dueOn.getTime() - t) <= 7 * DAY_MS;
+export function matchesFilter(a: MockAssignment, filter: AssignmentFilter | null): boolean {
+  if (!filter) return true;
+  if (filter.kind === 'calendar') return sameDay(a.dueOn, filter.date);
+  if (filter.kind === 'subject') return a.subject === filter.value;
+  return a.chapter === filter.value;
 }
+
+function filterLabel(filter: AssignmentFilter): string {
+  if (filter.kind === 'calendar') {
+    return `Due ${filter.date.getDate()} ${MONTHS[filter.date.getMonth()]}`;
+  }
+  return filter.kind === 'subject' ? `Subject: ${filter.value}` : `Chapter: ${filter.value}`;
+}
+
+const dayMonth = (d: Date) => `${d.getDate()} ${MONTHS[d.getMonth()]}`;
 
 /**
- * Assignment list, built to the approved design: search with a calendar filter, Upcoming / Past
- * tabs, and one card per assignment with assigned date, due date, total marks, subject and a
- * two-line description that expands with "View More". MOCK data only.
+ * Assignment list, built to the approved design: back and ☰ filter menu (calendar, subject,
+ * chapter), search with a calendar button, Upcoming / Past / Submitted tabs, and one card per
+ * assignment. A card opens the submission page. MOCK data only.
  */
 export function AssignmentListScreen() {
   const router = useRouter();
@@ -57,16 +62,27 @@ export function AssignmentListScreen() {
 
   const today = useMemo(() => new Date(), []);
   const all = useMemo(() => mockAssignments(today), [today]);
-  const [tab, setTab] = useState<Tab>('upcoming');
+  const submissions = useSubmissions((s) => s.submissions);
+
+  const [tab, setTab] = useState<AssignmentTab>('upcoming');
   const [query, setQuery] = useState('');
-  const [dueFilter, setDueFilter] = useState<DueFilter>('all');
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [filter, setFilter] = useState<AssignmentFilter | null>(null);
+  const [sheet, setSheet] = useState<'menu' | FilterKind | null>(null);
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
 
+  const subjects = useMemo(() => [...new Set(all.map((a) => a.subject))].sort(), [all]);
+  const chapters = useMemo(
+    () =>
+      [...new Map(all.map((a) => [a.chapter, a.subject])).entries()]
+        .map(([chapter, subject]) => ({ value: chapter, label: chapter, sub: subject }))
+        .sort((x, y) => x.label.localeCompare(y.label)),
+    [all],
+  );
+
   const visible = all
-    .filter((a) => isUpcoming(a, today) === (tab === 'upcoming'))
+    .filter((a) => assignmentTab(a, today, Boolean(submissions[a.id])) === tab)
     .filter((a) => matchesSearch(a, query))
-    .filter((a) => matchesDueFilter(a, dueFilter, today))
+    .filter((a) => matchesFilter(a, filter))
     .sort((x, y) =>
       tab === 'upcoming'
         ? x.dueOn.getTime() - y.dueOn.getTime()
@@ -80,6 +96,11 @@ export function AssignmentListScreen() {
       else next.add(id);
       return next;
     });
+
+  const applyFilter = (next: AssignmentFilter | null) => {
+    setFilter(next);
+    setSheet(null);
+  };
 
   return (
     <Screen scrollable contentContainerStyle={styles.content}>
@@ -96,7 +117,15 @@ export function AssignmentListScreen() {
         <Text style={styles.title} accessibilityRole="header">
           Assignment
         </Text>
-        <View style={styles.headerButton} />
+        <Pressable
+          testID="assignment-menu-button"
+          accessibilityRole="button"
+          accessibilityLabel="Filter menu"
+          onPress={() => setSheet('menu')}
+          style={styles.headerButton}
+        >
+          <Menu size={22} color={filter ? colors.primary : colors.text} />
+        </Pressable>
       </View>
 
       <View style={styles.searchRow}>
@@ -116,13 +145,34 @@ export function AssignmentListScreen() {
         <Pressable
           testID="assignment-calendar"
           accessibilityRole="button"
-          accessibilityLabel="Filter by due date"
-          onPress={() => setFilterOpen(true)}
-          style={[styles.calendarButton, dueFilter !== 'all' && styles.calendarButtonActive]}
+          accessibilityLabel="Open calendar"
+          onPress={() => setSheet('calendar')}
+          style={[
+            styles.calendarButton,
+            filter?.kind === 'calendar' && styles.calendarButtonActive,
+          ]}
         >
-          <CalendarDays size={20} color={dueFilter !== 'all' ? colors.primary : colors.text} />
+          <CalendarDays
+            size={20}
+            color={filter?.kind === 'calendar' ? colors.primary : colors.text}
+          />
         </Pressable>
       </View>
+
+      {filter ? (
+        <View style={styles.chipRow}>
+          <Pressable
+            testID="assignment-filter-chip"
+            accessibilityRole="button"
+            accessibilityLabel={`${filterLabel(filter)}, remove filter`}
+            onPress={() => setFilter(null)}
+            style={styles.chip}
+          >
+            <Text style={styles.chipText}>{filterLabel(filter)}</Text>
+            <X size={13} color={colors.primary} />
+          </Pressable>
+        </View>
+      ) : null}
 
       <View style={styles.tabs} accessibilityRole="tablist">
         {TABS.map((t) => {
@@ -145,36 +195,58 @@ export function AssignmentListScreen() {
       {visible.length === 0 ? (
         <StateView
           state="empty"
-          title="No assignments"
-          description={
-            query || dueFilter !== 'all' ? 'Try another search or date filter.' : undefined
-          }
+          title={tab === 'submitted' ? 'Nothing submitted yet' : 'No assignments'}
+          description={query || filter ? 'Try another search or filter.' : undefined}
         />
       ) : (
         <View style={styles.list}>
           {visible.map((a) => {
             const open = expanded.has(a.id);
+            const submission = submissions[a.id];
             return (
-              <View key={a.id} style={styles.card} testID={`assignment-${a.id}`}>
-                <View style={styles.cardTop}>
-                  <View style={styles.dateBox}>
-                    <Text style={styles.dateDay}>{a.assignedOn.getDate()}</Text>
-                    <Text style={styles.dateMonth}>{MONTHS[a.assignedOn.getMonth()]}</Text>
+              <View key={a.id} style={styles.card}>
+                {/* Only the top opens the assignment: View More is a button of its own, and buttons cannot nest on web. */}
+                <Pressable
+                  style={({ pressed }) => pressed && styles.cardPressed}
+                  testID={`assignment-${a.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${a.subject}, ${a.title}, due ${dayMonth(a.dueOn)}`}
+                  onPress={() =>
+                    router.push({ pathname: '/assignments/[id]', params: { id: a.id } })
+                  }
+                >
+                  <View style={styles.cardTop}>
+                    <View style={styles.dateBox}>
+                      <Text style={styles.dateDay}>{a.assignedOn.getDate()}</Text>
+                      <Text style={styles.dateMonth}>{MONTHS[a.assignedOn.getMonth()]}</Text>
+                    </View>
+                    <View style={styles.infoBox}>
+                      <Text style={styles.infoValue}>{dayMonth(a.dueOn)}</Text>
+                      <Text style={styles.infoLabel}>Due Date</Text>
+                    </View>
+                    <View style={styles.spacer} />
+                    <View style={[styles.infoBox, styles.marksBox]}>
+                      <Text style={styles.infoValue}>{a.totalMarks}</Text>
+                      <Text style={styles.infoLabel}>Total Marks</Text>
+                    </View>
                   </View>
-                  <View style={styles.infoBox}>
-                    <Text style={styles.infoValue}>
-                      {a.dueOn.getDate()} {MONTHS[a.dueOn.getMonth()]}
-                    </Text>
-                    <Text style={styles.infoLabel}>Due Date</Text>
-                  </View>
-                  <View style={styles.spacer} />
-                  <View style={[styles.infoBox, styles.marksBox]}>
-                    <Text style={styles.infoValue}>{a.totalMarks}</Text>
-                    <Text style={styles.infoLabel}>Total Marks</Text>
-                  </View>
-                </View>
 
-                <Text style={styles.subject}>{a.subject}</Text>
+                  <View style={styles.subjectRow}>
+                    <Text style={styles.subject}>{a.subject}</Text>
+                    {submission ? (
+                      <View style={[styles.status, styles.statusDone]}>
+                        <Text style={[styles.statusText, styles.statusTextDone]}>
+                          Submitted {dayMonth(submission.submittedOn)}
+                        </Text>
+                      </View>
+                    ) : tab === 'past' ? (
+                      <View style={[styles.status, styles.statusLate]}>
+                        <Text style={[styles.statusText, styles.statusTextLate]}>Overdue</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Text style={styles.chapter}>{a.chapter}</Text>
+                </Pressable>
                 <View style={styles.descriptionRow}>
                   <Text style={styles.description} numberOfLines={open ? undefined : 2}>
                     {a.description}
@@ -201,42 +273,41 @@ export function AssignmentListScreen() {
         </View>
       )}
 
-      <Modal
-        visible={filterOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setFilterOpen(false)}
-      >
-        <Pressable
-          style={styles.backdrop}
-          accessibilityRole="button"
-          accessibilityLabel="Close date filter"
-          onPress={() => setFilterOpen(false)}
-        />
-        <SafeAreaView edges={['bottom']} style={styles.sheet}>
-          <Text style={styles.sheetTitle}>Filter by due date</Text>
-          {DUE_FILTERS.map((f) => {
-            const active = f.key === dueFilter;
-            return (
-              <Pressable
-                key={f.key}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-                onPress={() => {
-                  setDueFilter(f.key);
-                  setFilterOpen(false);
-                }}
-                style={styles.sheetOption}
-              >
-                <Text style={[styles.sheetOptionText, active && styles.sheetOptionActive]}>
-                  {f.label}
-                </Text>
-                {active ? <Check size={18} color={colors.primary} /> : null}
-              </Pressable>
-            );
-          })}
-        </SafeAreaView>
-      </Modal>
+      <FilterMenuSheet
+        visible={sheet === 'menu'}
+        onClose={() => setSheet(null)}
+        onPick={(kind) => setSheet(kind)}
+        active={filter?.kind}
+      />
+      <CalendarSheet
+        visible={sheet === 'calendar'}
+        onClose={() => setSheet(null)}
+        today={today}
+        selected={filter?.kind === 'calendar' ? filter.date : undefined}
+        markedDays={all
+          .filter((a) => assignmentTab(a, today, Boolean(submissions[a.id])) === 'upcoming')
+          .map((a) => a.dueOn)}
+        onSelect={(date) => applyFilter({ kind: 'calendar', date })}
+        onClear={() => applyFilter(null)}
+      />
+      <OptionSheet
+        visible={sheet === 'subject'}
+        onClose={() => setSheet(null)}
+        title="Choose subject"
+        testID="assignment-subject-sheet"
+        options={subjects.map((s) => ({ value: s, label: s }))}
+        selected={filter?.kind === 'subject' ? filter.value : undefined}
+        onSelect={(value) => applyFilter({ kind: 'subject', value })}
+      />
+      <OptionSheet
+        visible={sheet === 'chapter'}
+        onClose={() => setSheet(null)}
+        title="Choose chapter"
+        testID="assignment-chapter-sheet"
+        options={chapters}
+        selected={filter?.kind === 'chapter' ? filter.value : undefined}
+        onSelect={(value) => applyFilter({ kind: 'chapter', value })}
+      />
     </Screen>
   );
 }
@@ -250,6 +321,7 @@ function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingVertical: spacing.sm,
+      marginHorizontal: -8,
     },
     headerButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
     title: { color: colors.primary, fontSize: 20, fontFamily: fonts.semibold },
@@ -282,6 +354,19 @@ function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
       justifyContent: 'center',
     },
     calendarButtonActive: { borderColor: colors.primary, backgroundColor: colors.surfaceSubtle },
+    chipRow: { flexDirection: 'row', marginTop: spacing.sm },
+    chip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: radii.full,
+      backgroundColor: colors.surfaceSubtle,
+      borderWidth: 1,
+      borderColor: '#E1D3FA',
+    },
+    chipText: { color: colors.primary, fontSize: 12, fontFamily: fonts.semibold },
     tabs: { flexDirection: 'row', marginTop: spacing.base },
     tab: {
       flex: 1,
@@ -302,6 +387,7 @@ function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
       backgroundColor: colors.surface,
       padding: spacing.md,
     },
+    cardPressed: { backgroundColor: '#FAFAFB' },
     cardTop: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.sm },
     dateBox: {
       minWidth: 36,
@@ -326,7 +412,20 @@ function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
     infoValue: { color: colors.text, fontSize: 12, fontFamily: fonts.bold },
     infoLabel: { color: colors.textSecondary, fontSize: 9, fontFamily: fonts.medium },
     spacer: { flex: 1 },
-    subject: { marginTop: spacing.md, color: colors.text, fontSize: 16, fontFamily: fonts.bold },
+    subjectRow: {
+      marginTop: spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    subject: { flexShrink: 1, color: colors.text, fontSize: 16, fontFamily: fonts.bold },
+    status: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: radii.full },
+    statusDone: { backgroundColor: '#DCFCE7' },
+    statusLate: { backgroundColor: '#FEE2E2' },
+    statusText: { fontSize: 10, fontFamily: fonts.semibold },
+    statusTextDone: { color: '#15803D' },
+    statusTextLate: { color: '#B91C1C' },
+    chapter: { color: colors.primary, fontSize: 11, fontFamily: fonts.medium, marginTop: 1 },
     descriptionRow: { marginTop: 4, flexDirection: 'row', alignItems: 'flex-end' },
     description: {
       flex: 1,
@@ -343,29 +442,5 @@ function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
       paddingLeft: spacing.xs,
     },
     viewMoreText: { color: LINK_BLUE, fontSize: 12, fontFamily: fonts.semibold },
-    backdrop: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)' },
-    sheet: {
-      backgroundColor: colors.surface,
-      borderTopLeftRadius: radii.xl,
-      borderTopRightRadius: radii.xl,
-      paddingHorizontal: spacing.base,
-      paddingTop: spacing.base,
-    },
-    sheetTitle: {
-      color: colors.text,
-      fontSize: 16,
-      fontFamily: fonts.bold,
-      marginBottom: spacing.sm,
-    },
-    sheetOption: {
-      minHeight: 48,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    sheetOptionText: { color: colors.text, fontSize: 15, fontFamily: fonts.medium },
-    sheetOptionActive: { color: colors.primary, fontFamily: fonts.semibold },
   });
 }

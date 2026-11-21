@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- React Native image assets are loaded with require() */
 import React from 'react';
-import { Image, type ImageSourcePropType, Text, View } from 'react-native';
+import { Image, type ImageSourcePropType, Pressable, Text, View } from 'react-native';
 import { Tabs } from 'expo-router';
 import { WebColumn } from '@/components';
 
@@ -18,7 +18,7 @@ export const TABS = [
   },
   {
     name: 'messages',
-    title: 'Messages',
+    title: 'Community',
     icon: require('../../assets/images/home/tab_messages.png') as ImageSourcePropType,
   },
   {
@@ -33,36 +33,94 @@ export const TABS = [
   },
 ] as const;
 
-const ACTIVE = '#4A1CA5';
-const INACTIVE = '#4F46A5';
+const INACTIVE = '#5F6B8A';
+const INDICATOR = '#7B5CF0';
 /** Space the floating bar covers; non-Home tabs add it as bottom padding so nothing is hidden. */
 const BAR_SPACE = 100;
+
+type TabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>['tabBar']>>[0];
+
+/**
+ * Our own floating bar. The navigator's default bar ignores left / right / bottom margins on
+ * Android (it sticks to the screen edge), so this one positions itself above the safe area.
+ */
+function FloatingTabBar({ state, navigateToTab, insets }: TabBarProps) {
+  return (
+    <View
+      pointerEvents="box-none"
+      style={{ position: 'absolute', left: 20, right: 20, bottom: insets.bottom + 6 }}
+    >
+      <View
+        style={{
+          height: 90,
+          paddingBottom: 12,
+          flexDirection: 'row',
+          alignItems: 'center',
+          borderRadius: 36,
+          backgroundColor: '#FFFFFF',
+          shadowColor: '#3B2A7A',
+          shadowOpacity: 0.16,
+          shadowRadius: 22,
+          shadowOffset: { width: 0, height: 4 },
+          elevation: 14,
+        }}
+      >
+        {state.routes.map((route, index) => {
+          const tab = TABS.find((t) => t.name === route.name);
+          if (!tab) return null;
+          const focused = state.index === index;
+          const onPress = () => {
+            if (!focused) navigateToTab(route.key);
+          };
+          return (
+            <Pressable
+              key={route.key}
+              testID={`tab-${tab.name}`}
+              accessibilityRole="tab"
+              accessibilityLabel={tab.title}
+              accessibilityState={{ selected: focused }}
+              onPress={onPress}
+              style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Image source={tab.icon} resizeMode="contain" style={{ width: 34, height: 34 }} />
+              <Text
+                style={{
+                  marginTop: 2,
+                  fontSize: 12,
+                  fontWeight: focused ? '700' : '500',
+                  color: focused ? INDICATOR : INACTIVE,
+                }}
+              >
+                {tab.title}
+              </Text>
+              <View
+                style={{
+                  marginTop: 3,
+                  width: 28,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: focused ? INDICATOR : 'transparent',
+                  shadowColor: INDICATOR,
+                  shadowOpacity: focused ? 0.55 : 0,
+                  shadowRadius: 5,
+                  shadowOffset: { width: 0, height: 3 },
+                  elevation: focused ? 3 : 0,
+                }}
+              />
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
 
 export default function TabsLayout() {
   return (
     <WebColumn backgroundColor="#FFFFFF">
       <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarStyle: {
-            position: 'absolute',
-            left: 14,
-            right: 14,
-            bottom: 14,
-            height: 74,
-            paddingTop: 8,
-            paddingBottom: 8,
-            borderRadius: 30,
-            borderTopWidth: 0,
-            backgroundColor: '#FFFFFF',
-            shadowColor: '#4A1CA5',
-            shadowOpacity: 0.18,
-            shadowRadius: 16,
-            shadowOffset: { width: 0, height: 6 },
-            elevation: 12,
-          },
-          tabBarItemStyle: { paddingVertical: 0 },
-        }}
+        screenOptions={{ headerShown: false }}
+        tabBar={(props) => <FloatingTabBar {...props} />}
       >
         {TABS.map((tab) => (
           <Tabs.Screen
@@ -74,31 +132,6 @@ export default function TabsLayout() {
                 tab.name === 'index'
                   ? { backgroundColor: '#FFFFFF' }
                   : { backgroundColor: '#FFFFFF', paddingBottom: BAR_SPACE },
-              tabBarIcon: () => (
-                <Image source={tab.icon} resizeMode="contain" style={{ width: 28, height: 28 }} />
-              ),
-              tabBarLabel: ({ focused }) => (
-                <View style={{ alignItems: 'center' }}>
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      fontWeight: focused ? '700' : '500',
-                      color: focused ? ACTIVE : INACTIVE,
-                    }}
-                  >
-                    {tab.title}
-                  </Text>
-                  <View
-                    style={{
-                      marginTop: 3,
-                      width: 28,
-                      height: 3,
-                      borderRadius: 2,
-                      backgroundColor: focused ? '#7C5CE0' : 'transparent',
-                    }}
-                  />
-                </View>
-              ),
             }}
           />
         ))}

@@ -68,7 +68,7 @@ const shortBreak = (id: string): BreakSlot => ({
   tag: 'Lounge',
 });
 
-/** Timetable by weekday (1 = Monday ... 5 = Friday). Wednesday matches the approved design. */
+/** Timetable by weekday (1 = Monday ... 6 = Saturday). Wednesday matches the approved design. */
 export const mockTimetable: Record<number, TimetableSlot[]> = {
   1: [
     cls('mon-1', t(8), t(9, 30), 'English', 'Prof. shasi', '71'),
@@ -119,5 +119,13 @@ export const mockTimetable: Record<number, TimetableSlot[]> = {
     shortBreak('fri-6'),
     cls('fri-7', t(14, 30), t(16), 'Art & Craft', 'Ms. P. Nair', 'Art Room'),
     cls('fri-8', t(16, 30), t(17), 'English', 'Prof. shasi', '71'),
+  ],
+  // Saturday is a shorter day: three classes, lunch and one afternoon period.
+  6: [
+    cls('sat-1', t(8), t(9, 30), 'Social Studies', 'Ms. Jenkins', 'Auditorium2'),
+    cls('sat-2', t(9, 30), t(10), 'English', 'Prof. shasi', '71'),
+    cls('sat-3', t(10), t(11, 45), 'Mathematics', 'Prof. Vance', '304 (East)'),
+    lunch('sat-4'),
+    cls('sat-5', t(12, 45), t(14, 15), 'Physical Education', 'Mr. D. Singh', 'Ground'),
   ],
 };

@@ -8,7 +8,7 @@ export type DayStatus = 'present' | 'absent' | 'holiday';
 /** First month of the academic year (June 2026): the month picker starts here. */
 export const ACADEMIC_YEAR_START = new Date(2026, 5, 1);
 
-/** School holidays (month is 1-based: "2026-08-15"). Weekends are holidays too. */
+/** School holidays (month is 1-based: "2026-08-15"). Sundays are holidays too (Saturday is a school day). */
 const HOLIDAYS = new Set([
   '2026-08-15',
   '2026-08-28',
@@ -49,7 +49,7 @@ export function mockDayStatus(date: Date, today: Date = new Date()): DayStatus |
   const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   if (d > t || d < ACADEMIC_YEAR_START) return null;
   const k = key(d);
-  if (d.getDay() === 0 || d.getDay() === 6 || HOLIDAYS.has(k)) return 'holiday';
+  if (d.getDay() === 0 || HOLIDAYS.has(k)) return 'holiday';
   if (ABSENT.has(k)) return 'absent';
   return 'present';
 }

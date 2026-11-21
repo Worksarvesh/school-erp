@@ -239,7 +239,7 @@ function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
       marginTop: spacing.lg,
       padding: spacing.base,
       borderColor: 'transparent',
-      shadowColor: '#5016A8',
+      shadowColor: '#4B18AA',
       shadowOpacity: 0.08,
       shadowRadius: 14,
       shadowOffset: { width: 0, height: 2 },

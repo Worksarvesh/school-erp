@@ -26,3 +26,34 @@ export const homeImages = {
   tabFees: require('../../assets/home/tab-fees.png'),
   tabProfile: require('../../assets/home/tab-profile.png'),
 } satisfies Record<string, ImageSourcePropType>;
+
+/** Sports screen artwork, cropped from the approved design (assets/sports). */
+export const sportsImages = {
+  banner: require('../../assets/sports/banner.png'),
+  avatar: require('../../assets/sports/avatar.png'),
+  cricket: require('../../assets/sports/cricket.png'),
+  football: require('../../assets/sports/football.png'),
+  basketball: require('../../assets/sports/basketball.png'),
+  badminton: require('../../assets/sports/badminton.png'),
+  volleyball: require('../../assets/sports/volleyball.png'),
+  tabletennis: require('../../assets/sports/tabletennis.png'),
+  athletics: require('../../assets/sports/athletics.png'),
+  other: require('../../assets/sports/other.png'),
+} satisfies Record<string, ImageSourcePropType>;
+
+/** Safety screen avatars, cropped from the approved design (assets/safety). */
+export const safetyImages = {
+  sarah: require('../../assets/safety/sarah.png'),
+  man: require('../../assets/safety/man.png'),
+  elena: require('../../assets/safety/elena.png'),
+} satisfies Record<string, ImageSourcePropType>;
+
+/** Community screen avatars, cropped from the approved design (assets/community). */
+export const communityImages = {
+  announcements: require('../../assets/community/announcements.png'),
+  teacher: require('../../assets/community/teacher.png'),
+  sports: require('../../assets/community/sports.png'),
+  sportsHead: require('../../assets/community/sports_head.png'),
+  coordinator: require('../../assets/community/coordinator.png'),
+  coach: require('../../assets/community/coach.png'),
+} satisfies Record<string, ImageSourcePropType>;

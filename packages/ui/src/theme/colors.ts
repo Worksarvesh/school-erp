@@ -1,6 +1,6 @@
 export const lightPalette = {
   // Brand colors
-  primary: '#5016A8', // Royal Purple (Primary Brand, Home design)
+  primary: '#4B18AA', // Royal Purple (Primary Brand, Home design)
   primaryLight: '#7C4DDB',
   primaryDark: '#3F0F8C',
   primaryForeground: '#FFFFFF',

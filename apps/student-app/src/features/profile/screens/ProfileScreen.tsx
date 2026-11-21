@@ -69,7 +69,7 @@ export function ProfileScreen() {
                   <User size={24} color={BLUE} />
                 )}
               </View>
-              <Text style={styles.rowLabel}>{rowLabel(section.id, section.title)}</Text>
+              <Text style={styles.rowLabel}>{section.title}</Text>
               <ChevronRight size={22} color="#374151" />
             </Pressable>
           ))}
@@ -87,11 +87,6 @@ export function ProfileScreen() {
       </ScrollView>
     </SafeAreaView>
   );
-}
-
-/** The design lists the last row in lower case ("safety"). */
-function rowLabel(id: SectionId, title: string) {
-  return id === 'safety' ? 'safety' : title;
 }
 
 function Chip({ label }: { label: string }) {
@@ -148,7 +143,7 @@ const styles = StyleSheet.create({
   },
   chipText: { color: BLUE, fontSize: 15, fontWeight: '700' },
   menu: {
-    marginTop: 8,
+    marginTop: 24,
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     shadowColor: '#000000',

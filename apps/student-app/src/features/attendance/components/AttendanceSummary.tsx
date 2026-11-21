@@ -102,8 +102,15 @@ export function AttendanceSummary({ showRemark = false }: AttendanceSummaryProps
   );
 }
 
-function AttendanceRing({ percentage, trackColor }: { percentage: number; trackColor: string }) {
-  const size = 104;
+export function AttendanceRing({
+  percentage,
+  trackColor,
+  size = 104,
+}: {
+  percentage: number;
+  trackColor: string;
+  size?: number;
+}) {
   const stroke = 13;
   const r = (size - stroke) / 2;
   const circumference = 2 * Math.PI * r;

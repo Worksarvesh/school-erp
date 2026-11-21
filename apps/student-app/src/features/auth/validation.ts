@@ -1,28 +1,26 @@
 import { z } from 'zod';
 
-/** Email: must have "@", and a "." after it (name@domain.tld), no spaces. */
-export const EMAIL_PATTERN = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
+/** Username: small letters, numbers, "_" and "-" only, 4 to 30 characters (e.g. sch0001s0001). */
+export const USERNAME_PATTERN = /^[a-z0-9_-]{4,30}$/;
 export const PASSWORD_MIN_LENGTH = 8;
 const SPECIAL_CHARACTER = /[^A-Za-z0-9\s]/;
 
 /**
  * Student sign-in (frontend checks only; the server decides who may sign in).
- * Email: required, must contain "@" and a "." after it.
+ * Username: required, small letters, numbers, "_" or "-" only (no email, spaces or capitals).
  * Password: at least 8 characters, with a number and a special character, no spaces.
  */
 export const studentLoginSchema = z.object({
   username: z
     .string()
     .trim()
-    .min(1, 'Enter your Email')
+    .min(1, 'Enter your username')
     .superRefine((v, ctx) => {
       if (v === '') return;
-      if (!v.includes('@')) {
-        ctx.addIssue({ code: 'custom', message: 'Email must contain "@"' });
-      } else if (!EMAIL_PATTERN.test(v)) {
+      if (!USERNAME_PATTERN.test(v)) {
         ctx.addIssue({
           code: 'custom',
-          message: 'Enter a valid email with "." after "@" (e.g. name@school.edu)',
+          message: 'Use small letters, numbers, _ or - only (4 to 30 characters)',
         });
       }
     }),

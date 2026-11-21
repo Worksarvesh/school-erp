@@ -4,7 +4,7 @@ import { ArrowRight } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ParentsIllustration, ROLE_SELECT_COLORS as C, SelectCard } from '@/components';
+import { ROLE_SELECT_COLORS as C, SelectCard } from '@/components';
 import type { AppRole } from '@/state/session';
 import { useSession } from '@/state/session';
 
@@ -14,7 +14,7 @@ import { useSession } from '@/state/session';
  */
 export function RoleSelectScreen() {
   const router = useRouter();
-  const [role, setRole] = useState<AppRole | null>(null);
+  const [role, setRole] = useState<AppRole | null>('student');
 
   const onContinue = () => {
     if (!role) return;
@@ -43,14 +43,6 @@ export function RoleSelectScreen() {
             illustration={null}
             selected={role === 'student'}
             onPress={() => setRole('student')}
-          />
-          <SelectCard
-            testID="role-parent"
-            title="Parents"
-            description="Learning through engaging meaningful experiences."
-            illustration={<ParentsIllustration />}
-            selected={role === 'parent'}
-            onPress={() => setRole('parent')}
           />
         </View>
       </View>

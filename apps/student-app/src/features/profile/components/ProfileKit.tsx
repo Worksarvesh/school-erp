@@ -17,7 +17,7 @@ import { formatDisplayDate } from '../progress';
 
 /** Fixed light palette for the profile-completion design (violet header, white sheet). */
 export const PROFILE = {
-  accent: '#8000FF',
+  accent: '#4B18AA',
   text: '#0F172A',
   label: '#4B5563',
   muted: '#6B7280',

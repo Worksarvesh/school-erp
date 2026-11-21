@@ -1,6 +1,16 @@
 import type { HomeworkDto } from '@school-erp/api-client';
 import { useRouter } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  BookOpen,
+  Calculator,
+  ChevronLeft,
+  ChevronRight,
+  FlaskConical,
+  Globe,
+  Laptop,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Screen, StateView, useTheme, type ThemeContextValue } from '@school-erp/ui';
@@ -25,6 +35,56 @@ const SUBJECT_COLORS: Record<string, string> = {
 };
 const FALLBACK_COLORS = ['#EC4899', '#14B8A6', '#8B5CF6', '#F97316', '#0EA5E9'];
 
+interface SubjectCard {
+  name: string;
+  icon: LucideIcon;
+  /** Icon square colour, card border tint and chevron colour (from the approved design). */
+  color: string;
+  border: string;
+  /** Subject names in the homework data that belong to this card. */
+  matches: readonly string[];
+}
+
+/** The Subject view: one card per subject, in design order. */
+const SUBJECT_CARDS: readonly SubjectCard[] = [
+  {
+    name: 'Mathematics',
+    icon: Calculator,
+    color: '#2F80ED',
+    border: '#D6E4FA',
+    matches: ['Mathematics', 'Geometry'],
+  },
+  {
+    name: 'Science',
+    icon: FlaskConical,
+    color: '#2DB36B',
+    border: '#D2F1E1',
+    matches: ['Science', 'Chemistry'],
+  },
+  { name: 'English', icon: BookOpen, color: '#F43F5E', border: '#FADADF', matches: ['English'] },
+  {
+    name: 'Social Science',
+    icon: Globe,
+    color: '#FB923C',
+    border: '#FBE3CC',
+    matches: ['Social Science', 'Social Studies'],
+  },
+  {
+    name: 'Computer',
+    icon: Laptop,
+    color: '#8B5CF6',
+    border: '#E4DBFB',
+    matches: ['Computer', 'Computer Science'],
+  },
+  {
+    name: 'General Knowledge',
+    icon: Calculator,
+    color: '#2F80ED',
+    border: '#D6E4FA',
+    matches: ['General Knowledge'],
+  },
+];
+
 export function subjectColor(subject: string): string {
   const known = SUBJECT_COLORS[subject];
   if (known) return known;
@@ -34,8 +94,8 @@ export function subjectColor(subject: string): string {
 }
 
 const STATUS = {
-  completed: { label: 'Complete', color: '#E11D2E' },
-  pending: { label: 'Incomplete', color: '#F97316' },
+  completed: { label: 'Complete', color: '#16A34A' },
+  pending: { label: 'Incomplete', color: '#E11D2E' },
 } as const;
 
 /** Groups homework by subject, keeping the order in which subjects first appear. */
@@ -61,6 +121,7 @@ export function HomeworkListScreen() {
   const { colors } = theme;
 
   const [view, setView] = useState<HomeworkView>('all');
+  const [subject, setSubject] = useState<SubjectCard | null>(null);
   const [homework, setHomework] = useState<HomeworkDto[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -122,7 +183,10 @@ export function HomeworkListScreen() {
               testID={`homework-view-${v.key}`}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
-              onPress={() => setView(v.key)}
+              onPress={() => {
+                setView(v.key);
+                setSubject(null);
+              }}
               style={[styles.segmentItem, active && styles.segmentItemActive]}
             >
               <Text style={[styles.segmentText, active && styles.segmentTextActive]}>
@@ -139,17 +203,56 @@ export function HomeworkListScreen() {
         <StateView state="empty" title="No homework" description="You're all caught up." />
       ) : view === 'all' ? (
         <View style={styles.list}>{homework.map(renderRow)}</View>
-      ) : (
-        groupBySubject(homework).map(([subject, items]) => (
-          <View key={subject} style={styles.group}>
-            <View style={styles.groupHeader}>
-              <View style={[styles.groupDot, { backgroundColor: subjectColor(subject) }]} />
-              <Text style={styles.groupTitle}>{subject}</Text>
-              <Text style={styles.groupCount}>{items.length}</Text>
+      ) : subject ? (
+        <View>
+          <Pressable
+            testID="subject-back"
+            accessibilityRole="button"
+            accessibilityLabel="Back to subjects"
+            onPress={() => setSubject(null)}
+            style={styles.subjectHead}
+          >
+            <ChevronLeft size={20} color={subject.color} />
+            <Text style={[styles.subjectHeadText, { color: subject.color }]}>{subject.name}</Text>
+          </Pressable>
+          {homework.filter((hw) => subject.matches.includes(hw.subjectName)).length === 0 ? (
+            <StateView
+              state="empty"
+              title="No homework"
+              description={`There is no ${subject.name} homework right now.`}
+            />
+          ) : (
+            <View style={styles.list}>
+              {homework.filter((hw) => subject.matches.includes(hw.subjectName)).map(renderRow)}
             </View>
-            <View style={styles.list}>{items.map(renderRow)}</View>
-          </View>
-        ))
+          )}
+        </View>
+      ) : (
+        <View style={styles.cards}>
+          {SUBJECT_CARDS.map((c) => {
+            const Icon = c.icon;
+            return (
+              <Pressable
+                key={c.name}
+                testID={`subject-${c.name}`}
+                accessibilityRole="button"
+                accessibilityLabel={c.name}
+                onPress={() => setSubject(c)}
+                style={({ pressed }) => [
+                  styles.card,
+                  { borderColor: c.border },
+                  pressed && styles.pressed,
+                ]}
+              >
+                <View style={[styles.cardIcon, { backgroundColor: c.color }]}>
+                  <Icon size={24} color="#FFFFFF" />
+                </View>
+                <Text style={styles.cardTitle}>{c.name}</Text>
+                <ChevronRight size={22} color={c.color} />
+              </Pressable>
+            );
+          })}
+        </View>
       )}
     </Screen>
   );
@@ -204,16 +307,33 @@ function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
     rowTitle: { color: '#1F2937', fontSize: 13, fontFamily: fonts.regular },
     rowSubject: { color: colors.textSecondary, fontSize: 11, fontFamily: fonts.regular },
     status: { fontSize: 11, fontFamily: fonts.semibold, marginLeft: spacing.sm },
-    group: { marginTop: spacing.sm },
-    groupHeader: {
+    cards: { marginTop: spacing.lg, paddingHorizontal: spacing.base, gap: 12 },
+    card: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: spacing.sm,
-      marginTop: spacing.md,
-      paddingHorizontal: spacing.base,
+      gap: spacing.base,
+      minHeight: 76,
+      paddingHorizontal: spacing.md,
+      borderRadius: 12,
+      borderWidth: 1,
+      backgroundColor: colors.surface,
     },
-    groupDot: { width: 8, height: 8, borderRadius: radii.full },
-    groupTitle: { flex: 1, color: colors.text, fontSize: 14, fontFamily: fonts.semibold },
-    groupCount: { color: colors.textSecondary, fontSize: 12, fontFamily: fonts.medium },
+    cardIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cardTitle: { flex: 1, color: '#111827', fontSize: 16, fontFamily: fonts.medium },
+    subjectHead: {
+      marginTop: spacing.base,
+      paddingHorizontal: spacing.sm,
+      minHeight: 40,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    subjectHeadText: { fontSize: 15, fontFamily: fonts.semibold },
   });
 }

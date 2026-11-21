@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@school-erp/ui';
 import { fonts } from '@/theme/fonts';
@@ -68,8 +69,16 @@ export function startOfDay(d: Date): number {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 }
 
-/** Back arrow, centred purple title, and an empty slot on the right to keep it centred. */
-export function ExamHeader({ title, testID }: { title: string; testID: string }) {
+/** Back arrow, centred purple title, and an optional button on the right. */
+export function ExamHeader({
+  title,
+  testID,
+  right,
+}: {
+  title: string;
+  testID: string;
+  right?: ReactNode;
+}) {
   const router = useRouter();
   const { colors } = useTheme();
   return (
@@ -86,7 +95,7 @@ export function ExamHeader({ title, testID }: { title: string; testID: string })
       <Text style={[styles.title, { color: colors.primary }]} accessibilityRole="header">
         {title}
       </Text>
-      <View style={styles.headerButton} />
+      {right ?? <View style={styles.headerButton} />}
     </View>
   );
 }

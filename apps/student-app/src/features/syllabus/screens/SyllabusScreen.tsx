@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { ChevronRight, Sun } from 'lucide-react-native';
+import { ChevronRight } from 'lucide-react-native';
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Screen, StateView } from '@school-erp/ui';
@@ -50,7 +50,6 @@ export function SyllabusScreen() {
           <Text style={styles.bannerText}>Grow</Text>
           <Text style={styles.bannerText}>Achieve 💜</Text>
         </View>
-        <Sun size={20} color="#2F6FED" style={styles.sun} />
       </View>
 
       <View style={styles.sectionRow}>
@@ -122,7 +121,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     fontStyle: 'italic',
   },
-  sun: { position: 'absolute', top: 12, right: 14 },
   sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -92,10 +92,21 @@ function RootNavigationGate() {
           options={{ headerShown: false, presentation: 'card' }}
         />
         <Stack.Screen name="syllabus/[id]" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen
+          name="syllabus/chapter/[chapterId]"
+          options={{ headerShown: false, presentation: 'card' }}
+        />
         <Stack.Screen name="notices/index" options={{ headerShown: false, presentation: 'card' }} />
         <Stack.Screen name="notices/[id]" options={{ headerShown: false, presentation: 'card' }} />
         <Stack.Screen name="coming-soon" options={{ headerShown: false, presentation: 'card' }} />
-        <Stack.Screen name="assignments" options={{ headerShown: false, presentation: 'card' }} />
+        <Stack.Screen
+          name="assignments/index"
+          options={{ headerShown: false, presentation: 'card' }}
+        />
+        <Stack.Screen
+          name="assignments/[id]"
+          options={{ headerShown: false, presentation: 'card' }}
+        />
         <Stack.Screen name="puzzle" options={{ headerShown: false, presentation: 'card' }} />
 
         {/* Modals & Bottom Sheets */}

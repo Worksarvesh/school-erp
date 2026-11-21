@@ -1,74 +1,19 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import {
-  BookMarked,
-  Check,
-  ChevronRight,
-  Download,
-  Leaf,
-  Lock,
-  Play,
-  type LucideIcon,
-} from 'lucide-react-native';
+import { BookMarked, ChevronRight, Download } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Screen, StateView } from '@school-erp/ui';
 import { comingSoon } from '@/features/dashboard/quickActions';
-import {
-  mockSyllabusSubjects,
-  syllabusProgress,
-  type ChapterStatus,
-  type MockChapter,
-} from '@/mock/syllabus';
+import { mockSyllabusSubjects, syllabusProgress, type MockChapter } from '@/mock/syllabus';
 import { fonts } from '@/theme/fonts';
-import { ProgressBar, ProgressRing, SyllabusHeader } from '../components/SyllabusKit';
-
-const BLUE = '#2F6FED';
-
-const STATUS: Record<
-  ChapterStatus,
-  {
-    label: string;
-    icon: LucideIcon;
-    iconBg: string;
-    iconColor: string;
-    /** Filled play icon for in-progress and upcoming chapters. */
-    filled: boolean;
-    pillBg: string;
-    pillFg: string;
-    pillIcon: LucideIcon;
-  }
-> = {
-  completed: {
-    label: 'Completed',
-    icon: Leaf,
-    iconBg: '#E3F6EC',
-    iconColor: '#22A06B',
-    filled: false,
-    pillBg: '#E3F6EC',
-    pillFg: '#16A34A',
-    pillIcon: Check,
-  },
-  in_progress: {
-    label: 'In Progress',
-    icon: Play,
-    iconBg: BLUE,
-    iconColor: '#FFFFFF',
-    filled: true,
-    pillBg: '#E5EEFE',
-    pillFg: BLUE,
-    pillIcon: Play,
-  },
-  upcoming: {
-    label: 'Upcoming',
-    icon: Play,
-    iconBg: '#4B5563',
-    iconColor: '#FFFFFF',
-    filled: true,
-    pillBg: '#F3F4F6',
-    pillFg: '#6B7280',
-    pillIcon: Lock,
-  },
-};
+import {
+  CHAPTER_STATUS as STATUS,
+  ProgressBar,
+  ProgressRing,
+  StatusPill,
+  SYLLABUS_BLUE as BLUE,
+  SyllabusHeader,
+} from '../components/SyllabusKit';
 
 function chapterSubtitle(c: MockChapter): string {
   if (c.status === 'completed') return `${c.topics} Topics`;
@@ -151,31 +96,37 @@ export function SyllabusSubjectScreen() {
           {chapters.map((c) => {
             const s = STATUS[c.status];
             const Icon = s.icon;
-            const PillIcon = s.pillIcon;
             const locked = c.status === 'upcoming';
             return (
-              <View key={c.id} style={styles.card} testID={`chapter-${c.id}`}>
-                <View style={[styles.chapterIcon, { backgroundColor: s.iconBg }]}>
-                  <Icon
-                    size={14}
-                    color={s.iconColor}
-                    fill={s.filled ? s.iconColor : 'transparent'}
-                  />
-                </View>
-                <View style={styles.chapterText}>
-                  <Text style={styles.chapterTitle} numberOfLines={1}>
-                    {c.title}
-                  </Text>
-                  <Text style={styles.chapterSub}>{chapterSubtitle(c)}</Text>
-                </View>
-                <View style={[styles.pill, { backgroundColor: s.pillBg }]}>
-                  <PillIcon
-                    size={9}
-                    color={s.pillFg}
-                    fill={c.status === 'in_progress' ? s.pillFg : 'transparent'}
-                  />
-                  <Text style={[styles.pillText, { color: s.pillFg }]}>{s.label}</Text>
-                </View>
+              <View key={c.id} style={styles.card}>
+                {/* The download is a separate button: buttons cannot nest on web. */}
+                <Pressable
+                  testID={`chapter-${c.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${c.title}, ${s.label}`}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/syllabus/chapter/[chapterId]',
+                      params: { chapterId: c.id },
+                    })
+                  }
+                  style={({ pressed }) => [styles.cardMain, pressed && styles.cardPressed]}
+                >
+                  <View style={[styles.chapterIcon, { backgroundColor: s.iconBg }]}>
+                    <Icon
+                      size={14}
+                      color={s.iconColor}
+                      fill={s.filled ? s.iconColor : 'transparent'}
+                    />
+                  </View>
+                  <View style={styles.chapterText}>
+                    <Text style={styles.chapterTitle} numberOfLines={1}>
+                      {c.title}
+                    </Text>
+                    <Text style={styles.chapterSub}>{chapterSubtitle(c)}</Text>
+                  </View>
+                  <StatusPill status={c.status} />
+                </Pressable>
                 <Pressable
                   testID={`chapter-download-${c.id}`}
                   accessibilityRole="button"
@@ -234,9 +185,8 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    gap: 6,
+    paddingRight: 10,
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
@@ -247,6 +197,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
   },
+  cardMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingLeft: 12,
+    borderRadius: 12,
+  },
+  cardPressed: { backgroundColor: '#FAFAFB' },
   chapterIcon: {
     width: 30,
     height: 30,
@@ -257,15 +217,6 @@ const styles = StyleSheet.create({
   chapterText: { flex: 1 },
   chapterTitle: { color: '#111827', fontSize: 12, fontFamily: fonts.semibold },
   chapterSub: { color: '#6B7280', fontSize: 10, fontFamily: fonts.regular, marginTop: 2 },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 999,
-  },
-  pillText: { fontSize: 9, fontFamily: fonts.semibold },
   download: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
   keepGoing: {
     flexDirection: 'row',

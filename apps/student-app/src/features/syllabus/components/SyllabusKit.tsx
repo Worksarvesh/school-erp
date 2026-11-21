@@ -3,9 +3,13 @@ import {
   ArrowLeft,
   BookOpen,
   Calculator,
+  Check,
   FlaskConical,
   Globe,
+  Leaf,
+  Lock,
   Monitor,
+  Play,
   Search,
   X,
   type LucideIcon,
@@ -13,7 +17,72 @@ import {
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useTheme } from '@school-erp/ui';
+import type { ChapterStatus } from '@/mock/syllabus';
 import { fonts } from '@/theme/fonts';
+
+export const SYLLABUS_BLUE = '#2F6FED';
+
+/** Icon and pill colours per status, shared by chapters and topics. */
+export const CHAPTER_STATUS: Record<
+  ChapterStatus,
+  {
+    label: string;
+    icon: LucideIcon;
+    iconBg: string;
+    iconColor: string;
+    /** Filled play icon for in-progress and upcoming items. */
+    filled: boolean;
+    pillBg: string;
+    pillFg: string;
+    pillIcon: LucideIcon;
+  }
+> = {
+  completed: {
+    label: 'Completed',
+    icon: Leaf,
+    iconBg: '#E3F6EC',
+    iconColor: '#22A06B',
+    filled: false,
+    pillBg: '#E3F6EC',
+    pillFg: '#16A34A',
+    pillIcon: Check,
+  },
+  in_progress: {
+    label: 'In Progress',
+    icon: Play,
+    iconBg: SYLLABUS_BLUE,
+    iconColor: '#FFFFFF',
+    filled: true,
+    pillBg: '#E5EEFE',
+    pillFg: SYLLABUS_BLUE,
+    pillIcon: Play,
+  },
+  upcoming: {
+    label: 'Upcoming',
+    icon: Play,
+    iconBg: '#4B5563',
+    iconColor: '#FFFFFF',
+    filled: true,
+    pillBg: '#F3F4F6',
+    pillFg: '#6B7280',
+    pillIcon: Lock,
+  },
+};
+
+export function StatusPill({ status }: { status: ChapterStatus }) {
+  const s = CHAPTER_STATUS[status];
+  const PillIcon = s.pillIcon;
+  return (
+    <View style={[styles.pill, { backgroundColor: s.pillBg }]}>
+      <PillIcon
+        size={9}
+        color={s.pillFg}
+        fill={status === 'in_progress' ? s.pillFg : 'transparent'}
+      />
+      <Text style={[styles.pillText, { color: s.pillFg }]}>{s.label}</Text>
+    </View>
+  );
+}
 
 export interface SubjectStyle {
   icon: LucideIcon;
@@ -187,6 +256,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: fonts.regular,
   },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  pillText: { fontSize: 9, fontFamily: fonts.semibold },
   ringCenter: { alignItems: 'center', justifyContent: 'center' },
   ringText: { color: '#111827', fontFamily: fonts.bold },
   barTrack: { height: 5, borderRadius: 999, backgroundColor: '#EEF0F4', overflow: 'hidden' },

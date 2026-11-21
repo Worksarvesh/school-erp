@@ -4,6 +4,7 @@ import {
   CalendarDays,
   Check,
   CircleCheck,
+  Download,
   FlaskConical,
   Globe,
   Monitor,
@@ -20,6 +21,7 @@ import { mockExamResults, type MockExamResult } from '@/mock/exams';
 import { fonts } from '@/theme/fonts';
 import { homeImages } from '@/theme/images';
 import { ExamHeader } from '../components/ExamKit';
+import { downloadResultPdf, resultHtml } from '../resultPdf';
 
 const PURPLE = '#6D28D9';
 const HEADER_PURPLE = '#7C3AED';
@@ -59,6 +61,8 @@ export function resultTotals(result: MockExamResult): {
 export function ExamResultScreen() {
   const [resultId, setResultId] = useState(mockExamResults[0]?.id ?? '');
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState(false);
   const result = mockExamResults.find((r) => r.id === resultId) ?? mockExamResults[0];
   const totals = useMemo(() => (result ? resultTotals(result) : null), [result]);
 
@@ -181,6 +185,34 @@ export function ExamResultScreen() {
         </View>
       </View>
 
+      <Pressable
+        testID="exam-result-download"
+        accessibilityRole="button"
+        accessibilityLabel="Download result as PDF"
+        accessibilityState={{ disabled: downloading, busy: downloading }}
+        disabled={downloading}
+        onPress={async () => {
+          setDownloading(true);
+          setDownloadError(false);
+          try {
+            await downloadResultPdf(resultHtml(result, totals), result.title);
+          } catch {
+            setDownloadError(true);
+          } finally {
+            setDownloading(false);
+          }
+        }}
+        style={({ pressed }) => [styles.download, (pressed || downloading) && styles.pressedBtn]}
+      >
+        <Download size={18} color="#FFFFFF" />
+        <Text style={styles.downloadText}>
+          {downloading ? 'Preparing PDF...' : 'Download as PDF'}
+        </Text>
+      </Pressable>
+      {downloadError ? (
+        <Text style={styles.downloadError}>Could not create the PDF. Please try again.</Text>
+      ) : null}
+
       <Modal
         visible={pickerOpen}
         transparent
@@ -256,37 +288,39 @@ function ScoreRing({ percent }: { percent: number }) {
   const clamped = Math.max(0, Math.min(100, percent));
   return (
     <View
-      style={styles.ring}
+      style={styles.ringWrap}
       accessible
       accessibilityLabel={`Total score ${clamped} percent`}
       testID="exam-result-score"
     >
-      <Svg width={RING_SIZE} height={RING_SIZE}>
-        <Circle
-          cx={RING_SIZE / 2}
-          cy={RING_SIZE / 2}
-          r={r}
-          stroke="#EDE9FE"
-          strokeWidth={RING_STROKE}
-          fill="none"
-        />
-        <Circle
-          cx={RING_SIZE / 2}
-          cy={RING_SIZE / 2}
-          r={r}
-          stroke={PURPLE}
-          strokeWidth={RING_STROKE}
-          fill="none"
-          strokeLinecap="round"
-          strokeDasharray={`${circumference} ${circumference}`}
-          strokeDashoffset={circumference * (1 - clamped / 100)}
-          transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
-        />
-      </Svg>
-      <View style={styles.ringCenter}>
-        <Text style={styles.ringValue}>{clamped}%</Text>
-        <Text style={styles.ringLabel}>TOTAL SCORE</Text>
+      <View style={styles.ring}>
+        <Svg width={RING_SIZE} height={RING_SIZE}>
+          <Circle
+            cx={RING_SIZE / 2}
+            cy={RING_SIZE / 2}
+            r={r}
+            stroke="#EDE9FE"
+            strokeWidth={RING_STROKE}
+            fill="none"
+          />
+          <Circle
+            cx={RING_SIZE / 2}
+            cy={RING_SIZE / 2}
+            r={r}
+            stroke={PURPLE}
+            strokeWidth={RING_STROKE}
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={`${circumference} ${circumference}`}
+            strokeDashoffset={circumference * (1 - clamped / 100)}
+            transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
+          />
+        </Svg>
+        <View style={styles.ringCenter}>
+          <Text style={styles.ringValue}>{clamped}%</Text>
+        </View>
       </View>
+      <Text style={styles.ringLabel}>TOTAL SCORE</Text>
     </View>
   );
 }
@@ -378,8 +412,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ringValue: { color: '#111827', fontSize: 14, fontFamily: fonts.bold },
-  ringLabel: { color: '#6B7280', fontSize: 6, fontFamily: fonts.semibold },
+  ringWrap: { alignItems: 'center', gap: 4 },
+  download: {
+    marginHorizontal: 12,
+    marginTop: 16,
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 12,
+    backgroundColor: PURPLE,
+  },
+  pressedBtn: { opacity: 0.8 },
+  downloadText: { color: '#FFFFFF', fontSize: 15, fontFamily: fonts.bold },
+  downloadError: {
+    marginTop: 6,
+    textAlign: 'center',
+    color: '#B91C1C',
+    fontSize: 12,
+    fontFamily: fonts.medium,
+  },
+  ringValue: { color: '#111827', fontSize: 15, fontFamily: fonts.bold },
+  ringLabel: { color: '#6B7280', fontSize: 9, fontFamily: fonts.semibold, letterSpacing: 0.4 },
   statusCol: { alignItems: 'center', gap: 6 },
   statusPill: {
     flexDirection: 'row',

@@ -19,6 +19,53 @@ export interface MockSyllabusSubject {
   chapters: MockChapter[];
 }
 
+export interface MockTopic {
+  id: string;
+  title: string;
+  status: ChapterStatus;
+}
+
+const TOPIC_NAMES = [
+  'Introduction',
+  'Key Concepts',
+  'Solved Examples',
+  'Important Terms',
+  'Class Activity',
+  'Practice Questions',
+  'Worksheet',
+];
+
+/**
+ * Sample topics for a chapter: all done when the chapter is completed, none when upcoming, and
+ * the first half done with the next one in progress for the current chapter.
+ */
+export function chapterTopics(chapter: MockChapter): MockTopic[] {
+  const n = chapter.topics;
+  const done =
+    chapter.status === 'completed' ? n : chapter.status === 'upcoming' ? 0 : Math.ceil(n / 2);
+  return Array.from({ length: n }, (_, i) => ({
+    id: `${chapter.id}-t${i + 1}`,
+    title: i === n - 1 ? 'Summary & Revision' : (TOPIC_NAMES[i % TOPIC_NAMES.length] ?? 'Topic'),
+    status:
+      i < done
+        ? 'completed'
+        : i === done && chapter.status === 'in_progress'
+          ? 'in_progress'
+          : 'upcoming',
+  }));
+}
+
+/** The chapter with this id and the subject it belongs to. */
+export function findChapter(
+  chapterId: string,
+): { subject: MockSyllabusSubject; chapter: MockChapter } | undefined {
+  for (const subject of mockSyllabusSubjects) {
+    const chapter = subject.chapters.find((c) => c.id === chapterId);
+    if (chapter) return { subject, chapter };
+  }
+  return undefined;
+}
+
 const chapters = (
   subjectId: string,
   list: readonly [title: string, topics: number][],

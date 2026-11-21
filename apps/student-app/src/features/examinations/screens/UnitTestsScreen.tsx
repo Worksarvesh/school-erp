@@ -1,9 +1,7 @@
-import { useRouter } from 'expo-router';
-import { CalendarDays, ChevronRight, Clock } from 'lucide-react-native';
+import { CalendarDays, Clock } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Screen, StateView } from '@school-erp/ui';
-import { comingSoon } from '@/features/dashboard/quickActions';
 import { mockUnitTests, type MockUnitTest } from '@/mock/exams';
 import { fonts } from '@/theme/fonts';
 import {
@@ -36,7 +34,6 @@ export function isCompleted(t: MockUnitTest, today: Date): boolean {
  * the marks scored. MOCK data only.
  */
 export function UnitTestsScreen() {
-  const router = useRouter();
   const today = useMemo(() => new Date(), []);
   const tests = useMemo(() => mockUnitTests(today), [today]);
   const [filter, setFilter] = useState<Filter>('upcoming');
@@ -81,13 +78,11 @@ export function UnitTestsScreen() {
             const done = isCompleted(t, today);
             const pill = done ? COMPLETED_PILL : pillColors(i);
             return (
-              <Pressable
+              <View
                 key={t.id}
                 testID={`unit-test-${t.id}`}
-                accessibilityRole="button"
                 accessibilityLabel={`${t.name}, ${t.subject}, ${done ? 'Completed' : 'Upcoming'}`}
-                onPress={() => router.push(comingSoon(`${t.subject} ${t.name}`))}
-                style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+                style={styles.card}
               >
                 <View style={styles.dateBox}>
                   <Text style={styles.dateDay}>{String(t.date.getDate()).padStart(2, '0')}</Text>
@@ -119,8 +114,7 @@ export function UnitTestsScreen() {
                     </Text>
                   </View>
                 </View>
-                <ChevronRight size={18} color="#374151" />
-              </Pressable>
+              </View>
             );
           })}
         </View>
@@ -167,7 +161,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  pressed: { backgroundColor: '#FAFAFB' },
   dateBox: {
     width: 42,
     paddingVertical: 6,

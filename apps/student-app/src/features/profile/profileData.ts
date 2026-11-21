@@ -1,6 +1,6 @@
 import { mockStudentRecord } from '../../core/mocks/fixtures';
 import type { OptionalProfile } from '@/state/session';
-import { mockStudent } from '@/mock/student';
+import { MOCK_MOTHER_MOBILE, mockStudent } from '@/mock/student';
 import { formatDisplayDate } from './progress';
 
 export type SectionId = 'personal' | 'parent' | 'contact' | 'academic' | 'safety';
@@ -73,9 +73,10 @@ export function profileSections(saved: OptionalProfile): SectionDef[] {
       title: 'Parent & Guardian Information',
       note: 'Registered with your school. Contact the school office to change these.',
       fields: [
-        { label: "Parents' name", value: dash(saved.parentName ?? record.fatherName) },
-        { label: "Mother's name", value: dash(record.motherName) },
-        { label: "Parents' mobile number", value: mobile ? `+91 ${mobile}` : 'Not recorded' },
+        { label: 'Father name', value: dash(saved.parentName ?? record.fatherName) },
+        { label: 'Father phone no.', value: mobile ? `+91 ${mobile}` : 'Not recorded' },
+        { label: 'Mother name', value: dash(record.motherName) },
+        { label: 'Mother phone no.', value: `+91 ${MOCK_MOTHER_MOBILE}` },
       ],
     },
     {

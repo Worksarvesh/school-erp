@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import {
   CalendarDays,
   ChevronLeft,
@@ -10,7 +9,6 @@ import {
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Screen, StateView } from '@school-erp/ui';
-import { comingSoon } from '@/features/dashboard/quickActions';
 import { mockExamTimetable, type MockExamSlot } from '@/mock/exams';
 import { fonts } from '@/theme/fonts';
 import {
@@ -44,7 +42,6 @@ const sameDay = (a: Date, b: Date) => startOfDay(a) === startOfDay(b);
  * subject, exam type, time and marks. Opens on the month of the next exam. MOCK data only.
  */
 export function ExamTimetableScreen() {
-  const router = useRouter();
   const today = useMemo(() => new Date(), []);
   const exams = useMemo(
     () => mockExamTimetable(today).sort((a, b) => a.date.getTime() - b.date.getTime()),
@@ -66,7 +63,6 @@ export function ExamTimetableScreen() {
   const inMonth = exams.filter((e) => monthKey(e.date) === month);
   const canPrev = month > firstMonth;
   const canNext = month < lastMonth;
-  const openExam = (exam: MockExamSlot) => router.push(comingSoon(`${exam.subject} exam`));
 
   // Calendar view: the picked day, else the next exam in this month, else its first exam.
   const selected =
@@ -90,7 +86,7 @@ export function ExamTimetableScreen() {
   return (
     <Screen scrollable contentContainerStyle={styles.content}>
       <ExamHeader
-        title="Exam"
+        title="Exam Timetable"
         testID="exam-timetable"
         right={
           <Pressable
@@ -220,12 +216,7 @@ export function ExamTimetableScreen() {
               <Text style={styles.noExam}>No exam on this day</Text>
             ) : (
               selectedExams.map((exam) => (
-                <ExamCard
-                  key={exam.id}
-                  exam={exam}
-                  pill={EXAM_COLOR}
-                  onPress={() => openExam(exam)}
-                />
+                <ExamCard key={exam.id} exam={exam} pill={EXAM_COLOR} />
               ))
             )}
           </View>
@@ -235,7 +226,7 @@ export function ExamTimetableScreen() {
       ) : (
         <View style={styles.list}>
           {inMonth.map((exam) => (
-            <ExamCard key={exam.id} exam={exam} pill={EXAM_COLOR} onPress={() => openExam(exam)} />
+            <ExamCard key={exam.id} exam={exam} pill={EXAM_COLOR} />
           ))}
         </View>
       )}
@@ -243,24 +234,14 @@ export function ExamTimetableScreen() {
   );
 }
 
-function ExamCard({
-  exam,
-  pill,
-  onPress,
-}: {
-  exam: MockExamSlot;
-  pill: { bg: string; fg: string };
-  onPress: () => void;
-}) {
+function ExamCard({ exam, pill }: { exam: MockExamSlot; pill: { bg: string; fg: string } }) {
   return (
-    <Pressable
+    <View
       testID={`exam-${exam.id}`}
-      accessibilityRole="button"
       accessibilityLabel={`${exam.subject}, ${exam.kind}, ${exam.date.getDate()} ${
         SHORT_MONTHS[exam.date.getMonth()]
       }`}
-      onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={styles.card}
     >
       <View style={styles.dateCol}>
         <Text style={styles.dateDay}>{exam.date.getDate()}</Text>
@@ -286,8 +267,7 @@ function ExamCard({
           <Text style={styles.meta}>{exam.maxMarks} Marks</Text>
         </View>
       </View>
-      <ChevronRight size={16} color="#9CA3AF" />
-    </Pressable>
+    </View>
   );
 }
 
@@ -356,7 +336,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   arrow: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  monthText: { color: '#111827', fontSize: 14, fontFamily: fonts.semibold },
+  monthText: { color: '#111827', fontSize: 14.5, fontFamily: fonts.bold },
   list: { paddingHorizontal: 16, paddingTop: 4, gap: 12 },
   card: {
     flexDirection: 'row',
@@ -373,15 +353,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  pressed: { backgroundColor: '#FAFAFB' },
   dateCol: { width: 40, alignItems: 'center' },
-  dateDay: { color: '#111827', fontSize: 20, lineHeight: 24, fontFamily: fonts.bold },
-  dateMonth: { color: '#111827', fontSize: 11, fontFamily: fonts.semibold },
+  dateDay: { color: '#111827', fontSize: 20, lineHeight: 24, fontFamily: fonts.semibold },
+  dateMonth: { color: '#111827', fontSize: 11, fontFamily: fonts.bold },
   dateWeekday: { color: '#9CA3AF', fontSize: 10, fontFamily: fonts.regular, marginTop: 2 },
   divider: { width: 1, alignSelf: 'stretch', backgroundColor: '#EEF0F3', marginHorizontal: 12 },
   body: { flex: 1, gap: 5 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  subject: { flexShrink: 1, color: '#111827', fontSize: 14, fontFamily: fonts.bold },
+  subject: { flexShrink: 1, color: '#111827', fontSize: 14, fontFamily: fonts.semibold },
   pill: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999 },
   pillText: { fontSize: 9, fontFamily: fonts.semibold },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

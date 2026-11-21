@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { BookMarked, ChevronRight, Download } from 'lucide-react-native';
+import { BookMarked, ChevronRight, Lock } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Screen, StateView } from '@school-erp/ui';
@@ -28,7 +28,7 @@ export function matchesChapter(c: MockChapter, query: string): boolean {
 
 /**
  * One subject's syllabus, built to the approved design: teacher and progress summary, then each
- * chapter with its status and a download button, and a "Keep going!" card at the end.
+ * chapter with its status and a lock on chapters not yet completed, and a "Keep going!" card at the end.
  * MOCK data only.
  */
 export function SyllabusSubjectScreen() {
@@ -96,10 +96,9 @@ export function SyllabusSubjectScreen() {
           {chapters.map((c) => {
             const s = STATUS[c.status];
             const Icon = s.icon;
-            const locked = c.status === 'upcoming';
+            const locked = c.status !== 'completed';
             return (
               <View key={c.id} style={styles.card}>
-                {/* The download is a separate button: buttons cannot nest on web. */}
                 <Pressable
                   testID={`chapter-${c.id}`}
                   accessibilityRole="button"
@@ -127,18 +126,16 @@ export function SyllabusSubjectScreen() {
                   </View>
                   <StatusPill status={c.status} />
                 </Pressable>
-                <Pressable
-                  testID={`chapter-download-${c.id}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Download ${c.title}`}
-                  accessibilityState={{ disabled: locked }}
-                  disabled={locked}
-                  onPress={() => router.push(comingSoon('Chapter downloads'))}
-                  hitSlop={8}
-                  style={styles.download}
-                >
-                  <Download size={15} color={locked ? '#C4C8CF' : '#374151'} />
-                </Pressable>
+                <View style={styles.lockSlot}>
+                  {locked ? (
+                    <Lock
+                      testID={`chapter-lock-${c.id}`}
+                      accessibilityLabel="Locked"
+                      size={15}
+                      color="#9CA3AF"
+                    />
+                  ) : null}
+                </View>
               </View>
             );
           })}
@@ -217,7 +214,7 @@ const styles = StyleSheet.create({
   chapterText: { flex: 1 },
   chapterTitle: { color: '#111827', fontSize: 12, fontFamily: fonts.semibold },
   chapterSub: { color: '#6B7280', fontSize: 10, fontFamily: fonts.regular, marginTop: 2 },
-  download: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  lockSlot: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
   keepGoing: {
     flexDirection: 'row',
     alignItems: 'center',

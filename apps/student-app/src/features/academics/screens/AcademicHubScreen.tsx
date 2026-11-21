@@ -1,19 +1,8 @@
-import type { Href } from 'expo-router';
 import { useRouter } from 'expo-router';
-import type { LucideIcon } from 'lucide-react-native';
-import {
-  ArrowLeft,
-  BookOpen,
-  CalendarDays,
-  ChevronRight,
-  FileText,
-  LibraryBig,
-  SquarePlay,
-} from 'lucide-react-native';
+import { ArrowLeft, CalendarDays } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Screen, useTheme, type ThemeContextValue } from '@school-erp/ui';
-import { comingSoon } from '@/features/dashboard/quickActions';
 import {
   ATTENDANCE_COLORS,
   AttendanceSummary,
@@ -23,21 +12,6 @@ import { fonts } from '@/theme/fonts';
 import { homeImages } from '@/theme/images';
 
 const DUE_RED = '#C81E1E';
-
-interface Resource {
-  key: string;
-  label: string;
-  icon: LucideIcon;
-  href: Href;
-}
-
-/** Learning resources are not built in V1.2: each opens a "Coming soon" placeholder (UI only). */
-const LEARNING_RESOURCES: readonly Resource[] = [
-  { key: 'library', label: 'Library', icon: LibraryBig, href: comingSoon('Library') },
-  { key: 'live', label: 'Live Classes', icon: SquarePlay, href: comingSoon('Live Classes') },
-  { key: 'notes', label: 'Notes', icon: BookOpen, href: comingSoon('Notes') },
-  { key: 'pdfs', label: 'Pdfs', icon: FileText, href: comingSoon('Pdfs') },
-];
 
 /** "Due today, 11:59 PM" / "Due tomorrow, 5:00 PM" / "Due 24 Nov, 5:00 PM". */
 export function formatDue(dueAt: Date, now: Date = new Date()): string {
@@ -67,8 +41,8 @@ export function formatDue(dueAt: Date, now: Date = new Date()): string {
 
 /**
  * Academic tab, built to the approved Academic design: centered title with menu and photo,
- * Homework Due card, attendance with Daily / Weekly / Monthly tabs and a progress ring,
- * Learning Resources, and a Survey & Feedback entry. MOCK data only.
+ * Homework Due card, attendance with Daily / Weekly / Monthly tabs and a progress ring.
+ * MOCK data only.
  */
 export function AcademicHubScreen() {
   const router = useRouter();
@@ -143,50 +117,6 @@ export function AcademicHubScreen() {
       </View>
 
       <AttendanceSummary showRemark />
-
-      <View style={[styles.card, styles.resourcesCard]}>
-        <View style={styles.rowBetween}>
-          <Text style={styles.sectionTitle}>Learning Resources</Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="See all learning resources"
-            onPress={() => router.push(comingSoon('Learning Resources'))}
-            style={styles.seeAll}
-          >
-            <Text style={styles.seeAllText}>See all</Text>
-          </Pressable>
-        </View>
-        <View style={styles.resourceRow}>
-          {LEARNING_RESOURCES.map((r) => (
-            <Pressable
-              key={r.key}
-              testID={`resource-${r.key}`}
-              accessibilityRole="button"
-              accessibilityLabel={r.label}
-              onPress={() => router.push(r.href)}
-              style={({ pressed }) => [styles.resource, pressed && styles.pressed]}
-            >
-              <View style={styles.resourceIcon}>
-                <r.icon size={24} color={colors.primary} />
-              </View>
-              <Text style={styles.resourceLabel} numberOfLines={1}>
-                {r.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        <Pressable
-          testID="survey-feedback"
-          accessibilityRole="button"
-          accessibilityLabel="Survey and Feedback"
-          onPress={() => router.push(comingSoon('Survey & Feedback'))}
-          style={({ pressed }) => [styles.surveyTab, pressed && styles.pressed]}
-        >
-          <Text style={styles.sectionTitle}>Survey & Feedback</Text>
-          <ChevronRight size={20} color={colors.textSecondary} />
-        </Pressable>
-      </View>
     </Screen>
   );
 }
@@ -235,38 +165,5 @@ function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
     sectionHeader: { marginTop: spacing.lg },
     sectionTitle: { color: colors.text, fontSize: 18, fontFamily: fonts.semibold },
     iconButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-    resourcesCard: {
-      marginTop: spacing.lg,
-      padding: spacing.base,
-      borderColor: 'transparent',
-      shadowColor: '#5016A8',
-      shadowOpacity: 0.08,
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: 2 },
-      elevation: 3,
-    },
-    seeAll: { minHeight: 32, justifyContent: 'center', paddingHorizontal: spacing.xs },
-    seeAllText: { color: colors.textSecondary, fontSize: 12, fontFamily: fonts.medium },
-    resourceRow: { flexDirection: 'row', marginTop: spacing.md },
-    resource: { width: '25%', alignItems: 'center', gap: spacing.sm },
-    resourceIcon: {
-      width: 52,
-      height: 52,
-      borderRadius: radii.full,
-      backgroundColor: '#F1F1F4',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    resourceLabel: { color: colors.text, fontSize: 12, fontFamily: fonts.medium },
-    surveyTab: {
-      marginTop: spacing.lg,
-      minHeight: 48,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-      paddingTop: spacing.md,
-    },
   });
 }

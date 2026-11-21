@@ -79,23 +79,22 @@ function StudentLogin() {
     <AuthShell
       title="Login To your Account"
       subtitle={
-        'Login using your phone number or Email ID.\nYou can add your other details after logging in.'
+        'Login using the username given by your school.\nYou can add your other details after logging in.'
       }
       onBack={() => router.replace('/(auth)/role-select')}
     >
       <AuthField
         testID="username"
-        label="User ID / Email"
-        placeholder="Enter your Email"
+        label="Username"
+        placeholder="Enter your username"
         icon={<User size={22} color={AUTH.icon} />}
         autoCapitalize="none"
         autoCorrect={false}
         textContentType="username"
         returnKeyType="next"
-        keyboardType="email-address"
         value={username}
         onChangeText={(t) => {
-          setUsername(t);
+          setUsername(t.toLowerCase());
           clearError('username');
         }}
         onBlur={() => validateField('username', username)}

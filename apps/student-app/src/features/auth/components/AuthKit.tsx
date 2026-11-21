@@ -27,7 +27,7 @@ export const AUTH = {
   fieldText: '#111827',
   placeholder: '#9CA3AF',
   icon: '#8B5CF6',
-  accent: '#8000FF',
+  accent: '#4B18AA',
   accentDisabled: '#C9A8FA',
   error: '#DC2626',
   back: '#3F3F46',

@@ -1,23 +1,22 @@
 import {
   BookOpen,
   Calculator,
-  CalendarDays,
   Check,
+  ChevronDown,
   CircleCheck,
   Download,
   FlaskConical,
   Globe,
   Monitor,
-  NotebookText,
-  UserRound,
   type LucideIcon,
 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
-import { Screen } from '@school-erp/ui';
-import { mockExamResults, type MockExamResult } from '@/mock/exams';
+import { Screen, StateView } from '@school-erp/ui';
+import { mockExamResults, type ExamResultKind, type MockExamResult } from '@/mock/exams';
+import { mockStudent } from '@/mock/student';
 import { fonts } from '@/theme/fonts';
 import { homeImages } from '@/theme/images';
 import { ExamHeader } from '../components/ExamKit';
@@ -26,15 +25,23 @@ import { downloadResultPdf, resultHtml } from '../resultPdf';
 const PURPLE = '#6D28D9';
 const HEADER_PURPLE = '#7C3AED';
 
-/** Icon and tint per subject in the marks table; other subjects use a book icon. */
-const SUBJECT_ICONS: Record<string, { icon: LucideIcon; bg: string; fg: string }> = {
-  Mathematics: { icon: Calculator, bg: '#EDE9FE', fg: '#7C3AED' },
-  Science: { icon: FlaskConical, bg: '#FFEDD5', fg: '#EA580C' },
-  Computer: { icon: Monitor, bg: '#DBEAFE', fg: '#2563EB' },
-  English: { icon: BookOpen, bg: '#FFEDD5', fg: '#F97316' },
-  'Social Science': { icon: Globe, bg: '#CCFBF1', fg: '#0D9488' },
+/** Icon per subject in the marks table; other subjects use a book icon. */
+const SUBJECT_ICONS: Record<string, LucideIcon> = {
+  Mathematics: Calculator,
+  Science: FlaskConical,
+  Computer: Monitor,
+  English: BookOpen,
+  'Social Science': Globe,
 };
-const DEFAULT_SUBJECT_ICON = { icon: BookOpen, bg: '#F3F4F6', fg: '#4B5563' };
+/** Every subject icon uses the same purple tint. */
+const SUBJECT_ICON_BG = '#EDE9FE';
+const SUBJECT_ICON_FG = '#7C3AED';
+
+const TABS: readonly { key: ExamResultKind; label: string }[] = [
+  { key: 'unit_test', label: 'Unit Test' },
+  { key: 'mid_term', label: 'Mid Term' },
+  { key: 'end_sem', label: 'End Sem' },
+];
 
 /** Grade pill colours: A+ green, A blue, anything else amber. */
 function gradeColors(grade: string): { bg: string; fg: string } {
@@ -54,22 +61,50 @@ export function resultTotals(result: MockExamResult): {
 }
 
 /**
- * Exam result, built to the approved design: exam summary card, overall result (score ring, pass
- * status, grade) and the subject-wise marks table. "Previous Exam" switches to another published
- * result. MOCK data only.
+ * Exam result, built to the approved design, with Unit Test / Mid Term / End Sem tabs. Each tab
+ * shows the same layout: exam summary card, overall result (score ring, pass status, grade) and
+ * the subject-wise marks table. The exam dropdown picks another published result of that tab. MOCK data only.
  */
 export function ExamResultScreen() {
-  const [resultId, setResultId] = useState(mockExamResults[0]?.id ?? '');
+  const [tab, setTab] = useState<ExamResultKind>('unit_test');
+  const [resultId, setResultId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState(false);
-  const result = mockExamResults.find((r) => r.id === resultId) ?? mockExamResults[0];
+  const tabResults = mockExamResults.filter((r) => r.kind === tab);
+  const result = tabResults.find((r) => r.id === resultId) ?? tabResults[0];
   const totals = useMemo(() => (result ? resultTotals(result) : null), [result]);
+
+  const tabs = (
+    <View style={styles.segment} accessibilityRole="tablist">
+      {TABS.map((t) => {
+        const active = t.key === tab;
+        return (
+          <Pressable
+            key={t.key}
+            testID={`exam-result-tab-${t.key}`}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
+            onPress={() => {
+              setTab(t.key);
+              setResultId(null);
+              setDownloadError(false);
+            }}
+            style={[styles.segmentItem, active && styles.segmentItemActive]}
+          >
+            <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{t.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
 
   if (!result || !totals) {
     return (
       <Screen>
         <ExamHeader title="Result" testID="exam-result" />
+        {tabs}
+        <StateView state="empty" title="No results yet" />
       </Screen>
     );
   }
@@ -77,6 +112,20 @@ export function ExamResultScreen() {
   return (
     <Screen scrollable contentContainerStyle={styles.content}>
       <ExamHeader title="Result" testID="exam-result" />
+      {tabs}
+
+      <Pressable
+        testID="exam-result-dropdown"
+        accessibilityRole="button"
+        accessibilityLabel={`${result.title}, choose exam`}
+        onPress={() => setPickerOpen(true)}
+        style={({ pressed }) => [styles.dropdown, pressed && styles.pressedBtn]}
+      >
+        <Text style={styles.dropdownText} numberOfLines={1}>
+          {result.title}
+        </Text>
+        <ChevronDown size={18} color={PURPLE} />
+      </Pressable>
 
       <View style={styles.summaryCard}>
         <View style={styles.summaryTop}>
@@ -86,37 +135,23 @@ export function ExamResultScreen() {
           </View>
           <View style={styles.summaryText}>
             <Text style={styles.examTitle}>{result.title}</Text>
-            <Text style={styles.examYear}>
-              Academic Year : <Text style={styles.examYearValue}>{result.academicYear}</Text>
+            <Text style={styles.studentName} testID="exam-result-student">
+              {mockStudent.fullName}
             </Text>
           </View>
         </View>
         <View style={styles.infoRow}>
-          <InfoItem icon={UserRound} label="Class" value={result.className} />
+          <InfoItem label="Roll No" value={String(mockStudent.rollNumber)} />
           <View style={styles.infoDivider} />
-          <InfoItem icon={NotebookText} label="Semester" value={result.semester} />
+          <InfoItem label="Class" value={`${mockStudent.className} - ${mockStudent.section}`} />
           <View style={styles.infoDivider} />
-          <Pressable
-            testID="exam-result-previous"
-            accessibilityRole="button"
-            accessibilityLabel="Previous exam"
-            onPress={() => setPickerOpen(true)}
-            style={styles.infoItem}
-          >
-            <View style={styles.infoIcon}>
-              <CalendarDays size={13} color={PURPLE} />
-            </View>
-            <Text style={styles.previousText}>Previous{'\n'}Exam</Text>
-          </Pressable>
+          <InfoItem label="Year" value={result.academicYear} />
         </View>
       </View>
 
       <View style={styles.panel}>
         <View style={styles.panelHeader}>
           <Text style={styles.panelTitle}>Overall Result</Text>
-          <View style={styles.headerPill}>
-            <Text style={styles.headerPillText}>Official Status</Text>
-          </View>
         </View>
         <View style={styles.overallBody}>
           <ScoreRing percent={totals.percent} />
@@ -150,14 +185,13 @@ export function ExamResultScreen() {
           <Text style={[styles.th, styles.gradeCol]}>GRADE</Text>
         </View>
         {result.subjects.map((s) => {
-          const meta = SUBJECT_ICONS[s.subject] ?? DEFAULT_SUBJECT_ICON;
-          const Icon = meta.icon;
+          const Icon = SUBJECT_ICONS[s.subject] ?? BookOpen;
           const grade = gradeColors(s.grade);
           return (
             <View key={s.subject} style={styles.tableRow}>
               <View style={[styles.subjectCol, styles.subjectCell]}>
-                <View style={[styles.subjectIcon, { backgroundColor: meta.bg }]}>
-                  <Icon size={11} color={meta.fg} />
+                <View style={styles.subjectIcon}>
+                  <Icon size={11} color={SUBJECT_ICON_FG} />
                 </View>
                 <Text style={styles.subjectName} numberOfLines={2}>
                   {s.subject}
@@ -227,7 +261,7 @@ export function ExamResultScreen() {
         />
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
           <Text style={styles.sheetTitle}>Choose exam</Text>
-          {mockExamResults.map((r) => {
+          {tabResults.map((r) => {
             const active = r.id === result.id;
             return (
               <Pressable
@@ -257,24 +291,13 @@ export function ExamResultScreen() {
   );
 }
 
-function InfoItem({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-}) {
+function InfoItem({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.infoItem}>
-      <View style={styles.infoIcon}>
-        <Icon size={13} color={PURPLE} />
-      </View>
-      <View>
-        <Text style={styles.infoLabel}>{label}</Text>
-        <Text style={styles.infoValue}>{value}</Text>
-      </View>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue} numberOfLines={1}>
+        {value}
+      </Text>
     </View>
   );
 }
@@ -327,52 +350,77 @@ function ScoreRing({ percent }: { percent: number }) {
 
 const styles = StyleSheet.create({
   content: { paddingBottom: 28 },
+  segment: {
+    flexDirection: 'row',
+    marginHorizontal: 12,
+    marginTop: 12,
+    padding: 3,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
+  },
+  segmentItem: {
+    flex: 1,
+    minHeight: 32,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  segmentItemActive: { backgroundColor: PURPLE },
+  segmentText: { color: '#4B5563', fontSize: 12, fontFamily: fonts.medium },
+  segmentTextActive: { color: '#FFFFFF', fontFamily: fonts.semibold },
+  dropdown: {
+    marginHorizontal: 12,
+    marginTop: 12,
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E4DAFB',
+    backgroundColor: '#FFFFFF',
+  },
+  dropdownText: { flex: 1, color: '#111827', fontSize: 14, fontFamily: fonts.semibold },
   summaryCard: {
     marginHorizontal: 12,
     marginTop: 12,
-    padding: 12,
+    padding: 10,
     borderRadius: 16,
     backgroundColor: '#F7F3FF',
     borderWidth: 1,
     borderColor: '#EDE7FB',
   },
-  summaryTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  summaryTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   artBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 14,
+    width: 46,
+    height: 46,
+    borderRadius: 12,
     backgroundColor: '#E9E1FB',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  books: { width: 46, height: 46 },
-  cap: { position: 'absolute', top: 4, right: 6, width: 26, height: 26 },
+  books: { width: 34, height: 34 },
+  cap: { position: 'absolute', top: 2, right: 3, width: 19, height: 19 },
   summaryText: { flex: 1 },
-  examTitle: { color: '#111827', fontSize: 17, fontFamily: fonts.bold },
-  examYear: { color: '#6B7280', fontSize: 11, fontFamily: fonts.regular, marginTop: 2 },
-  examYearValue: { color: '#111827', fontFamily: fonts.semibold },
+  examTitle: { color: '#111827', fontSize: 16, fontFamily: fonts.bold },
+  studentName: { color: '#374151', fontSize: 12.5, fontFamily: fonts.semibold, marginTop: 1 },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 10,
     paddingVertical: 8,
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
     borderRadius: 12,
     backgroundColor: '#FFFFFF',
   },
-  infoItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36 },
-  infoDivider: { width: 1, height: 26, backgroundColor: '#EEE8FA', marginHorizontal: 4 },
-  infoIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 7,
-    backgroundColor: '#F1EBFD',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  infoItem: { flex: 1, alignItems: 'center' },
+  infoDivider: { width: 1, height: 24, backgroundColor: '#EEE8FA' },
   infoLabel: { color: '#9CA3AF', fontSize: 9, fontFamily: fonts.regular },
   infoValue: { color: '#111827', fontSize: 11, fontFamily: fonts.semibold },
-  previousText: { color: '#111827', fontSize: 10, lineHeight: 13, fontFamily: fonts.semibold },
   panel: {
     marginHorizontal: 12,
     marginTop: 14,
@@ -479,6 +527,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 6,
+    backgroundColor: SUBJECT_ICON_BG,
     alignItems: 'center',
     justifyContent: 'center',
   },

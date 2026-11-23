@@ -1,6 +1,6 @@
 import React from 'react';
-import { ResultsCardScreen } from '../../src/features/examinations/screens/ResultsCardScreen.js';
+import { ExamResultScreen } from '../../src/features/examinations/screens/ExamResultScreen';
 
-export default function ResultsCardRoute() {
-  return <ResultsCardScreen />;
+export default function ExamResultRoute() {
+  return <ExamResultScreen />;
 }

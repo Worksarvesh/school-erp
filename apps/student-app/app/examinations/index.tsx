@@ -1,6 +1,6 @@
 import React from 'react';
-import { ExaminationListScreen } from '../../src/features/examinations/screens/ExaminationListScreen.js';
+import { ExamHubScreen } from '../../src/features/examinations/screens/ExamHubScreen';
 
-export default function ExaminationListRoute() {
-  return <ExaminationListScreen />;
+export default function ExamHubRoute() {
+  return <ExamHubScreen />;
 }

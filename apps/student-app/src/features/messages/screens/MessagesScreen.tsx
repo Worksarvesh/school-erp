@@ -8,6 +8,8 @@ import { COMMUNITY_CHATS } from '@/mock/community';
 import { fonts } from '@/theme/fonts';
 import { communityImages, homeImages } from '@/theme/images';
 
+/** Removes the black focus ring the browser draws around inputs (web only). */
+const NO_OUTLINE = { outlineStyle: 'none', outlineWidth: 0 } as object;
 const DEEP = '#4B18AA';
 
 /**
@@ -58,7 +60,7 @@ export function MessagesScreen() {
             onChangeText={setQuery}
             placeholder="Search Messages, groups..."
             placeholderTextColor="#6B7280"
-            style={styles.searchInput}
+            style={[styles.searchInput, NO_OUTLINE]}
           />
         </View>
 

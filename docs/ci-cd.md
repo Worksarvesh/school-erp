@@ -12,7 +12,7 @@ Runs on pull requests to `main`, pushes to `main`, and manually.
 | API integration tests      | Docker Compose PostgreSQL, then `test:int` (incl. tenant isolation suite) and `test:e2e` for `apps/api` |
 | Build                      | `pnpm run build` (workspaces that define `build`)                                                       |
 | Dependency audit           | Advisory (non-blocking) `pnpm audit` for high/critical                                                  |
-| CI passed                  | Aggregate required check for branch protection                                                          |
+| CI passed                  | Aggregate required check (ruleset)                                                                      |
 
 Design choices: `permissions: contents: read`; frozen lockfile; Node version from `.node-version`; pnpm version pinned through `packageManager`; dependency cache via `setup-node`; no secrets used; superseded runs are cancelled.
 

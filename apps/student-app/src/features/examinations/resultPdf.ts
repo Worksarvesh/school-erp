@@ -2,6 +2,7 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 import type { MockExamResult } from '@/mock/exams';
+import { mockStudent } from '@/mock/student';
 
 const esc = (s: string | number) =>
   String(s).replace(
@@ -35,7 +36,8 @@ tfoot td{background:#F5F3FF;font-weight:bold}
 </style></head><body>
 <h1>${esc(result.title)}</h1>
 <div class="muted">Academic Year: ${esc(result.academicYear)}</div>
-<div class="info"><span>Class: <b>${esc(result.className)}</b></span><span>Semester: <b>${esc(result.semester)}</b></span></div>
+<div class="info"><span>Name: <b>${esc(mockStudent.fullName)}</b></span><span>Roll No: <b>${esc(mockStudent.rollNumber)}</b></span></div>
+<div class="info"><span>Class: <b>${esc(mockStudent.className)} - ${esc(mockStudent.section)}</b></span></div>
 <div class="box">
 <div><span class="muted">Total Score</span><b>${esc(totals.percent)}%</b></div>
 <div><span class="muted">Status</span><b>${result.passed ? 'Pass' : 'Fail'}</b></div>

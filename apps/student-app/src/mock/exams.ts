@@ -33,12 +33,14 @@ export interface MockSubjectMark {
   grade: string;
 }
 
+/** Which Result tab an exam belongs to. */
+export type ExamResultKind = 'unit_test' | 'mid_term' | 'end_sem';
+
 export interface MockExamResult {
   id: string;
+  kind: ExamResultKind;
   title: string;
   academicYear: string;
-  className: string;
-  semester: string;
   /** Grade and status as published by the school. */
   overallGrade: string;
   passed: boolean;
@@ -103,39 +105,64 @@ export function mockUnitTests(today: Date = new Date()): MockUnitTest[] {
   ];
 }
 
+/** Grade for a percentage: 90+ A+, 75+ A, 60+ B+, 45+ B, else C. */
+function gradeFor(obtained: number, max: number): string {
+  const p = (obtained / max) * 100;
+  if (p >= 90) return 'A+';
+  if (p >= 75) return 'A';
+  if (p >= 60) return 'B+';
+  if (p >= 45) return 'B';
+  return 'C';
+}
+
+const SUBJECTS = ['Mathematics', 'Science', 'Computer', 'English', 'Social Science'] as const;
+
+/** One published result; `marks` are in SUBJECTS order, all out of `maxMarks`. */
+function result(
+  id: string,
+  kind: ExamResultKind,
+  title: string,
+  maxMarks: number,
+  marks: readonly number[],
+  remark: string,
+): MockExamResult {
+  const subjects = SUBJECTS.map((subject, i) => {
+    const obtained = marks[i] ?? 0;
+    return { subject, maxMarks, obtained, grade: gradeFor(obtained, maxMarks) };
+  });
+  const total = subjects.reduce((s, x) => s + x.obtained, 0);
+  return {
+    id,
+    kind,
+    title,
+    academicYear: '2026 - 2027',
+    overallGrade: gradeFor(total, maxMarks * subjects.length),
+    passed: subjects.every((x) => x.obtained >= maxMarks * 0.33),
+    remark,
+    subjects,
+  };
+}
+
+/** Published results, newest first within each kind. */
 export const mockExamResults: readonly MockExamResult[] = [
-  {
-    id: 'res-midterm',
-    title: 'Mid Term Examination',
-    academicYear: '2025 - 26',
-    className: '10 - A',
-    semester: '1st',
-    overallGrade: 'A+',
-    passed: true,
-    remark: 'Well Done!',
-    subjects: [
-      { subject: 'Mathematics', maxMarks: 100, obtained: 92, grade: 'A+' },
-      { subject: 'Science', maxMarks: 100, obtained: 88, grade: 'A' },
-      { subject: 'Computer', maxMarks: 100, obtained: 95, grade: 'A+' },
-      { subject: 'English', maxMarks: 100, obtained: 80, grade: 'A' },
-      { subject: 'Social Science', maxMarks: 100, obtained: 85, grade: 'A' },
-    ],
-  },
-  {
-    id: 'res-quarterly',
-    title: 'Quarterly Examination',
-    academicYear: '2025 - 26',
-    className: '10 - A',
-    semester: '1st',
-    overallGrade: 'A',
-    passed: true,
-    remark: 'Good Work!',
-    subjects: [
-      { subject: 'Mathematics', maxMarks: 50, obtained: 41, grade: 'A' },
-      { subject: 'Science', maxMarks: 50, obtained: 39, grade: 'B+' },
-      { subject: 'Computer', maxMarks: 50, obtained: 46, grade: 'A+' },
-      { subject: 'English', maxMarks: 50, obtained: 40, grade: 'A' },
-      { subject: 'Social Science', maxMarks: 50, obtained: 42, grade: 'A' },
-    ],
-  },
+  result('res-ut-4', 'unit_test', 'Unit Test 4', 30, [28, 26, 29, 24, 25], 'Well Done!'),
+  result('res-ut-3', 'unit_test', 'Unit Test 3', 30, [25, 27, 28, 22, 24], 'Good Work!'),
+  result('res-ut-2', 'unit_test', 'Unit Test 2', 30, [27, 23, 26, 25, 21], 'Good Work!'),
+  result('res-ut-1', 'unit_test', 'Unit Test 1', 30, [24, 22, 27, 23, 20], 'Keep it up!'),
+  result(
+    'res-midterm',
+    'mid_term',
+    'Mid Term Examination',
+    100,
+    [92, 88, 95, 80, 85],
+    'Well Done!',
+  ),
+  result(
+    'res-endsem',
+    'end_sem',
+    'End Semester Examination',
+    100,
+    [89, 84, 93, 78, 82],
+    'Well Done!',
+  ),
 ];

@@ -6,12 +6,11 @@ import {
   Modal,
   Platform,
   Pressable,
-  StyleSheet,
-  Text,
   TextInput,
   View,
   type TextInputProps,
 } from 'react-native';
+import { StyleSheet, Text, scaled, MAX_FONT_SCALE } from '@school-erp/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatDisplayDate } from '../progress';
 
@@ -77,6 +76,7 @@ export function TextField({ label, required, error, prefix, suffix, ...input }: 
           </>
         ) : null}
         <TextInput
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
           accessibilityLabel={label}
           placeholderTextColor={PROFILE.placeholder}
           style={styles.input}
@@ -128,7 +128,7 @@ export function SelectField<T extends string>({
         <Text style={[styles.input, styles.valueText, !value && { color: PROFILE.placeholder }]}>
           {value ?? placeholder}
         </Text>
-        <ChevronDown size={20} color={PROFILE.muted} />
+        <ChevronDown size={scaled(20)} color={PROFILE.muted} />
       </Pressable>
       <FieldError message={error} />
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
@@ -168,7 +168,7 @@ export function SelectField<T extends string>({
                   <Text style={[styles.optionText, selected && { color: PROFILE.accent }]}>
                     {item}
                   </Text>
-                  {selected ? <Check size={18} color={PROFILE.accent} /> : null}
+                  {selected ? <Check size={scaled(18)} color={PROFILE.accent} /> : null}
                 </Pressable>
               );
             }}
@@ -271,7 +271,7 @@ export function DateField({
         <Text style={[styles.input, styles.valueText, !value && { color: PROFILE.placeholder }]}>
           {value ? formatDisplayDate(value) : 'Select date'}
         </Text>
-        <Calendar size={20} color={PROFILE.muted} />
+        <Calendar size={scaled(20)} color={PROFILE.muted} />
       </Pressable>
       <FieldError message={error} />
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
@@ -283,13 +283,13 @@ export function DateField({
                 hitSlop={8}
                 onPress={() => shiftMonth(-1)}
               >
-                <ChevronLeft size={22} color={PROFILE.text} />
+                <ChevronLeft size={scaled(22)} color={PROFILE.text} />
               </Pressable>
               <Text style={styles.calTitle}>
                 {MONTHS[month]} {year}
               </Text>
               <Pressable accessibilityLabel="Next month" hitSlop={8} onPress={() => shiftMonth(1)}>
-                <ChevronRight size={22} color={PROFILE.text} />
+                <ChevronRight size={scaled(22)} color={PROFILE.text} />
               </Pressable>
             </View>
             <View style={styles.yearRow}>

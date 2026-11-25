@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Screen, Button, Input, useTheme } from '@school-erp/ui';
+import { Screen, Button, Input, useTheme, StyleSheet, Text } from '@school-erp/ui';
 import { useAuthStore } from '@school-erp/mobile-core';
 import { loginSchema, type LoginFormData } from '../schemas/auth.schema.js';
 import { MockStudentServices } from '../../../core/mocks/mock-services.js';

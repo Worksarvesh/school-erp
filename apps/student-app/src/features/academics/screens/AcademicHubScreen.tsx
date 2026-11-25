@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
 import { ArrowLeft, CalendarDays } from 'lucide-react-native';
 import { useMemo } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Screen, useTheme, type ThemeContextValue } from '@school-erp/ui';
+import { Image, Pressable, View } from 'react-native';
+import { Screen, useTheme, type ThemeContextValue, StyleSheet, Text, scaled } from '@school-erp/ui';
 import {
   ATTENDANCE_COLORS,
   AttendanceSummary,
@@ -62,7 +62,7 @@ export function AcademicHubScreen() {
           onPress={() => router.navigate('/')}
           style={styles.headerButton}
         >
-          <ArrowLeft size={22} color={colors.text} />
+          <ArrowLeft size={scaled(22)} color={colors.text} />
         </Pressable>
         <Text style={styles.title} accessibilityRole="header">
           Academic
@@ -112,7 +112,7 @@ export function AcademicHubScreen() {
           onPress={() => router.push('/attendance')}
           style={styles.iconButton}
         >
-          <CalendarDays size={22} color={ATTENDANCE_COLORS.holiday} />
+          <CalendarDays size={scaled(22)} color={ATTENDANCE_COLORS.holiday} />
         </Pressable>
       </View>
 
@@ -165,38 +165,5 @@ function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
     sectionHeader: { marginTop: spacing.lg },
     sectionTitle: { color: colors.text, fontSize: 18, fontFamily: fonts.semibold },
     iconButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-    resourcesCard: {
-      marginTop: spacing.lg,
-      padding: spacing.base,
-      borderColor: 'transparent',
-      shadowColor: '#4B18AA',
-      shadowOpacity: 0.08,
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: 2 },
-      elevation: 3,
-    },
-    seeAll: { minHeight: 32, justifyContent: 'center', paddingHorizontal: spacing.xs },
-    seeAllText: { color: colors.textSecondary, fontSize: 12, fontFamily: fonts.medium },
-    resourceRow: { flexDirection: 'row', marginTop: spacing.md },
-    resource: { width: '25%', alignItems: 'center', gap: spacing.sm },
-    resourceIcon: {
-      width: 52,
-      height: 52,
-      borderRadius: radii.full,
-      backgroundColor: '#F1F1F4',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    resourceLabel: { color: colors.text, fontSize: 12, fontFamily: fonts.medium },
-    surveyTab: {
-      marginTop: spacing.lg,
-      minHeight: 48,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-      paddingTop: spacing.md,
-    },
   });
 }

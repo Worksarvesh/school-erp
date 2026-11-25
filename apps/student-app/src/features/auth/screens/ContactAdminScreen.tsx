@@ -1,7 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ArrowLeft } from 'lucide-react-native';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { StyleSheet, Text, scaled } from '@school-erp/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { HelpDeskIllustration } from '@/components';
 import { AUTH } from '../components/AuthKit';
@@ -43,7 +44,7 @@ export function ContactAdminScreen() {
           onPress={back}
           style={styles.button}
         >
-          <ArrowLeft size={20} color="#FFFFFF" />
+          <ArrowLeft size={scaled(20)} color="#FFFFFF" />
           <Text style={styles.buttonLabel}>Back to Login</Text>
         </Pressable>
       </View>

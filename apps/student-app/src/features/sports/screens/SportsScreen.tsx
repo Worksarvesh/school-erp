@@ -8,7 +8,8 @@ import {
   Clock,
   MapPin,
 } from 'lucide-react-native';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, View } from 'react-native';
+import { StyleSheet, Text, scaled } from '@school-erp/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SPORT_CATEGORIES, SPORTS_EVENTS } from '@/mock/sports';
 import { fonts } from '@/theme/fonts';
@@ -54,7 +55,7 @@ export function SportsScreen() {
           onPress={back}
           style={styles.topSide}
         >
-          <ArrowLeft size={26} color="#111827" />
+          <ArrowLeft size={scaled(26)} color="#111827" />
         </Pressable>
         <Text accessibilityRole="header" style={styles.topTitle}>
           Sports
@@ -76,7 +77,7 @@ export function SportsScreen() {
               style={styles.bannerButton}
             >
               <Text style={styles.bannerButtonText}>View Details</Text>
-              <ArrowRight size={16} color="#FFFFFF" />
+              <ArrowRight size={scaled(16)} color="#FFFFFF" />
             </Pressable>
           </View>
           <Image
@@ -91,7 +92,7 @@ export function SportsScreen() {
           <Text style={styles.sectionTitle}>Sports Categories</Text>
           <Pressable testID="sports-see-all" accessibilityRole="link" style={styles.link}>
             <Text style={styles.linkText}>See All</Text>
-            <ChevronRight size={16} color={BLUE} />
+            <ChevronRight size={scaled(16)} color={BLUE} />
           </Pressable>
         </View>
         <View style={styles.grid}>
@@ -116,12 +117,12 @@ export function SportsScreen() {
         <View style={styles.events}>
           <View style={styles.sectionRow}>
             <View style={styles.eventsTitleRow}>
-              <CalendarDays size={22} color={BLUE} />
+              <CalendarDays size={scaled(22)} color={BLUE} />
               <Text style={styles.eventsTitle}>Upcoming Sports Events</Text>
             </View>
             <Pressable testID="sports-view-all" accessibilityRole="link" style={styles.link}>
               <Text style={styles.linkText}>View All</Text>
-              <ChevronRight size={16} color={BLUE} />
+              <ChevronRight size={scaled(16)} color={BLUE} />
             </Pressable>
           </View>
           {SPORTS_EVENTS.map((e) => (
@@ -139,18 +140,18 @@ export function SportsScreen() {
               <View style={styles.flex}>
                 <Text style={styles.eventTitle}>{e.title}</Text>
                 <View style={styles.meta}>
-                  <MapPin size={14} color="#6B7280" />
+                  <MapPin size={scaled(14)} color="#6B7280" />
                   <Text style={styles.metaText}>{e.place}</Text>
                 </View>
                 <View style={styles.meta}>
-                  <Clock size={14} color="#6B7280" />
+                  <Clock size={scaled(14)} color="#6B7280" />
                   <Text style={styles.metaText}>{e.time}</Text>
                 </View>
               </View>
               <View style={styles.pill}>
                 <Text style={styles.pillText}>{e.status}</Text>
               </View>
-              <ChevronRight size={20} color="#4B5563" />
+              <ChevronRight size={scaled(20)} color="#4B5563" />
             </Pressable>
           ))}
         </View>

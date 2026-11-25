@@ -1,5 +1,6 @@
 import { ArrowLeft } from 'lucide-react-native';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { StyleSheet, Text, scaled } from '@school-erp/ui';
 
 /** White top bar with a back arrow and a centred violet title (approved Profile design). */
 export function ProfileTopBar({ title, onBack }: { title: string; onBack: () => void }) {
@@ -13,7 +14,7 @@ export function ProfileTopBar({ title, onBack }: { title: string; onBack: () => 
         onPress={onBack}
         style={styles.back}
       >
-        <ArrowLeft size={26} color="#111827" />
+        <ArrowLeft size={scaled(26)} color="#111827" />
       </Pressable>
       <Text accessibilityRole="header" style={styles.title} numberOfLines={2}>
         {title}

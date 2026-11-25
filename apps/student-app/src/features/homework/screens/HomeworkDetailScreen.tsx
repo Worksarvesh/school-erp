@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Screen, Card, Button, StateView, useTheme } from '@school-erp/ui';
+import { Screen, Card, Button, StateView, useTheme, StyleSheet, Text } from '@school-erp/ui';
 import type { HomeworkDto } from '@school-erp/api-client';
 import { ProfileTopBar } from '../../profile/components/ProfileTopBar';
 import { PagesCarousel } from '../components/PagesCarousel';

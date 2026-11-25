@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Screen, Header, Card, Badge, StateView, useTheme } from '@school-erp/ui';
+import { Screen, Header, Card, Badge, StateView, useTheme, StyleSheet, Text } from '@school-erp/ui';
 import type {
   StudentRecordDto,
   AttendanceSummaryDto,

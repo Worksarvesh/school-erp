@@ -10,8 +10,8 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Screen } from '@school-erp/ui';
+import { Image, Pressable, View } from 'react-native';
+import { Screen, StyleSheet, Text, scaled } from '@school-erp/ui';
 import { mockFeeItems, mockFeePayments, type FeeIcon, type MockFeeItem } from '@/mock/fees';
 import { fonts } from '@/theme/fonts';
 import { homeImages } from '@/theme/images';
@@ -99,7 +99,7 @@ export function FeesScreen() {
           onPress={() => router.navigate('/')}
           style={styles.headerButton}
         >
-          <ArrowLeft size={22} color="#111827" />
+          <ArrowLeft size={scaled(22)} color="#111827" />
         </Pressable>
         <Text style={styles.headerTitle} accessibilityRole="header">
           Fees
@@ -149,7 +149,7 @@ export function FeesScreen() {
               }`}
             >
               <View style={styles.feeIcon}>
-                <Icon size={18} color="#4B5563" />
+                <Icon size={scaled(18)} color="#4B5563" />
               </View>
               <View style={styles.feeText}>
                 <Text style={styles.feeTitle}>{item.title}</Text>
@@ -161,7 +161,7 @@ export function FeesScreen() {
                 </Text>
                 {paid ? (
                   <View style={[styles.badge, styles.badgePaid]}>
-                    <Check size={9} color="#2563EB" strokeWidth={3} />
+                    <Check size={scaled(9)} color="#2563EB" strokeWidth={3} />
                     <Text style={[styles.badgeText, styles.badgeTextPaid]}>PAID</Text>
                   </View>
                 ) : (
@@ -197,7 +197,7 @@ export function FeesScreen() {
             testID={`fees-history-${p.id}`}
           >
             <View style={styles.historyIcon}>
-              <ReceiptText size={16} color="#4B5563" />
+              <ReceiptText size={scaled(16)} color="#4B5563" />
             </View>
             <View style={styles.historyText}>
               <Text style={styles.historyTitle}>{p.title}</Text>

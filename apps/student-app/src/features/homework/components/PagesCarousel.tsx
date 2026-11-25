@@ -4,11 +4,9 @@ import {
   type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
-  StyleSheet,
-  Text,
   View,
 } from 'react-native';
-import { useTheme } from '@school-erp/ui';
+import { useTheme, StyleSheet, Text } from '@school-erp/ui';
 
 /**
  * Swipeable pages of a homework (attachments). MOCK: there is no file API yet, so each slide is

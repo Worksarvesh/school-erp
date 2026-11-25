@@ -1,8 +1,10 @@
 export * from './theme/colors.js';
 export * from './theme/spacing.js';
 export * from './theme/typography.js';
+export * from './theme/responsive.js';
 export * from './theme/theme.context.js';
 
+export * from './components/Text.js';
 export * from './components/Screen.js';
 export * from './components/Header.js';
 export * from './components/Button.js';

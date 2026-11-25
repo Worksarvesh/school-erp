@@ -2,7 +2,8 @@ import { Redirect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { CheckCircle2, Check, GraduationCap, IdCard, Lock } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
-import { BackHandler, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, Platform, Pressable, ScrollView, View } from 'react-native';
+import { StyleSheet, Text, scaled } from '@school-erp/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { BloodGroup, Gender } from '@/mock/student';
 import { BLOOD_GROUPS, mockStudent } from '@/mock/student';
@@ -140,7 +141,7 @@ export function ProfileCompleteScreen() {
             }}
             onBlur={() => setError('parentName', requiredErrors.parentName)}
             error={errors.parentName}
-            suffix={<IdCard size={22} color="#94A3B8" />}
+            suffix={<IdCard size={scaled(22)} color="#94A3B8" />}
           />
           <TextField
             testID="parent-mobile"
@@ -157,7 +158,9 @@ export function ProfileCompleteScreen() {
             }}
             onBlur={() => setError('parentMobile', requiredErrors.parentMobile)}
             error={errors.parentMobile}
-            suffix={mobileValid ? <CheckCircle2 size={22} color={PROFILE.success} /> : undefined}
+            suffix={
+              mobileValid ? <CheckCircle2 size={scaled(22)} color={PROFILE.success} /> : undefined
+            }
           />
 
           <View style={styles.twoCol}>
@@ -196,7 +199,7 @@ export function ProfileCompleteScreen() {
           <View style={styles.lockedHeader}>
             <Text style={styles.lockedTitle}>School details (locked)</Text>
             <View style={styles.verified}>
-              <Lock size={13} color={PROFILE.muted} />
+              <Lock size={scaled(13)} color={PROFILE.muted} />
               <Text style={styles.verifiedText}>Verified by School</Text>
             </View>
           </View>
@@ -206,7 +209,7 @@ export function ProfileCompleteScreen() {
             style={styles.locked}
           >
             <View style={styles.capCircle}>
-              <GraduationCap size={22} color="#64748B" />
+              <GraduationCap size={scaled(22)} color="#64748B" />
             </View>
             <View style={styles.flex}>
               <Text style={styles.lockedMain}>
@@ -215,7 +218,7 @@ export function ProfileCompleteScreen() {
               <Text style={styles.lockedSub}>{s.schoolName}</Text>
               <Text style={styles.lockedSub}>• Academic Year {s.academicYear}</Text>
             </View>
-            <Lock size={20} color="#94A3B8" />
+            <Lock size={scaled(20)} color="#94A3B8" />
           </View>
 
           <View style={[styles.sectionRow, { marginTop: 28 }]}>
@@ -261,7 +264,7 @@ export function ProfileCompleteScreen() {
             style={styles.saveButton}
           >
             <Text style={styles.saveLabel}>Save and continue</Text>
-            <Check size={20} color="#FFFFFF" />
+            <Check size={scaled(20)} color="#FFFFFF" />
           </Pressable>
         </View>
       </View>

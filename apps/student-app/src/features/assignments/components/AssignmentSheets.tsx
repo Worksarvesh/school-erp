@@ -8,7 +8,8 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { useState, type ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { StyleSheet, Text, scaled } from '@school-erp/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fonts } from '@/theme/fonts';
 import { sameDay } from '../submissions';
@@ -95,13 +96,13 @@ export function FilterMenuSheet({
             style={styles.menuRow}
           >
             <View style={[styles.menuIcon, on && styles.menuIconActive]}>
-              <Icon size={18} color={on ? '#FFFFFF' : PURPLE} />
+              <Icon size={scaled(18)} color={on ? '#FFFFFF' : PURPLE} />
             </View>
             <View style={styles.menuText}>
               <Text style={[styles.optionText, on && styles.optionActive]}>{label}</Text>
               <Text style={styles.optionSub}>{hint}</Text>
             </View>
-            <ChevronRight size={18} color="#9CA3AF" />
+            <ChevronRight size={scaled(18)} color="#9CA3AF" />
           </Pressable>
         );
       })}
@@ -144,7 +145,7 @@ export function OptionSheet({
                 <Text style={[styles.optionText, on && styles.optionActive]}>{o.label}</Text>
                 {o.sub ? <Text style={styles.optionSub}>{o.sub}</Text> : null}
               </View>
-              {on ? <Check size={18} color={PURPLE} /> : null}
+              {on ? <Check size={scaled(18)} color={PURPLE} /> : null}
             </Pressable>
           );
         })}
@@ -204,7 +205,7 @@ export function CalendarSheet({
           onPress={() => setMonth(new Date(year, m - 1, 1))}
           style={styles.monthArrow}
         >
-          <ChevronLeft size={18} color="#111827" />
+          <ChevronLeft size={scaled(18)} color="#111827" />
         </Pressable>
         <Text style={styles.monthText}>
           {MONTHS[m]} {year}
@@ -216,7 +217,7 @@ export function CalendarSheet({
           onPress={() => setMonth(new Date(year, m + 1, 1))}
           style={styles.monthArrow}
         >
-          <ChevronRight size={18} color="#111827" />
+          <ChevronRight size={scaled(18)} color="#111827" />
         </Pressable>
       </View>
 

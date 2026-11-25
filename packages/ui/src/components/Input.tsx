@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  type TextInputProps,
-} from 'react-native';
+import { View, TextInput, TouchableOpacity, type TextInputProps } from 'react-native';
+import { MAX_FONT_SCALE, StyleSheet } from '../theme/responsive.js';
+import { Text } from './Text.js';
 import { useTheme } from '../theme/theme.context.js';
 
 export interface InputProps extends TextInputProps {
@@ -63,6 +58,7 @@ export function Input({
       >
         {leftIcon ? <View style={{ marginRight: spacing.sm }}>{leftIcon}</View> : null}
         <TextInput
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
           style={[
             styles.input,
             {

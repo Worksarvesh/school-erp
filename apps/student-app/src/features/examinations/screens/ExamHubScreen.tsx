@@ -1,7 +1,7 @@
 import { useRouter, type Href } from 'expo-router';
 import { CalendarCheck, ChartColumn, ClipboardList, type LucideIcon } from 'lucide-react-native';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Screen } from '@school-erp/ui';
+import { Pressable, View } from 'react-native';
+import { Screen, StyleSheet, Text, scaled } from '@school-erp/ui';
 import { fonts } from '@/theme/fonts';
 import { ExamHeader } from '../components/ExamKit';
 
@@ -59,7 +59,7 @@ export function ExamHubScreen() {
             ]}
           >
             <View style={[styles.iconBox, { backgroundColor: tint.box }]}>
-              <Icon size={20} color={tint.icon} />
+              <Icon size={scaled(20)} color={tint.icon} />
             </View>
             <Text style={styles.label}>{label}</Text>
           </Pressable>

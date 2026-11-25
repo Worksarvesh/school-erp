@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, type ViewStyle, type StyleProp } from 'react-native';
+import { View, TouchableOpacity, type ViewStyle, type StyleProp } from 'react-native';
+import { StyleSheet } from '../theme/responsive.js';
 import { useTheme } from '../theme/theme.context.js';
 
 export interface CardProps {

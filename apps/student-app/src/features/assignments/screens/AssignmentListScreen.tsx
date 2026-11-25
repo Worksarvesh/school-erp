@@ -1,8 +1,17 @@
 import { useRouter } from 'expo-router';
 import { ArrowLeft, CalendarDays, ChevronRight, Menu, Search, X } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Screen, StateView, useTheme, type ThemeContextValue } from '@school-erp/ui';
+import { Pressable, TextInput, View } from 'react-native';
+import {
+  Screen,
+  StateView,
+  useTheme,
+  type ThemeContextValue,
+  StyleSheet,
+  Text,
+  scaled,
+  MAX_FONT_SCALE,
+} from '@school-erp/ui';
 import { mockAssignments, type MockAssignment } from '@/mock/assignments';
 import { fonts } from '@/theme/fonts';
 import {
@@ -112,7 +121,7 @@ export function AssignmentListScreen() {
           onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
           style={styles.headerButton}
         >
-          <ArrowLeft size={24} color={colors.text} />
+          <ArrowLeft size={scaled(24)} color={colors.text} />
         </Pressable>
         <Text style={styles.title} accessibilityRole="header">
           Assignment
@@ -124,14 +133,15 @@ export function AssignmentListScreen() {
           onPress={() => setSheet('menu')}
           style={styles.headerButton}
         >
-          <Menu size={22} color={filter ? colors.primary : colors.text} />
+          <Menu size={scaled(22)} color={filter ? colors.primary : colors.text} />
         </Pressable>
       </View>
 
       <View style={styles.searchRow}>
         <View style={styles.search}>
-          <Search size={18} color={colors.textSecondary} />
+          <Search size={scaled(18)} color={colors.textSecondary} />
           <TextInput
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
             testID="assignment-search"
             value={query}
             onChangeText={setQuery}
@@ -153,7 +163,7 @@ export function AssignmentListScreen() {
           ]}
         >
           <CalendarDays
-            size={20}
+            size={scaled(20)}
             color={filter?.kind === 'calendar' ? colors.primary : colors.text}
           />
         </Pressable>
@@ -169,7 +179,7 @@ export function AssignmentListScreen() {
             style={styles.chip}
           >
             <Text style={styles.chipText}>{filterLabel(filter)}</Text>
-            <X size={13} color={colors.primary} />
+            <X size={scaled(13)} color={colors.primary} />
           </Pressable>
         </View>
       ) : null}
@@ -261,7 +271,7 @@ export function AssignmentListScreen() {
                   >
                     <Text style={styles.viewMoreText}>{open ? 'View Less' : 'View More'}</Text>
                     <ChevronRight
-                      size={14}
+                      size={scaled(14)}
                       color={LINK_BLUE}
                       style={open ? { transform: [{ rotate: '-90deg' }] } : undefined}
                     />

@@ -7,12 +7,11 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
-  Text,
   TextInput,
   View,
   type TextInputProps,
 } from 'react-native';
+import { StyleSheet, Text, scaled, MAX_FONT_SCALE } from '@school-erp/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Eye, EyeOff } from 'lucide-react-native';
 
@@ -63,6 +62,16 @@ export function AuthShell({ title, subtitle, onBack, children }: AuthShellProps)
                 <ArrowLeft size={24} color={AUTH.back} />
               </Pressable>
             ) : null}
+            <Pressable
+              testID="auth-back"
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              hitSlop={12}
+              onPress={onBack}
+              style={styles.back}
+            >
+              <ArrowLeft size={scaled(24)} color={AUTH.back} />
+            </Pressable>
             <View style={styles.flex}>
               <Text accessibilityRole="header" style={styles.title}>
                 {title}
@@ -96,6 +105,7 @@ export function AuthField({ label, icon, error, isPassword, testID, ...input }: 
       <View style={[styles.field, !!error && styles.fieldError]}>
         <View style={styles.fieldIcon}>{icon}</View>
         <TextInput
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
           testID={testID}
           accessibilityLabel={label}
           placeholderTextColor={AUTH.placeholder}
@@ -110,7 +120,11 @@ export function AuthField({ label, icon, error, isPassword, testID, ...input }: 
             hitSlop={10}
             onPress={() => setHidden((h) => !h)}
           >
-            {hidden ? <EyeOff size={22} color="#6B7280" /> : <Eye size={22} color="#6B7280" />}
+            {hidden ? (
+              <EyeOff size={scaled(22)} color="#6B7280" />
+            ) : (
+              <Eye size={scaled(22)} color="#6B7280" />
+            )}
           </Pressable>
         ) : null}
       </View>
@@ -144,7 +158,7 @@ export function AuthLink({
       style={styles.link}
     >
       <Text style={styles.linkText}>{label}</Text>
-      <ArrowRight size={16} color={AUTH.accent} />
+      <ArrowRight size={scaled(16)} color={AUTH.accent} />
     </Pressable>
   );
 }
@@ -174,7 +188,7 @@ export function AuthButton({
       style={[styles.button, loading && styles.buttonDisabled]}
     >
       <Text style={styles.buttonLabel}>{loading ? 'Please wait...' : label}</Text>
-      {trailingArrow ? <ArrowRight size={18} color="#FFFFFF" /> : null}
+      {trailingArrow ? <ArrowRight size={scaled(18)} color="#FFFFFF" /> : null}
     </Pressable>
   );
 }

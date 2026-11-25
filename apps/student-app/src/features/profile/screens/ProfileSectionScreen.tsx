@@ -1,7 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
+import { StyleSheet, Text } from '@school-erp/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BLOOD_GROUPS, type BloodGroup } from '@/mock/student';
 import { useSession, type OptionalProfile } from '@/state/session';

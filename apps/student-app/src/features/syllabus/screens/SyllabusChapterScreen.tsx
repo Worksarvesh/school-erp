@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { Screen, StateView } from '@school-erp/ui';
+import { View } from 'react-native';
+import { Screen, StateView, StyleSheet, Text, scaled } from '@school-erp/ui';
 import { chapterTopics, findChapter, type MockTopic } from '@/mock/syllabus';
 import { fonts } from '@/theme/fonts';
 import {
@@ -135,7 +135,11 @@ function TopicGroup({
               accessibilityLabel={`${t.title}, ${s.label}`}
             >
               <View style={[styles.icon, { backgroundColor: s.iconBg }]}>
-                <Icon size={13} color={s.iconColor} fill={s.filled ? s.iconColor : 'transparent'} />
+                <Icon
+                  size={scaled(13)}
+                  color={s.iconColor}
+                  fill={s.filled ? s.iconColor : 'transparent'}
+                />
               </View>
               <View style={styles.cardText}>
                 <Text style={styles.topicTitle}>{t.title}</Text>

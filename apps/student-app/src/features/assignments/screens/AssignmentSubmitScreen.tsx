@@ -10,9 +10,9 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Linking, Pressable, TextInput, View } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
-import { Screen, StateView } from '@school-erp/ui';
+import { Screen, StateView, StyleSheet, Text, scaled, MAX_FONT_SCALE } from '@school-erp/ui';
 import { mockAssignments } from '@/mock/assignments';
 import { fonts } from '@/theme/fonts';
 import { assignmentTab, isDriveLink, useSubmissions } from '../submissions';
@@ -73,7 +73,7 @@ export function AssignmentSubmitScreen() {
         onPress={() => (router.canGoBack() ? router.back() : router.replace('/assignments'))}
         style={styles.headerButton}
       >
-        <ArrowLeft size={24} color="#111827" />
+        <ArrowLeft size={scaled(24)} color="#111827" />
       </Pressable>
       <Text style={styles.headerTitle} accessibilityRole="header">
         {submission ? 'Submission' : 'Submit Assignment'}
@@ -131,7 +131,7 @@ export function AssignmentSubmitScreen() {
       {submission ? (
         <View style={styles.card} testID="assignment-submitted">
           <View style={styles.doneRow}>
-            <CircleCheck size={20} color="#FFFFFF" fill="#16A34A" />
+            <CircleCheck size={scaled(20)} color="#FFFFFF" fill="#16A34A" />
             <View style={styles.flex}>
               <Text style={styles.doneTitle}>Assignment submitted</Text>
               <Text style={styles.doneSub}>On {dateTime(submission.submittedOn)}</Text>
@@ -157,7 +157,7 @@ export function AssignmentSubmitScreen() {
                 <Text style={styles.driveLinkText} numberOfLines={1}>
                   {submission.driveLink}
                 </Text>
-                <ExternalLink size={16} color={PURPLE} />
+                <ExternalLink size={scaled(16)} color={PURPLE} />
               </Pressable>
             </>
           ) : null}
@@ -166,7 +166,7 @@ export function AssignmentSubmitScreen() {
         <View style={styles.card}>
           {overdue ? (
             <View style={styles.lateBanner}>
-              <CircleAlert size={16} color="#B91C1C" />
+              <CircleAlert size={scaled(16)} color="#B91C1C" />
               <Text style={styles.lateText}>
                 The due date has passed. This will be sent as a late submission.
               </Text>
@@ -175,6 +175,7 @@ export function AssignmentSubmitScreen() {
 
           <Text style={[styles.sectionLabel, styles.firstLabel]}>Your Answer</Text>
           <TextInput
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
             testID="assignment-answer"
             value={answer}
             onChangeText={setAnswer}
@@ -197,6 +198,7 @@ export function AssignmentSubmitScreen() {
           <View style={[styles.driveInput, linkError && styles.driveInputError]}>
             <DriveLogo />
             <TextInput
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
               testID="assignment-drive-link"
               value={driveLink}
               onChangeText={setDriveLink}
@@ -215,7 +217,7 @@ export function AssignmentSubmitScreen() {
                 onPress={() => setDriveLink('')}
                 hitSlop={10}
               >
-                <X size={16} color="#6B7280" />
+                <X size={scaled(16)} color="#6B7280" />
               </Pressable>
             ) : null}
           </View>
@@ -258,7 +260,7 @@ function StatusPill({
 }) {
   return (
     <View style={[styles.pill, { backgroundColor: bg }]}>
-      <Icon size={11} color={fg} />
+      <Icon size={scaled(11)} color={fg} />
       <Text style={[styles.pillText, { color: fg }]}>{label}</Text>
     </View>
   );
@@ -267,7 +269,7 @@ function StatusPill({
 function Fact({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
     <View style={styles.fact}>
-      <Icon size={14} color={PURPLE} />
+      <Icon size={scaled(14)} color={PURPLE} />
       <Text style={styles.factValue}>{value}</Text>
       <Text style={styles.factLabel}>{label}</Text>
     </View>

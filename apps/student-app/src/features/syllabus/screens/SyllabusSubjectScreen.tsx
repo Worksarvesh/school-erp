@@ -1,8 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BookMarked, ChevronRight, Lock } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Screen, StateView } from '@school-erp/ui';
+import { Pressable, View } from 'react-native';
+import { Screen, StateView, StyleSheet, Text, scaled } from '@school-erp/ui';
 import { comingSoon } from '@/features/dashboard/quickActions';
 import { mockSyllabusSubjects, syllabusProgress, type MockChapter } from '@/mock/syllabus';
 import { fonts } from '@/theme/fonts';
@@ -113,13 +113,13 @@ export function SyllabusSubjectScreen() {
                 >
                   <View style={[styles.chapterIcon, { backgroundColor: s.iconBg }]}>
                     <Icon
-                      size={14}
+                      size={scaled(14)}
                       color={s.iconColor}
                       fill={s.filled ? s.iconColor : 'transparent'}
                     />
                   </View>
                   <View style={styles.chapterText}>
-                    <Text style={styles.chapterTitle} numberOfLines={1}>
+                    <Text style={styles.chapterTitle} numberOfLines={2}>
                       {c.title}
                     </Text>
                     <Text style={styles.chapterSub}>{chapterSubtitle(c)}</Text>
@@ -131,7 +131,7 @@ export function SyllabusSubjectScreen() {
                     <Lock
                       testID={`chapter-lock-${c.id}`}
                       accessibilityLabel="Locked"
-                      size={15}
+                      size={scaled(15)}
                       color="#9CA3AF"
                     />
                   ) : null}
@@ -150,13 +150,13 @@ export function SyllabusSubjectScreen() {
         style={({ pressed }) => [styles.keepGoing, pressed && styles.keepGoingPressed]}
       >
         <View style={styles.keepIcon}>
-          <BookMarked size={18} color="#FFFFFF" />
+          <BookMarked size={scaled(18)} color="#FFFFFF" />
         </View>
         <View style={styles.keepText}>
           <Text style={styles.keepTitle}>Keep going!</Text>
           <Text style={styles.keepSub}>You&apos;re doing great! 💜</Text>
         </View>
-        <ChevronRight size={18} color="#5B21B6" />
+        <ChevronRight size={scaled(18)} color="#5B21B6" />
       </Pressable>
     </Screen>
   );

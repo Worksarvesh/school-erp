@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
 import { School } from 'lucide-react-native';
 import { useEffect } from 'react';
-import { Text, View } from 'react-native';
-import { Screen, useTheme } from '@school-erp/ui';
+import { View } from 'react-native';
+import { Screen, useTheme, Text, scaled } from '@school-erp/ui';
 import { useSession } from '@/state/session';
 
 const SPLASH_MS = 1500;
@@ -35,7 +35,7 @@ export function SplashScreen() {
           justifyContent: 'center',
         }}
       >
-        <School size={56} color={colors.primary} />
+        <School size={scaled(56)} color={colors.primary} />
       </View>
       <Text
         style={{

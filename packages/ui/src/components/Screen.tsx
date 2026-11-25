@@ -1,12 +1,6 @@
 import React from 'react';
-import {
-  View,
-  ScrollView,
-  RefreshControl,
-  StyleSheet,
-  type ViewStyle,
-  type StyleProp,
-} from 'react-native';
+import { View, ScrollView, RefreshControl, type ViewStyle, type StyleProp } from 'react-native';
+import { StyleSheet } from '../theme/responsive.js';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/theme.context.js';
 

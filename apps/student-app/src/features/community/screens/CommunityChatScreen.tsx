@@ -12,6 +12,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, View } from 'react-native';
+import { StyleSheet, Text, scaled } from '@school-erp/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COMMUNITY_CHATS, COMMUNITY_THREADS, type ThreadMessage } from '@/mock/community';
 import { fonts } from '@/theme/fonts';
@@ -57,7 +59,7 @@ export function CommunityChatScreen() {
           onPress={back}
           style={styles.round}
         >
-          <ChevronLeft size={26} color={DEEP} />
+          <ChevronLeft size={scaled(26)} color={DEEP} />
         </Pressable>
         {chat ? (
           <Image
@@ -82,6 +84,9 @@ export function CommunityChatScreen() {
         >
           {searching ? <X size={24} color={DEEP} /> : <Search size={24} color={DEEP} />}
         </Pressable>
+        <View style={styles.round}>
+          <Search size={scaled(24)} color={DEEP} />
+        </View>
       </View>
 
       {searching ? (
@@ -102,7 +107,7 @@ export function CommunityChatScreen() {
       {thread ? (
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.members}>
-            <Users size={20} color={NAME} fill={NAME} />
+            <Users size={scaled(20)} color={NAME} fill={NAME} />
             <Text style={styles.membersText}>{thread.members} Members</Text>
           </View>
           <View style={styles.dateChip}>
@@ -158,7 +163,7 @@ function Message({ message: m }: { message: ThreadMessage }) {
                 </Text>
                 <Text style={styles.fileSize}>{m.attachment.size}</Text>
               </View>
-              <Download size={22} color={NAME} />
+              <Download size={scaled(22)} color={NAME} />
             </Pressable>
           ) : null}
         </View>
@@ -176,7 +181,7 @@ function Message({ message: m }: { message: ThreadMessage }) {
               {m.likes + (liked ? 1 : 0)}
             </Text>
           </Pressable>
-          {m.canReply ? <CornerUpLeft size={20} color="#5B5B6B" /> : null}
+          {m.canReply ? <CornerUpLeft size={scaled(20)} color="#5B5B6B" /> : null}
         </View>
       </View>
     </View>

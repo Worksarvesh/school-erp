@@ -1,7 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Lock, Phone, User } from 'lucide-react-native';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text, scaled } from '@school-erp/ui';
 import { useAuthStore } from '@school-erp/mobile-core';
 import { mockSignInResponse } from '@/mock/auth';
 import { MOCK_UNREGISTERED_PARENT_MOBILE } from '@/mock/student';
@@ -86,7 +87,7 @@ function StudentLogin() {
         testID="username"
         label="Username"
         placeholder="Enter your username"
-        icon={<User size={22} color={AUTH.icon} />}
+        icon={<User size={scaled(22)} color={AUTH.icon} />}
         autoCapitalize="none"
         autoCorrect={false}
         textContentType="username"
@@ -103,7 +104,7 @@ function StudentLogin() {
         testID="password"
         label="Password"
         placeholder="Enter your password"
-        icon={<Lock size={22} color={AUTH.icon} />}
+        icon={<Lock size={scaled(22)} color={AUTH.icon} />}
         isPassword
         textContentType="password"
         returnKeyType="done"
@@ -167,7 +168,7 @@ function ParentLogin() {
         testID="mobile"
         label="Mobile number"
         placeholder="10-digit mobile number"
-        icon={<Phone size={22} color={AUTH.icon} />}
+        icon={<Phone size={scaled(22)} color={AUTH.icon} />}
         keyboardType="number-pad"
         textContentType="telephoneNumber"
         autoComplete="tel"

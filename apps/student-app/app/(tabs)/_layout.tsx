@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- React Native image assets are loaded with require() */
 import React from 'react';
-import { Image, type ImageSourcePropType, Pressable, Text, View } from 'react-native';
+import { Image, type ImageSourcePropType, Pressable, View } from 'react-native';
+import { Text, scaled } from '@school-erp/ui';
 import { Tabs } from 'expo-router';
 import { WebColumn } from '@/components';
 
@@ -36,7 +37,7 @@ export const TABS = [
 const INACTIVE = '#5F6B8A';
 const INDICATOR = '#7B5CF0';
 /** Space the floating bar covers; non-Home tabs add it as bottom padding so nothing is hidden. */
-const BAR_SPACE = 100;
+const BAR_SPACE = scaled(100);
 
 type TabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>['tabBar']>>[0];
 
@@ -48,12 +49,17 @@ function FloatingTabBar({ state, navigateToTab, insets }: TabBarProps) {
   return (
     <View
       pointerEvents="box-none"
-      style={{ position: 'absolute', left: 20, right: 20, bottom: insets.bottom + 6 }}
+      style={{
+        position: 'absolute',
+        left: scaled(20),
+        right: scaled(20),
+        bottom: insets.bottom + 6,
+      }}
     >
       <View
         style={{
-          height: 90,
-          paddingBottom: 12,
+          height: scaled(90),
+          paddingBottom: scaled(12),
           flexDirection: 'row',
           alignItems: 'center',
           borderRadius: 36,
@@ -82,11 +88,17 @@ function FloatingTabBar({ state, navigateToTab, insets }: TabBarProps) {
               onPress={onPress}
               style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
             >
-              <Image source={tab.icon} resizeMode="contain" style={{ width: 34, height: 34 }} />
+              <Image
+                source={tab.icon}
+                resizeMode="contain"
+                style={{ width: scaled(34), height: scaled(34) }}
+              />
               <Text
+                numberOfLines={1}
+                maxFontSizeMultiplier={1}
                 style={{
                   marginTop: 2,
-                  fontSize: 12,
+                  fontSize: scaled(12),
                   fontWeight: focused ? '700' : '500',
                   color: focused ? INDICATOR : INACTIVE,
                 }}

@@ -2,7 +2,8 @@
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ChevronRight, IdCard, Info, User } from 'lucide-react-native';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, View } from 'react-native';
+import { StyleSheet, Text, scaled } from '@school-erp/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@school-erp/mobile-core';
 import { useSession } from '@/state/session';
@@ -64,13 +65,13 @@ export function ProfileScreen() {
             >
               <View style={[styles.iconCircle, section.id === 'parent' && styles.iconCircleGrey]}>
                 {section.id === 'parent' ? (
-                  <Info size={24} color="#374151" />
+                  <Info size={scaled(24)} color="#374151" />
                 ) : (
-                  <User size={24} color={BLUE} />
+                  <User size={scaled(24)} color={BLUE} />
                 )}
               </View>
               <Text style={styles.rowLabel}>{section.title}</Text>
-              <ChevronRight size={22} color="#374151" />
+              <ChevronRight size={scaled(22)} color="#374151" />
             </Pressable>
           ))}
         </View>
@@ -92,7 +93,7 @@ export function ProfileScreen() {
 function Chip({ label }: { label: string }) {
   return (
     <View style={styles.chip}>
-      <IdCard size={18} color={BLUE} />
+      <IdCard size={scaled(18)} color={BLUE} />
       <Text style={styles.chipText}>{label}</Text>
     </View>
   );

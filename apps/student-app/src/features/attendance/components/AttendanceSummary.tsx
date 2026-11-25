@@ -1,8 +1,8 @@
 import { CircleCheck } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { useTheme, type ThemeContextValue } from '@school-erp/ui';
+import { useTheme, type ThemeContextValue, StyleSheet, Text, scaled } from '@school-erp/ui';
 import { mockAttendanceStats, type AttendancePeriod } from '@/mock/academic';
 import { fonts } from '@/theme/fonts';
 
@@ -92,7 +92,10 @@ export function AttendanceSummary({ showRemark = false }: AttendanceSummaryProps
 
       {showRemark ? (
         <View style={[styles.remark, !good && styles.remarkWarn]}>
-          <CircleCheck size={16} color={good ? ATTENDANCE_COLORS.present : colors.warning} />
+          <CircleCheck
+            size={scaled(16)}
+            color={good ? ATTENDANCE_COLORS.present : colors.warning}
+          />
           <Text style={[styles.remarkText, !good && { color: colors.warning }]}>
             {attendanceRemark(stats.percentage)}
           </Text>
@@ -119,11 +122,21 @@ export function AttendanceRing({
 
   return (
     <View
-      style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}
+      style={{
+        width: scaled(size),
+        height: scaled(size),
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
       accessible
       accessibilityLabel={`${percentage} percent present`}
     >
-      <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
+      <Svg
+        width={scaled(size)}
+        height={scaled(size)}
+        viewBox={`0 0 ${size} ${size}`}
+        style={StyleSheet.absoluteFill}
+      >
         <Circle
           cx={size / 2}
           cy={size / 2}
@@ -143,11 +156,20 @@ export function AttendanceRing({
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </Svg>
-      <Text style={{ color: green, fontSize: 26, fontFamily: fonts.bold, lineHeight: 30 }}>
+      <Text
+        style={{
+          color: green,
+          fontSize: scaled(26),
+          fontFamily: fonts.bold,
+          lineHeight: scaled(30),
+        }}
+      >
         {percentage}
-        <Text style={{ fontSize: 18 }}>%</Text>
+        <Text style={{ fontSize: scaled(18) }}>%</Text>
       </Text>
-      <Text style={{ color: '#1F2937', fontSize: 12, fontFamily: fonts.semibold }}>Present</Text>
+      <Text style={{ color: '#1F2937', fontSize: scaled(12), fontFamily: fonts.semibold }}>
+        Present
+      </Text>
     </View>
   );
 }

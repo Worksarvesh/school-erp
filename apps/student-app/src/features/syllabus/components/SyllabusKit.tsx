@@ -14,9 +14,9 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react-native';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { useTheme } from '@school-erp/ui';
+import { useTheme, StyleSheet, Text, scaled, MAX_FONT_SCALE } from '@school-erp/ui';
 import type { ChapterStatus } from '@/mock/syllabus';
 import { fonts } from '@/theme/fonts';
 
@@ -75,7 +75,7 @@ export function StatusPill({ status }: { status: ChapterStatus }) {
   return (
     <View style={[styles.pill, { backgroundColor: s.pillBg }]}>
       <PillIcon
-        size={9}
+        size={scaled(9)}
         color={s.pillFg}
         fill={status === 'in_progress' ? s.pillFg : 'transparent'}
       />
@@ -127,12 +127,12 @@ export function ProgressRing({
   const value = Math.max(0, Math.min(100, percent));
   return (
     <View
-      style={{ width: size, height: size }}
+      style={{ width: scaled(size), height: scaled(size) }}
       accessible
       accessibilityLabel={`${value} percent complete`}
       testID={testID}
     >
-      <Svg width={size} height={size}>
+      <Svg width={scaled(size)} height={scaled(size)} viewBox={`0 0 ${size} ${size}`}>
         <Circle
           cx={size / 2}
           cy={size / 2}
@@ -155,7 +155,7 @@ export function ProgressRing({
         />
       </Svg>
       <View style={[StyleSheet.absoluteFill, styles.ringCenter]}>
-        <Text style={[styles.ringText, { fontSize }]}>{value}%</Text>
+        <Text style={[styles.ringText, { fontSize: scaled(fontSize) }]}>{value}%</Text>
       </View>
     </View>
   );
@@ -203,10 +203,11 @@ export function SyllabusHeader({
         onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
         style={styles.headerButton}
       >
-        <ArrowLeft size={22} color={colors.text} />
+        <ArrowLeft size={scaled(22)} color={colors.text} />
       </Pressable>
       {searching ? (
         <TextInput
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
           testID={`${testID}-search-input`}
           autoFocus
           value={query}
@@ -229,7 +230,11 @@ export function SyllabusHeader({
         onPress={onToggleSearch}
         style={styles.headerButton}
       >
-        {searching ? <X size={20} color={colors.text} /> : <Search size={20} color={colors.text} />}
+        {searching ? (
+          <X size={scaled(20)} color={colors.text} />
+        ) : (
+          <Search size={scaled(20)} color={colors.text} />
+        )}
       </Pressable>
     </View>
   );

@@ -261,7 +261,6 @@ function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
   const cellBorder = '#E4E4E7';
   return StyleSheet.create({
     content: { paddingHorizontal: spacing.md, paddingBottom: spacing.xl },
-    pressed: { opacity: 0.75 },
     header: {
       flexDirection: 'row',
       alignItems: 'center',

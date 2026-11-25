@@ -215,27 +215,5 @@ function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
     },
     bar: { width: '100%', borderRadius: 4, minHeight: 2 },
     barLabel: { color: colors.textSecondary, fontSize: 10, fontFamily: fonts.medium },
-    list: {
-      marginTop: spacing.lg,
-      borderRadius: radii.xl,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surface,
-      overflow: 'hidden',
-    },
-    listRow: {
-      minHeight: 44,
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: spacing.md,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    listHead: { backgroundColor: '#F4EFFC' },
-    listHeadText: { color: colors.textSecondary, fontSize: 11, fontFamily: fonts.semibold },
-    listCurrent: { backgroundColor: '#F4EFFC' },
-    listMonth: { flex: 1.6, color: colors.text, fontSize: 13, fontFamily: fonts.medium },
-    listMonthCurrent: { color: colors.primary, fontFamily: fonts.bold },
-    listCount: { flex: 1, textAlign: 'center', fontSize: 14, fontFamily: fonts.semibold },
   });
 }

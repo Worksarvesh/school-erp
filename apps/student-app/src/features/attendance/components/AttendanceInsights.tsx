@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useTheme, type ThemeContextValue } from '@school-erp/ui';
+import { Pressable, View } from 'react-native';
+import { useTheme, type ThemeContextValue, StyleSheet, Text } from '@school-erp/ui';
 import type { DayStatus } from '@/mock/attendance';
 import { fonts } from '@/theme/fonts';
 import { chartBars, countStatuses, datesFor, percentPresent, type Period } from '../stats';
@@ -181,7 +181,7 @@ function makeStyles({ colors, spacing, radii }: ThemeContextValue) {
     },
     info: { flex: 1, gap: spacing.sm },
     overall: { color: colors.text, fontSize: 17, fontFamily: fonts.medium },
-    legendRow: { flexDirection: 'row', gap: 6 },
+    legendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
     legend: {
       flexDirection: 'row',
       alignItems: 'center',

@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useTheme } from '@school-erp/ui';
+import { Pressable, View } from 'react-native';
+import { useTheme, StyleSheet, Text, scaled } from '@school-erp/ui';
 import { fonts } from '@/theme/fonts';
 
 export const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -90,7 +90,7 @@ export function ExamHeader({
         onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
         style={styles.headerButton}
       >
-        <ArrowLeft size={22} color={colors.text} />
+        <ArrowLeft size={scaled(22)} color={colors.text} />
       </Pressable>
       <Text style={[styles.title, { color: colors.primary }]} accessibilityRole="header">
         {title}

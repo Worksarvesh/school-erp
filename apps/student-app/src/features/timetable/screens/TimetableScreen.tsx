@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Screen, useTheme, type ThemeContextValue } from '@school-erp/ui';
+import { Image, Pressable, View } from 'react-native';
+import { Screen, useTheme, type ThemeContextValue, StyleSheet, Text, scaled } from '@school-erp/ui';
 import { formatLongDate } from '@/features/dashboard/quickActions';
 import { mockTimetable, TERM_START, type TimetableSlot } from '@/mock/timetable';
 import { fonts } from '@/theme/fonts';
@@ -100,7 +100,7 @@ export function TimetableScreen() {
           onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
           style={styles.headerButton}
         >
-          <ArrowLeft size={24} color={colors.text} />
+          <ArrowLeft size={scaled(24)} color={colors.text} />
         </Pressable>
         <Text style={styles.title} accessibilityRole="header">
           Time Table
@@ -212,7 +212,12 @@ export function TimetableScreen() {
                         },
                       ]}
                     />
-                    <Text style={styles.breakTitle} numberOfLines={1}>
+                    <Text
+                      style={styles.breakTitle}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.75}
+                    >
                       {slot.title}
                     </Text>
                   </View>

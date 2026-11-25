@@ -3,14 +3,12 @@ import { useMemo } from 'react';
 import {
   Image,
   Pressable,
-  StyleSheet,
-  Text,
   View,
   type ImageSourcePropType,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { useTheme, type ThemeContextValue } from '@school-erp/ui';
+import { useTheme, type ThemeContextValue, StyleSheet, Text, scaled } from '@school-erp/ui';
 import { fonts } from '@/theme/fonts';
 
 interface BigActionCardProps {
@@ -51,7 +49,7 @@ export function BigActionCard({ title, image, onPress, badge, style, testID }: B
           ) : null}
         </View>
         <View style={styles.arrow}>
-          <ArrowRight size={18} color={theme.colors.primary} strokeWidth={2.5} />
+          <ArrowRight size={scaled(18)} color={theme.colors.primary} strokeWidth={2.5} />
         </View>
       </View>
     </Pressable>

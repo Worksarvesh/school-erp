@@ -2,7 +2,8 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ArrowLeft, BadgeCheck, Search } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, TextInput, View } from 'react-native';
+import { StyleSheet, Text, scaled, MAX_FONT_SCALE } from '@school-erp/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COMMUNITY_CHATS } from '@/mock/community';
 import { fonts } from '@/theme/fonts';
@@ -39,7 +40,7 @@ export function MessagesScreen() {
           onPress={back}
           style={styles.side}
         >
-          <ArrowLeft size={26} color="#111827" />
+          <ArrowLeft size={scaled(26)} color="#111827" />
         </Pressable>
         <Text accessibilityRole="header" style={styles.title}>
           Community
@@ -51,8 +52,9 @@ export function MessagesScreen() {
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.search}>
-          <Search size={22} color="#6B7280" />
+          <Search size={scaled(22)} color="#6B7280" />
           <TextInput
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
             testID="community-search"
             value={query}
             onChangeText={setQuery}
@@ -77,7 +79,9 @@ export function MessagesScreen() {
                 <Text style={styles.name} numberOfLines={1}>
                   {c.title}
                 </Text>
-                {c.verified ? <BadgeCheck size={20} color="#FFFFFF" fill="#4B3AA8" /> : null}
+                {c.verified ? (
+                  <BadgeCheck size={scaled(20)} color="#FFFFFF" fill="#4B3AA8" />
+                ) : null}
               </View>
               <Text style={styles.preview} numberOfLines={2}>
                 {c.preview}

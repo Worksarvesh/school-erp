@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Screen, Header, Card, Button, useTheme } from '@school-erp/ui';
+import { Screen, Header, Card, Button, useTheme, StyleSheet, Text } from '@school-erp/ui';
 import { useAuthStore } from '@school-erp/mobile-core';
 
 export function MandatoryOnboardingScreen() {

@@ -2,7 +2,8 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ArrowRight } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { StyleSheet, Text, scaled } from '@school-erp/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ROLE_SELECT_COLORS as C, SelectCard } from '@/components';
 import type { AppRole } from '@/state/session';
@@ -58,7 +59,7 @@ export function RoleSelectScreen() {
           style={[styles.button, !role && styles.buttonDisabled]}
         >
           <Text style={styles.buttonLabel}>Continue</Text>
-          <ArrowRight size={16} color="#FFFFFF" />
+          <ArrowRight size={scaled(16)} color="#FFFFFF" />
         </Pressable>
       </View>
     </SafeAreaView>

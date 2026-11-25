@@ -11,10 +11,10 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
-import { Screen, StateView } from '@school-erp/ui';
+import { Screen, StateView, StyleSheet, Text, scaled } from '@school-erp/ui';
 import { mockExamResults, type ExamResultKind, type MockExamResult } from '@/mock/exams';
 import { mockStudent } from '@/mock/student';
 import { fonts } from '@/theme/fonts';
@@ -124,7 +124,7 @@ export function ExamResultScreen() {
         <Text style={styles.dropdownText} numberOfLines={1}>
           {result.title}
         </Text>
-        <ChevronDown size={18} color={PURPLE} />
+        <ChevronDown size={scaled(18)} color={PURPLE} />
       </Pressable>
 
       <View style={styles.summaryCard}>
@@ -157,7 +157,11 @@ export function ExamResultScreen() {
           <ScoreRing percent={totals.percent} />
           <View style={styles.statusCol}>
             <View style={[styles.statusPill, !result.passed && styles.statusPillFail]}>
-              <CircleCheck size={16} color="#FFFFFF" fill={result.passed ? '#16A34A' : '#DC2626'} />
+              <CircleCheck
+                size={scaled(16)}
+                color="#FFFFFF"
+                fill={result.passed ? '#16A34A' : '#DC2626'}
+              />
               <Text style={[styles.statusText, !result.passed && styles.statusTextFail]}>
                 {result.passed ? 'Pass' : 'Fail'}
               </Text>
@@ -191,7 +195,7 @@ export function ExamResultScreen() {
             <View key={s.subject} style={styles.tableRow}>
               <View style={[styles.subjectCol, styles.subjectCell]}>
                 <View style={styles.subjectIcon}>
-                  <Icon size={11} color={SUBJECT_ICON_FG} />
+                  <Icon size={scaled(11)} color={SUBJECT_ICON_FG} />
                 </View>
                 <Text style={styles.subjectName} numberOfLines={2}>
                   {s.subject}
@@ -238,7 +242,7 @@ export function ExamResultScreen() {
         }}
         style={({ pressed }) => [styles.download, (pressed || downloading) && styles.pressedBtn]}
       >
-        <Download size={18} color="#FFFFFF" />
+        <Download size={scaled(18)} color="#FFFFFF" />
         <Text style={styles.downloadText}>
           {downloading ? 'Preparing PDF...' : 'Download as PDF'}
         </Text>
@@ -281,7 +285,7 @@ export function ExamResultScreen() {
                   </Text>
                   <Text style={styles.sheetOptionSub}>Academic Year {r.academicYear}</Text>
                 </View>
-                {active ? <Check size={18} color={PURPLE} /> : null}
+                {active ? <Check size={scaled(18)} color={PURPLE} /> : null}
               </Pressable>
             );
           })}
@@ -317,7 +321,11 @@ function ScoreRing({ percent }: { percent: number }) {
       testID="exam-result-score"
     >
       <View style={styles.ring}>
-        <Svg width={RING_SIZE} height={RING_SIZE}>
+        <Svg
+          width={scaled(RING_SIZE)}
+          height={scaled(RING_SIZE)}
+          viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+        >
           <Circle
             cx={RING_SIZE / 2}
             cy={RING_SIZE / 2}

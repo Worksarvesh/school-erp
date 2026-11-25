@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
 import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Screen, StateView } from '@school-erp/ui';
+import { Image, Pressable, View } from 'react-native';
+import { Screen, StateView, StyleSheet, Text, scaled } from '@school-erp/ui';
 import { mockSyllabusSubjects, syllabusProgress, type MockSyllabusSubject } from '@/mock/syllabus';
 import { fonts } from '@/theme/fonts';
 import { homeImages } from '@/theme/images';
@@ -75,7 +75,7 @@ export function SyllabusScreen() {
                 style={({ pressed }) => [styles.card, pressed && styles.pressed]}
               >
                 <View style={[styles.tile, { backgroundColor: look.tile }]}>
-                  <Icon size={20} color="#FFFFFF" />
+                  <Icon size={scaled(20)} color="#FFFFFF" />
                 </View>
                 <View style={styles.cardBody}>
                   <Text style={styles.subject}>{s.name}</Text>
@@ -88,7 +88,7 @@ export function SyllabusScreen() {
                   </Text>
                 </View>
                 <ProgressRing percent={percent} color={look.accent} />
-                <ChevronRight size={18} color="#6B7280" />
+                <ChevronRight size={scaled(18)} color="#6B7280" />
               </Pressable>
             );
           })}

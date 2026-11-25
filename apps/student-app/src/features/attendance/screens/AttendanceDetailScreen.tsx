@@ -9,9 +9,9 @@ import {
   CircleCheck,
 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Screen, useTheme, type ThemeContextValue } from '@school-erp/ui';
+import { Screen, useTheme, type ThemeContextValue, StyleSheet, Text, scaled } from '@school-erp/ui';
 import { AttendanceInsights } from '@/features/attendance/components/AttendanceInsights';
 import { ACADEMIC_YEAR_START, mockDayStatus, type DayStatus } from '@/mock/attendance';
 import { fonts } from '@/theme/fonts';
@@ -119,7 +119,7 @@ export function AttendanceDetailScreen() {
           onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
           style={styles.headerButton}
         >
-          <ArrowLeft size={24} color={colors.text} />
+          <ArrowLeft size={scaled(24)} color={colors.text} />
         </Pressable>
         <Text style={styles.title} accessibilityRole="header">
           Attendance
@@ -135,9 +135,9 @@ export function AttendanceDetailScreen() {
         onPress={() => setPickerOpen(true)}
         style={({ pressed }) => [styles.monthPill, pressed && styles.pressed]}
       >
-        <CalendarDays size={16} color={colors.primary} />
+        <CalendarDays size={scaled(16)} color={colors.primary} />
         <Text style={styles.monthPillText}>{monthLabel(month)}</Text>
-        <ChevronDown size={16} color={colors.textSecondary} />
+        <ChevronDown size={scaled(16)} color={colors.textSecondary} />
       </Pressable>
 
       <View style={styles.calendarCard}>
@@ -150,7 +150,7 @@ export function AttendanceDetailScreen() {
             onPress={() => shiftMonth(-1)}
             style={[styles.arrow, !canPrev && styles.arrowDisabled]}
           >
-            <ChevronLeft size={18} color={colors.text} />
+            <ChevronLeft size={scaled(18)} color={colors.text} />
           </Pressable>
           <Text style={styles.calendarTitle}>{monthLabel(month)}</Text>
           <Pressable
@@ -161,7 +161,7 @@ export function AttendanceDetailScreen() {
             onPress={() => shiftMonth(1)}
             style={[styles.arrow, !canNext && styles.arrowDisabled]}
           >
-            <ChevronRight size={18} color={colors.text} />
+            <ChevronRight size={scaled(18)} color={colors.text} />
           </Pressable>
         </View>
 
@@ -244,7 +244,7 @@ export function AttendanceDetailScreen() {
               },
             ]}
           >
-            <CircleCheck size={16} color={STATUS_PILL[selectedStatus].fg} />
+            <CircleCheck size={scaled(16)} color={STATUS_PILL[selectedStatus].fg} />
             <Text style={[styles.statusPillText, { color: STATUS_PILL[selectedStatus].fg }]}>
               {STATUS_LABEL[selectedStatus]}
             </Text>
@@ -295,7 +295,7 @@ export function AttendanceDetailScreen() {
                   >
                     {monthLabel(m)}
                   </Text>
-                  {active ? <Check size={18} color={colors.primary} /> : null}
+                  {active ? <Check size={scaled(18)} color={colors.primary} /> : null}
                 </Pressable>
               );
             })}

@@ -1,4 +1,5 @@
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import { scaled } from '@school-erp/ui';
 
 /**
  * Vector stand-in for the Parents artwork (the Student card is an empty lavender box in the design). To use the real images, replace the
@@ -6,8 +7,8 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
  */
 export function ParentsIllustration() {
   return (
-    <Svg width={76} height={76} viewBox="0 0 76 76">
-      <Rect width={76} height={76} fill="#E8F0FF" />
+    <Svg width={scaled(76)} height={scaled(76)} viewBox="0 0 76 76">
+      <Rect width={scaled(76)} height={scaled(76)} fill="#E8F0FF" />
       {/* father */}
       <Path d="M6 76c0-13 6-20 15-20s15 7 15 20z" fill="#3B6FE0" />
       <Circle cx={21} cy={38} r={9} fill="#E9B890" />
@@ -30,8 +31,8 @@ export function ParentsIllustration() {
 /** Vector stand-in for the school help-desk artwork (replace with the real image when available). */
 export function HelpDeskIllustration() {
   return (
-    <Svg width={110} height={110} viewBox="0 0 110 110">
-      <Rect width={110} height={110} fill="#F4F8F8" />
+    <Svg width={scaled(110)} height={scaled(110)} viewBox="0 0 110 110">
+      <Rect width={scaled(110)} height={scaled(110)} fill="#F4F8F8" />
       {/* wall board */}
       <Circle cx={30} cy={28} r={13} fill="#7FC8C8" />
       <Circle cx={30} cy={28} r={8} fill="#E9F7F7" />

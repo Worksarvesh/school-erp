@@ -1,7 +1,7 @@
 import { CalendarDays, Clock } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Screen, StateView } from '@school-erp/ui';
+import { Pressable, View } from 'react-native';
+import { Screen, StateView, StyleSheet, Text, scaled } from '@school-erp/ui';
 import { mockUnitTests, type MockUnitTest } from '@/mock/exams';
 import { fonts } from '@/theme/fonts';
 import {
@@ -183,11 +183,11 @@ function UnitTestCard({
         </View>
         <Text style={styles.subject}>{t.subject}</Text>
         <View style={styles.metaRow}>
-          <Clock size={11} color="#6B7280" />
+          <Clock size={scaled(11)} color="#6B7280" />
           <Text style={styles.meta}>{formatTimeRange(t.start, t.end)}</Text>
         </View>
         <View style={styles.metaRow}>
-          <CalendarDays size={11} color="#6B7280" />
+          <CalendarDays size={scaled(11)} color="#6B7280" />
           <Text style={styles.meta}>
             {t.obtained !== undefined
               ? `Marks: ${t.obtained} / ${t.maxMarks}`

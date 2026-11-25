@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Screen, Header, Card, Badge, StateView, useTheme } from '@school-erp/ui';
+import { Screen, Header, Card, Badge, StateView, useTheme, StyleSheet, Text } from '@school-erp/ui';
 import type { NoticeDto } from '@school-erp/api-client';
 import { MockStudentServices } from '../../../core/mocks/mock-services.js';
 

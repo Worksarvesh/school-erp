@@ -1,16 +1,16 @@
 import { useRouter } from 'expo-router';
 import { ArrowLeft, ChevronRight, Search, X } from 'lucide-react-native';
 import { useState } from 'react';
+import { Image, Pressable, TextInput, View, type ImageSourcePropType } from 'react-native';
 import {
-  Image,
-  Pressable,
+  Screen,
+  StateView,
+  useTheme,
   StyleSheet,
   Text,
-  TextInput,
-  View,
-  type ImageSourcePropType,
-} from 'react-native';
-import { Screen, StateView, useTheme } from '@school-erp/ui';
+  scaled,
+  MAX_FONT_SCALE,
+} from '@school-erp/ui';
 import { comingSoon } from '@/features/dashboard/quickActions';
 import { fonts } from '@/theme/fonts';
 import { puzzleImages } from '@/theme/images';
@@ -105,10 +105,11 @@ export function PuzzleScreen() {
           onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
           style={styles.headerButton}
         >
-          <ArrowLeft size={22} color={colors.text} />
+          <ArrowLeft size={scaled(22)} color={colors.text} />
         </Pressable>
         {searching ? (
           <TextInput
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
             testID="puzzle-search-input"
             autoFocus
             value={query}
@@ -135,9 +136,9 @@ export function PuzzleScreen() {
           style={styles.headerButton}
         >
           {searching ? (
-            <X size={20} color={colors.text} />
+            <X size={scaled(20)} color={colors.text} />
           ) : (
-            <Search size={20} color={colors.text} />
+            <Search size={scaled(20)} color={colors.text} />
           )}
         </Pressable>
       </View>
@@ -175,7 +176,7 @@ export function PuzzleScreen() {
               <View style={styles.art}>
                 <Image
                   source={g.image}
-                  style={{ width: g.size, height: g.size }}
+                  style={{ width: scaled(g.size), height: scaled(g.size) }}
                   resizeMode="contain"
                 />
               </View>
@@ -184,7 +185,7 @@ export function PuzzleScreen() {
                   {g.label}
                 </Text>
                 <View style={styles.arrow}>
-                  <ChevronRight size={14} color="#111827" strokeWidth={2.5} />
+                  <ChevronRight size={scaled(14)} color="#111827" strokeWidth={2.5} />
                 </View>
               </View>
             </Pressable>

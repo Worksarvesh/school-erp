@@ -1,7 +1,7 @@
 import { Clock, FileText } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { Screen, StateView } from '@school-erp/ui';
+import { View } from 'react-native';
+import { Screen, StateView, StyleSheet, Text, scaled } from '@school-erp/ui';
 import { mockExamTimetable, type MockExamSlot } from '@/mock/exams';
 import { fonts } from '@/theme/fonts';
 import {
@@ -123,11 +123,11 @@ function ExamCard({ exam, pill }: { exam: MockExamSlot; pill: { bg: string; fg: 
           </View>
         </View>
         <View style={styles.metaRow}>
-          <Clock size={12} color="#6B7280" />
+          <Clock size={scaled(12)} color="#6B7280" />
           <Text style={styles.meta}>{formatTimeRange(exam.start, exam.end)}</Text>
         </View>
         <View style={styles.metaRow}>
-          <FileText size={12} color="#6B7280" />
+          <FileText size={scaled(12)} color="#6B7280" />
           <Text style={styles.meta}>{exam.maxMarks} Marks</Text>
         </View>
       </View>

@@ -3,15 +3,8 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ArrowRight, Bell, School } from 'lucide-react-native';
 import { useEffect } from 'react';
-import {
-  Image,
-  type ImageSourcePropType,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Image, type ImageSourcePropType, Pressable, ScrollView, View } from 'react-native';
+import { StyleSheet, Text, scaled } from '@school-erp/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { findChild, mockParent, mockStudent } from '@/mock/student';
 import { useSession } from '@/state/session';
@@ -63,7 +56,7 @@ export function HomeScreen() {
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.schoolHeader} accessibilityRole="header">
-          <School size={28} color="#FFFFFF" />
+          <School size={scaled(28)} color="#FFFFFF" />
           <Text style={styles.schoolName} numberOfLines={1}>
             {s.schoolName}
           </Text>
@@ -114,7 +107,12 @@ export function HomeScreen() {
             style={styles.avatar}
           />
           <View style={styles.flex}>
-            <Text style={styles.greeting} numberOfLines={1}>
+            <Text
+              style={styles.greeting}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+            >
               {greetingFor(now)}, {name}!
             </Text>
             <Text style={styles.meta} numberOfLines={1}>
@@ -130,7 +128,7 @@ export function HomeScreen() {
             onPress={() => router.push('/notifications')}
             style={styles.bell}
           >
-            <Bell size={28} color={HOME.deep} />
+            <Bell size={scaled(28)} color={HOME.deep} />
             {s.unreadNotices > 0 ? <View style={styles.dot} /> : null}
           </Pressable>
         </View>
@@ -219,7 +217,7 @@ function FeatureCard({
       <View style={styles.cardBottom}>
         <Text style={styles.cardTitle}>{title}</Text>
         <View style={styles.arrow}>
-          <ArrowRight size={22} color={HOME.deep} />
+          <ArrowRight size={scaled(22)} color={HOME.deep} />
         </View>
       </View>
     </Pressable>

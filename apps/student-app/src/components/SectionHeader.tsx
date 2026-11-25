@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react-native';
-import { Text, View } from 'react-native';
-import { useTheme } from '@school-erp/ui';
+import { View } from 'react-native';
+import { useTheme, Text, scaled } from '@school-erp/ui';
 
 interface SectionHeaderProps {
   title: string;
@@ -46,7 +46,7 @@ export function SectionHeader({
       </Text>
       {tag ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-          {TagIcon ? <TagIcon size={14} color={tone} /> : null}
+          {TagIcon ? <TagIcon size={scaled(14)} color={tone} /> : null}
           <Text style={{ color: tone, fontSize: typography.fontSizes.xs }}>{tag}</Text>
         </View>
       ) : null}

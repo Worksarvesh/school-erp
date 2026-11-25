@@ -1,8 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import type { TextInputInstance, TextInputKeyPressEvent } from 'react-native';
-import { Pressable, Text, TextInput, View } from 'react-native';
-import { Button, Screen, useTheme } from '@school-erp/ui';
+import { Pressable, TextInput, View } from 'react-native';
+import { Button, Screen, useTheme, Text, MAX_FONT_SCALE } from '@school-erp/ui';
 import { useAuthStore } from '@school-erp/mobile-core';
 import { mockSignInResponse } from '@/mock/auth';
 import { useSession } from '@/state/session';
@@ -143,6 +143,7 @@ export function OtpScreen() {
       >
         {digits.map((digit, index) => (
           <TextInput
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
             key={index}
             ref={(el) => {
               inputs.current[index] = el;

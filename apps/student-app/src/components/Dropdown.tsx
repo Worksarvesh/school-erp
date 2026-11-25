@@ -1,8 +1,8 @@
 import { Check, ChevronDown } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Modal, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme, type ThemeContextValue } from '@school-erp/ui';
+import { useTheme, type ThemeContextValue, StyleSheet, Text, scaled } from '@school-erp/ui';
 
 interface DropdownProps<T extends string> {
   label: string;
@@ -46,7 +46,7 @@ export function Dropdown<T extends string>({
         style={styles.field}
       >
         <Text style={[styles.value, !value && styles.placeholder]}>{value ?? placeholder}</Text>
-        <ChevronDown size={20} color={colors.textSecondary} />
+        <ChevronDown size={scaled(20)} color={colors.textSecondary} />
       </Pressable>
 
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
@@ -74,7 +74,7 @@ export function Dropdown<T extends string>({
                   <Text style={[styles.optionText, selected && styles.optionSelected]}>
                     {item ?? 'Clear selection'}
                   </Text>
-                  {selected ? <Check size={20} color={colors.primary} /> : null}
+                  {selected ? <Check size={scaled(20)} color={colors.primary} /> : null}
                 </Pressable>
               );
             }}

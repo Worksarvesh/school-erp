@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
+import { StyleSheet } from '../theme/responsive.js';
+import { Text } from './Text.js';
 import { useTheme } from '../theme/theme.context.js';
 import { Button } from './Button.js';
 

@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
 import { ArrowLeft, CalendarDays } from 'lucide-react-native';
 import { useMemo } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Screen, useTheme, type ThemeContextValue } from '@school-erp/ui';
+import { Image, Pressable, View } from 'react-native';
+import { Screen, useTheme, type ThemeContextValue, StyleSheet, Text, scaled } from '@school-erp/ui';
 import {
   ATTENDANCE_COLORS,
   AttendanceSummary,
@@ -62,7 +62,7 @@ export function AcademicHubScreen() {
           onPress={() => router.navigate('/')}
           style={styles.headerButton}
         >
-          <ArrowLeft size={22} color={colors.text} />
+          <ArrowLeft size={scaled(22)} color={colors.text} />
         </Pressable>
         <Text style={styles.title} accessibilityRole="header">
           Academic
@@ -112,7 +112,7 @@ export function AcademicHubScreen() {
           onPress={() => router.push('/attendance')}
           style={styles.iconButton}
         >
-          <CalendarDays size={22} color={ATTENDANCE_COLORS.holiday} />
+          <CalendarDays size={scaled(22)} color={ATTENDANCE_COLORS.holiday} />
         </Pressable>
       </View>
 

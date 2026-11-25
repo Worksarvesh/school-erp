@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Asterisk, Phone } from 'lucide-react-native';
-import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, View } from 'react-native';
+import { StyleSheet, Text, scaled } from '@school-erp/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileTopBar } from '@/features/profile/components/ProfileTopBar';
 import { QUICK_DIAL, type QuickDialContact } from '@/mock/safety';
@@ -38,7 +39,7 @@ function ContactRow({ contact }: { contact: QuickDialContact }) {
     <View style={styles.card} testID={`quick-dial-${contact.id}`}>
       {contact.emergency ? (
         <View style={styles.emergency}>
-          <Asterisk size={34} color="#FFFFFF" strokeWidth={3} />
+          <Asterisk size={scaled(34)} color="#FFFFFF" strokeWidth={3} />
         </View>
       ) : (
         <Image
@@ -62,7 +63,7 @@ function ContactRow({ contact }: { contact: QuickDialContact }) {
         onPress={call}
         style={({ pressed }) => [styles.call, pressed && { opacity: 0.7 }]}
       >
-        <Phone size={20} color={RED} fill={RED} />
+        <Phone size={scaled(20)} color={RED} fill={RED} />
       </Pressable>
     </View>
   );

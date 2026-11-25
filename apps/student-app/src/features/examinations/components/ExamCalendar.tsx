@@ -1,6 +1,7 @@
 import { CalendarDays, ChevronLeft, ChevronRight, List } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { StyleSheet, Text, scaled } from '@school-erp/ui';
 import { fonts } from '@/theme/fonts';
 import { LONG_MONTHS, SHORT_DAYS, SHORT_MONTHS, formatTimeRange, startOfDay } from './ExamKit';
 
@@ -72,7 +73,11 @@ export function CalendarToggle({
       onPress={onToggle}
       style={[styles.toggle, on && styles.toggleOn]}
     >
-      {on ? <List size={20} color={PURPLE} /> : <CalendarDays size={20} color="#111827" />}
+      {on ? (
+        <List size={scaled(20)} color={PURPLE} />
+      ) : (
+        <CalendarDays size={scaled(20)} color="#111827" />
+      )}
     </Pressable>
   );
 }
@@ -102,7 +107,7 @@ export function MonthSwitcher({
         onPress={() => onChange(month - 1)}
         style={styles.arrow}
       >
-        <ChevronLeft size={18} color={canPrev ? '#111827' : '#D1D5DB'} />
+        <ChevronLeft size={scaled(18)} color={canPrev ? '#111827' : '#D1D5DB'} />
       </Pressable>
       <Text style={styles.monthText}>
         {LONG_MONTHS[month % 12]} {Math.floor(month / 12)}
@@ -116,7 +121,7 @@ export function MonthSwitcher({
         onPress={() => onChange(month + 1)}
         style={styles.arrow}
       >
-        <ChevronRight size={18} color={canNext ? '#111827' : '#D1D5DB'} />
+        <ChevronRight size={scaled(18)} color={canNext ? '#111827' : '#D1D5DB'} />
       </Pressable>
     </View>
   );

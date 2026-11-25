@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { StyleSheet, Text, scaled } from '@school-erp/ui';
 
 /** Fixed light palette for the onboarding role-select design (white background, violet accent). */
 export const ROLE_SELECT_COLORS = {
@@ -46,7 +47,7 @@ export function SelectCard({
     >
       {selected ? (
         <View style={styles.badge}>
-          <Check size={12} color="#FFFFFF" />
+          <Check size={scaled(12)} color="#FFFFFF" />
         </View>
       ) : null}
       <View style={styles.illustration}>{illustration}</View>

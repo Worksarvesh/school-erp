@@ -2,7 +2,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ChevronLeft, CornerUpLeft, Download, Search, Users } from 'lucide-react-native';
 import { useState } from 'react';
-import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, View } from 'react-native';
+import { StyleSheet, Text, scaled } from '@school-erp/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COMMUNITY_CHATS, COMMUNITY_THREADS, type ThreadMessage } from '@/mock/community';
 import { fonts } from '@/theme/fonts';
@@ -34,7 +35,7 @@ export function CommunityChatScreen() {
           onPress={back}
           style={styles.round}
         >
-          <ChevronLeft size={26} color={DEEP} />
+          <ChevronLeft size={scaled(26)} color={DEEP} />
         </Pressable>
         {chat ? (
           <Image
@@ -51,14 +52,14 @@ export function CommunityChatScreen() {
           </Text>
         </View>
         <View style={styles.round}>
-          <Search size={24} color={DEEP} />
+          <Search size={scaled(24)} color={DEEP} />
         </View>
       </View>
 
       {thread ? (
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.members}>
-            <Users size={20} color={NAME} fill={NAME} />
+            <Users size={scaled(20)} color={NAME} fill={NAME} />
             <Text style={styles.membersText}>{thread.members} Members</Text>
           </View>
           <View style={styles.dateChip}>
@@ -113,7 +114,7 @@ function Message({ message: m }: { message: ThreadMessage }) {
                 </Text>
                 <Text style={styles.fileSize}>{m.attachment.size}</Text>
               </View>
-              <Download size={22} color={NAME} />
+              <Download size={scaled(22)} color={NAME} />
             </Pressable>
           ) : null}
         </View>
@@ -131,7 +132,7 @@ function Message({ message: m }: { message: ThreadMessage }) {
               {m.likes + (liked ? 1 : 0)}
             </Text>
           </Pressable>
-          {m.canReply ? <CornerUpLeft size={20} color="#5B5B6B" /> : null}
+          {m.canReply ? <CornerUpLeft size={scaled(20)} color="#5B5B6B" /> : null}
         </View>
       </View>
     </View>

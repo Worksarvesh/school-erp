@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View } from 'react-native';
+import { StyleSheet } from '../theme/responsive.js';
+import { Text } from './Text.js';
 import { useTheme } from '../theme/theme.context.js';
 
 export interface BadgeProps {

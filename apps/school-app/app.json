@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "School ERP - School",
+    "slug": "school-erp-school-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "school-erp-school",
+    "splash": {
+      "backgroundColor": "#4B18AA"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.schoolerp.school"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#4B18AA"
+      },
+      "package": "com.schoolerp.school"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": ["expo-router", "expo-secure-store"]
+  }
+}

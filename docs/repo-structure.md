@@ -3,11 +3,15 @@
 ```
 school-erp/
   apps/
-    api/          NestJS API (pending)
-    web/          Web portal (pending)
-    mobile/       Expo app (pending)
+    api/          NestJS API (modular monolith)
+    school-app/   Expo: Principal, VP, Admin, Teacher, Non-teaching (foundation, mock data)
+    student-app/  Expo: Student mode + Parent mode (UI, mock data)
+    web/          Web portal (pending; framework is an open decision)
   packages/
     shared-types/ Roles and types shared by all apps (implemented, tested)
+    api-client/   DTO types and error shape
+    mobile-core/  Axios client with refresh, auth store, SecureStorage
+    ui/           Theme and shared React Native components
     config/       Shared tsconfig base
   docs/           Technical documentation
   scripts/        Cross-platform Node scripts (no Linux-only shell)

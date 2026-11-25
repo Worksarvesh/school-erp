@@ -81,7 +81,6 @@ function StudentLogin() {
       subtitle={
         'Login using the username given by your school.\nYou can add your other details after logging in.'
       }
-      onBack={() => router.replace('/(auth)/role-select')}
     >
       <AuthField
         testID="username"

@@ -14,7 +14,10 @@ export function SplashScreen() {
 
   useEffect(() => {
     void useSession.getState().hydrate();
-    const timer = setTimeout(() => router.replace('/(auth)/role-select'), SPLASH_MS);
+    const timer = setTimeout(
+      () => router.replace({ pathname: '/(auth)/login', params: { role: 'student' } }),
+      SPLASH_MS,
+    );
     return () => clearTimeout(timer);
   }, [router]);
 

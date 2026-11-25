@@ -10,6 +10,8 @@ Slices (V1.2 order): Step 1 tenancy core (done) · 2A credentials/sessions/audit
 
 Workflow per slice: new branch `feat/<slice>` from an up-to-date `main` → short plan + design doubts, wait for approval → build (migrations, RLS, permissions seeded by migration, endpoints, DTOs, pagination, errors, audit, OpenAPI) → unit + integration tests (isolation suite must cover new routes/tables) → seed script updated → format/lint/typecheck/test/build green → update this marker, `docs/decisions.md`, `docs/api/<slice>.md` (PowerShell `Invoke-RestMethod` examples) → small commits → progress report, then stop.
 
+Frontend: `apps/school-app` (staff Expo app) foundation started on branch `feat/school-app-foundation` (mock data, permission-driven modules; rules and open questions in `apps/school-app/README.md`). Screens for a module are wired to the API only after its backend slice is merged.
+
 On hold: Supabase staging (9 open questions from the hosting plan).
 
 Update this marker when a step starts or finishes.

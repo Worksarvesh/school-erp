@@ -1,14 +1,16 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ChevronLeft, CornerUpLeft, Download, Search, Users } from 'lucide-react-native';
+import { ChevronLeft, CornerUpLeft, Download, Search, Users, X } from 'lucide-react-native';
 import { useState } from 'react';
-import { Image, Linking, Pressable, ScrollView, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { StyleSheet, Text, scaled } from '@school-erp/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COMMUNITY_CHATS, COMMUNITY_THREADS, type ThreadMessage } from '@/mock/community';
 import { fonts } from '@/theme/fonts';
 import { communityImages } from '@/theme/images';
 
+/** Removes the black focus ring the browser draws around inputs (web only). */
+const NO_OUTLINE = { outlineStyle: 'none', outlineWidth: 0 } as object;
 const DEEP = '#4B18AA';
 const NAME = '#4B3AA8';
 const SOFT = '#EDE9FD';
@@ -22,6 +24,18 @@ export function CommunityChatScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const thread = id ? COMMUNITY_THREADS[id] : undefined;
   const chat = COMMUNITY_CHATS.find((c) => c.id === id);
+  const [searching, setSearching] = useState(false);
+  const [query, setQuery] = useState('');
+  const q = query.trim().toLowerCase();
+  const messages = (thread?.messages ?? []).filter(
+    (m) =>
+      !q ||
+      [m.sender, m.attachment?.name ?? '', ...m.lines].some((t) => t.toLowerCase().includes(q)),
+  );
+  const toggleSearch = () => {
+    setSearching((v) => !v);
+    setQuery('');
+  };
   const back = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/messages'));
 
   return (
@@ -51,10 +65,34 @@ export function CommunityChatScreen() {
             {thread?.subtitle ?? chat?.preview ?? ''}
           </Text>
         </View>
+        <Pressable
+          testID="chat-search-toggle"
+          accessibilityRole="button"
+          accessibilityLabel={searching ? 'Close search' : 'Search messages'}
+          onPress={toggleSearch}
+          style={styles.round}
+        >
+          {searching ? <X size={24} color={DEEP} /> : <Search size={24} color={DEEP} />}
+        </Pressable>
         <View style={styles.round}>
           <Search size={scaled(24)} color={DEEP} />
         </View>
       </View>
+
+      {searching ? (
+        <View style={styles.searchBox}>
+          <Search size={20} color="#6B7280" />
+          <TextInput
+            testID="chat-search-input"
+            autoFocus
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search in this chat..."
+            placeholderTextColor="#6B7280"
+            style={[styles.searchInput, NO_OUTLINE]}
+          />
+        </View>
+      ) : null}
 
       {thread ? (
         <ScrollView contentContainerStyle={styles.content}>
@@ -65,9 +103,10 @@ export function CommunityChatScreen() {
           <View style={styles.dateChip}>
             <Text style={styles.dateText}>{thread.dateLabel}</Text>
           </View>
-          {thread.messages.map((m) => (
+          {messages.map((m) => (
             <Message key={m.id} message={m} />
           ))}
+          {messages.length === 0 ? <Text style={styles.empty}>No messages found.</Text> : null}
         </ScrollView>
       ) : (
         <Text style={styles.empty}>No messages yet.</Text>
@@ -254,5 +293,19 @@ const styles = StyleSheet.create({
   likeCountActive: { color: '#FFFFFF' },
   likeEmoji: { fontSize: 14 },
   likeCount: { color: '#2D2A4A', fontSize: 14, fontFamily: fonts.semibold },
+  searchBox: {
+    height: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginHorizontal: 16,
+    marginTop: 12,
+    paddingHorizontal: 14,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: '#C9BDF3',
+    backgroundColor: '#FFFFFF',
+  },
+  searchInput: { flex: 1, color: '#111827', fontSize: 15, fontFamily: fonts.medium },
   empty: { textAlign: 'center', color: '#6B7280', marginTop: 40, fontFamily: fonts.medium },
 });

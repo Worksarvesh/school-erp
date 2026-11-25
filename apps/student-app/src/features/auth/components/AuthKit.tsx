@@ -35,7 +35,7 @@ export const AUTH = {
 interface AuthShellProps {
   title: string;
   subtitle: string;
-  onBack: () => void;
+  onBack?: () => void;
   children: ReactNode;
 }
 
@@ -50,6 +50,18 @@ export function AuthShell({ title, subtitle, onBack, children }: AuthShellProps)
       >
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.headerRow}>
+            {onBack ? (
+              <Pressable
+                testID="auth-back"
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+                hitSlop={12}
+                onPress={onBack}
+                style={styles.back}
+              >
+                <ArrowLeft size={24} color={AUTH.back} />
+              </Pressable>
+            ) : null}
             <Pressable
               testID="auth-back"
               accessibilityRole="button"

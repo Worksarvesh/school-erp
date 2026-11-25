@@ -2,17 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ChevronLeft, CornerUpLeft, Download, Search, Users, X } from 'lucide-react-native';
 import { useState } from 'react';
-import {
-  Image,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import { Image, Linking, Pressable, ScrollView, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { StyleSheet, Text, scaled } from '@school-erp/ui';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COMMUNITY_CHATS, COMMUNITY_THREADS, type ThreadMessage } from '@/mock/community';

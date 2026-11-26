@@ -9,7 +9,7 @@ export function SplashScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    const t = setTimeout(() => router.replace('/(auth)/role-select'), 900);
+    const t = setTimeout(() => router.replace('/(auth)/onboarding'), 900);
     return () => clearTimeout(t);
   }, [router]);
 

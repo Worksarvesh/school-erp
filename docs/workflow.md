@@ -4,7 +4,9 @@
 - Work on short-lived branches from `main`: `feat/<short-name>`, `fix/<short-name>`, `docs/<short-name>`, `chore/<short-name>`.
 - One logical change per PR; keep PRs small.
 - PR titles are free-form. Conventional Commits (`feat(api): add attendance endpoint`) is recommended, and CI shows an advisory warning when a title does not follow it, but it never blocks a PR. Merge method is **squash**, so the PR title becomes the commit on `main`: keep it clear.
-- Branch protection on `main` (configure in GitHub settings): require a PR, require 1 approval, require the `CI passed` status check, require branches to be up to date, block force pushes, dismiss stale approvals.
+- `main` is protected by one repository ruleset (GitHub: Settings > Rules > Rulesets):
+  - **main: PR + green CI required** (no bypass, applies to the owner too): require a PR, require the `CI passed` status check, require branches to be up to date with `main`, block force pushes and branch deletion, and require an approval when a PR contains changes not attributed to its author (for example AI co-authored commits). No general approval count is required.
+  - There is no "only owner can merge" ruleset (removed 2026-11-25: it blocked every merge until the owner bypassed it). On a personal repository GitHub cannot limit merging to the owner, so collaborators with Write access can merge PRs that pass the ruleset. Restricting merges again needs an organization-owned repository and Maintain/Write roles.
 
 ## Daily flow (PowerShell)
 

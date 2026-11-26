@@ -56,7 +56,8 @@ export const mockAuthService: AuthService = {
 
   async verifyPrincipalOtp(_mobile, code) {
     await delay(400);
-    if (!/^\d{6}$/.test(code)) {
+    // MOCK: the approved design uses a 4-digit code; the real API sends 6 digits (OTP_FIXED_CODE).
+    if (!/^(\d{4}|\d{6})$/.test(code)) {
       throw new ApiError(400, { code: 'invalid_otp', message: 'Invalid or expired code' });
     }
     const memberships = mockPrincipalMemberships();

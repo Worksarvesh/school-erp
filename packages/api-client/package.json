@@ -24,6 +24,6 @@
     "@school-erp/config": "workspace:*",
     "@types/node": "^24.0.0",
     "typescript": "^6.0.2",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   }
 }

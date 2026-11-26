@@ -15,6 +15,7 @@ import {
 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DASHBOARD_MOCK as DATA } from '@/mock/dashboard';
+import { usePermission } from '@/core/permissions';
 import { useSession } from '@/state/session';
 import { DonutChart } from '../components/DonutChart';
 import { TAB_BAR_SPACE } from '../components/FloatingTabBar';
@@ -104,12 +105,21 @@ function Badge({ count }: { count: number }) {
  */
 export function PrincipalDashboardScreen() {
   const router = useRouter();
+  const canPublishNotices = usePermission('notices.publish');
+  const canManageExams = usePermission('exams.manage');
   const fullName = useSession((s) => s.fullName);
   const active = useSession((s) => s.activeMembership);
   const now = new Date();
   const today = `${WEEKDAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
 
   const open = (module: string) => router.push({ pathname: '/coming-soon', params: { module } });
+
+  const viewAll = (id: string) => {
+    if (id === 'approvals') router.navigate('/(tabs)/approvals');
+    // The only notice screen designed so far writes a notice, so it needs that permission.
+    else if (id === 'notices' && canPublishNotices) router.push('/school-notice');
+    else open(id);
+  };
 
   const linkRow = (id: string, title: string, count: number) => (
     <View style={[styles.box, styles.linkRow]}>
@@ -120,7 +130,7 @@ export function PrincipalDashboardScreen() {
         accessibilityRole="button"
         accessibilityLabel={`View all: ${title}`}
         hitSlop={10}
-        onPress={() => open(id)}
+        onPress={() => viewAll(id)}
         style={styles.viewAll}
       >
         <Text style={styles.viewAllText}>View All</Text>
@@ -204,7 +214,15 @@ export function PrincipalDashboardScreen() {
             </View>
           </View>
 
-          <View style={[styles.box, styles.performance]}>
+          <Pressable
+            testID="academic-performance"
+            accessibilityRole="button"
+            accessibilityLabel={`Academic Performance, ${DATA.academicPerformance} percent`}
+            onPress={() =>
+              canManageExams ? router.navigate('/(tabs)/academics') : open('academics')
+            }
+            style={[styles.box, styles.performance]}
+          >
             <View style={styles.flex}>
               <Text style={styles.rowTitle}>Academic Performance</Text>
               <Text style={styles.performanceSub}>(Class 10 Avg.)</Text>
@@ -213,7 +231,7 @@ export function PrincipalDashboardScreen() {
             <View style={styles.trend}>
               <TrendingUp size={18} color="#059669" strokeWidth={2.4} />
             </View>
-          </View>
+          </Pressable>
         </View>
       </ScrollView>
     </View>

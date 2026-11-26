@@ -16,6 +16,8 @@ export default function AuthLayout() {
       <Stack.Screen name="admin-login-detail" />
       <Stack.Screen name="profile-verification" options={{ gestureEnabled: false }} />
       <Stack.Screen name="staff-login" />
+      <Stack.Screen name="vice-principal-registration" />
+      <Stack.Screen name="vice-principal-login" />
       <Stack.Screen name="change-password" options={{ gestureEnabled: false }} />
       <Stack.Screen name="forgot-password" />
     </Stack>

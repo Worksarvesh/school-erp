@@ -1,11 +1,6 @@
 import React from 'react';
-import { Screen, StateView } from '@school-erp/ui';
+import { ApprovalCenterScreen } from '@/features/approvals/screens/ApprovalCenterScreen';
 
-/** Approval tab. The screen is not designed yet. */
 export default function Route() {
-  return (
-    <Screen>
-      <StateView state="empty" title="Coming soon" description="Approvals will appear here." />
-    </Screen>
-  );
+  return <ApprovalCenterScreen />;
 }

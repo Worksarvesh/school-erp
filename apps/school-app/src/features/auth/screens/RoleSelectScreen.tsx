@@ -102,9 +102,11 @@ export function RoleSelectScreen() {
               accessibilityLabel={`${o.title}. ${o.description}`}
               onPress={() => {
                 chooseLoginPath(o.path);
-                router.push(
-                  o.path === 'principal' ? '/(auth)/principal-login' : '/(auth)/staff-login',
-                );
+                if (o.path === 'principal') router.push('/(auth)/principal-login');
+                // The Vice Principal has designed pages of its own: registration, then login.
+                else if (o.key === 'vice-principal')
+                  router.push('/(auth)/vice-principal-registration');
+                else router.push('/(auth)/staff-login');
               }}
               style={({ pressed }) => [
                 styles.card,

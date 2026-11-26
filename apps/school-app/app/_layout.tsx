@@ -70,6 +70,8 @@ function RootNavigationGate() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="school-notice" />
+        <Stack.Screen name="notice-list" />
         <Stack.Screen name="coming-soon" options={{ presentation: 'card' }} />
       </Stack>
     </>

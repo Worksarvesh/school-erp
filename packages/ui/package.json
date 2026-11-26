@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@school-erp/config": "workspace:*",
-    "@types/node": "^24.0.0",
+    "@types/node": "^25.9.9",
     "@types/react": "^19.1.1",
     "react": "^19.3.0",
     "react-native": "0.88.1",
